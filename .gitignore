@@ -1,0 +1,16 @@
+*.tar
+*.tar.gz
+*.pyc
+*.pil
+*.pt
+*.txt
+*.bin
+*.png
+*.ark
+*.scp
+*.jpeg
+*.sh
+*.err
+*.out
+*.csh
+*.awk
