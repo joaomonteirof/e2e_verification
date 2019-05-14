@@ -36,7 +36,7 @@ class Transition(nn.Module):
 
 
 class DenseNet(nn.Module):
-	def __init__(self, block, nblocks, growth_rate=12, reduction=0.5, num_classes=10, nh=1, n_h=512):
+	def __init__(self, block, nblocks, nh, n_h, growth_rate, reduction=0.5, num_classes=10):
 		super(DenseNet, self).__init__()
 		self.growth_rate = growth_rate
 
@@ -67,7 +67,7 @@ class DenseNet(nn.Module):
 		self.bn = nn.BatchNorm2d(num_planes)
 		self.linear = nn.Linear(num_planes, num_classes)
 
-		self.classifier = self.make_bin_layers(n_in=num_planes, n_h_layers=nh, h_size=n_h)
+		self.classifier = self.make_bin_layers(n_in=2*num_planes, n_h_layers=nh, h_size=n_h)
 
 	def _make_dense_layers(self, block, in_planes, nblock):
 		layers = []
@@ -108,17 +108,17 @@ class DenseNet(nn.Module):
 		
 		return z
 
-def DenseNet121():
-	return DenseNet(Bottleneck, [6,12,24,16], growth_rate=32, nh=1, n_h=512)
+def DenseNet121(nh=1, n_h=512):
+	return DenseNet(Bottleneck, [6,12,24,16], nh, n_h, growth_rate=32)
 
-def DenseNet169():
-	return DenseNet(Bottleneck, [6,12,32,32], growth_rate=32, nh=1, n_h=512)
+def DenseNet169(nh=1, n_h=512):
+	return DenseNet(Bottleneck, [6,12,32,32], nh, n_h, growth_rate=32)
 
-def DenseNet201():
-	return DenseNet(Bottleneck, [6,12,48,32], growth_rate=32, nh=1, n_h=512)
+def DenseNet201(nh=1, n_h=512):
+	return DenseNet(Bottleneck, [6,12,48,32], nh, n_h, growth_rate=32)
 
-def DenseNet161():
-	return DenseNet(Bottleneck, [6,12,36,24], growth_rate=48, nh=1, n_h=512)
+def DenseNet161(nh=1, n_h=512):
+	return DenseNet(Bottleneck, [6,12,36,24], nh, n_h, growth_rate=48)
 
-def densenet_cifar():
-	return DenseNet(Bottleneck, [6,12,24,16], growth_rate=12, nh=1, n_h=512)
+def densenet_cifar(nh=1, n_h=512):
+	return DenseNet(Bottleneck, [6,12,24,16], nh, n_h, growth_rate=12)

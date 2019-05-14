@@ -77,7 +77,7 @@ class ResNet(nn.Module):
 		self.layer4 = self._make_layer(block, 512, num_blocks[3], stride=2)
 		self.linear = nn.Linear(512*block.expansion, num_classes)
 
-		self.classifier = self.make_bin_layers(n_in=512*block.expansion, n_h_layers=nh, h_size=n_h)
+		self.classifier = self.make_bin_layers(n_in=2*512*block.expansion, n_h_layers=nh, h_size=n_h)
 
 	def _make_layer(self, block, planes, num_blocks, stride):
 		strides = [stride] + [1]*(num_blocks-1)
@@ -119,17 +119,17 @@ class ResNet(nn.Module):
 		
 		return z
 
-def ResNet18():
-	return ResNet(BasicBlock, [2,2,2,2], nh=1, n_h=512)
+def ResNet18(nh=1, n_h=512):
+	return ResNet(BasicBlock, [2,2,2,2], nh, n_h)
 
-def ResNet34():
-	return ResNet(BasicBlock, [3,4,6,3], nh=1, n_h=512)
+def ResNet34(nh=1, n_h=512):
+	return ResNet(BasicBlock, [3,4,6,3], nh, n_h)
 
-def ResNet50():
-	return ResNet(Bottleneck, [3,4,6,3], nh=1, n_h=512)
+def ResNet50(nh=1, n_h=512):
+	return ResNet(Bottleneck, [3,4,6,3], nh, n_h)
 
-def ResNet101():
-	return ResNet(Bottleneck, [3,4,23,3], nh=1, n_h=512)
+def ResNet101(nh=1, n_h=512):
+	return ResNet(Bottleneck, [3,4,23,3], nh, n_h)
 
-def ResNet152():
-	return ResNet(Bottleneck, [3,8,36,3], nh=1, n_h=512)
+def ResNet152(nh=1, n_h=512):
+	return ResNet(Bottleneck, [3,8,36,3], nh, n_h)

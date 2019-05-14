@@ -21,13 +21,13 @@ elif args.model == 'resnet':
 elif args.model == 'densenet':
 	model = densenet.densenet_cifar(nh=args.n_hidden, n_h=args.hidden_size)
 
-batch = torch.rand(3, 1, args.ncoef, 200)
+batch = torch.rand(3, 3, 32, 32)
 
 pred, emb = model.forward(batch)
 
-print(mu.size())
+print(pred.size(), emb.size())
 
-emb = torch.cat([mu,mu],1)
+emb = torch.cat([emb,emb],1)
 
 print(emb.size())
 

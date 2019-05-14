@@ -217,9 +217,9 @@ class TrainLoop(object):
 		if self.cuda_mode:
 			triplets_idx = triplets_idx.cuda(self.device)
 
-		emb_a = torch.index_select(embeddings_norm, 0, triplets_idx[:, 0])
-		emb_p = torch.index_select(embeddings_norm, 0, triplets_idx[:, 1])
-		emb_n = torch.index_select(embeddings_norm, 0, triplets_idx[:, 2])
+		emb_a = torch.index_select(embeddings, 0, triplets_idx[:, 0])
+		emb_p = torch.index_select(embeddings, 0, triplets_idx[:, 1])
+		emb_n = torch.index_select(embeddings, 0, triplets_idx[:, 2])
 
 		emb_ap = torch.cat([emb_a, emb_p],1)
 		emb_an = torch.cat([emb_a, emb_n],1)

@@ -18,7 +18,7 @@ class VGG(nn.Module):
 		self.features = self._make_layers(cfg[vgg_name])
 		self.classifier = nn.Linear(512, 10)
 
-		self.classifier = self.make_bin_layers(n_in=512, n_h_layers=nh, h_size=n_h)
+		self.bin_classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h)
 
 	def forward(self, x):
 		features = self.features(x)
@@ -56,7 +56,7 @@ class VGG(nn.Module):
 
 	def forward_bin(self, z):
 
-		for l in self.classifier:
+		for l in self.bin_classifier:
 			z = l(z)
 		
 		return z
