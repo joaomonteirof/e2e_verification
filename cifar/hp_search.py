@@ -56,18 +56,18 @@ def train(lr, l2, momentum, margin, lambda_, patience, swap, model, n_hidden, hi
 	valid_loader = torch.utils.data.DataLoader(validset, batch_size=valid_batch_size, shuffle=False, num_workers=n_workers)
 
 	if model == 'vgg':
-		model = vgg.VGG('VGG16', nh=int(n_hidden), n_h=int(hidden_size))
+		model_ = vgg.VGG('VGG16', nh=int(n_hidden), n_h=int(hidden_size))
 	elif model == 'resnet':
-		model = resnet.ResNet18(, nh=int(n_hidden), n_h=int(hidden_size))
+		model_ = resnet.ResNet18(, nh=int(n_hidden), n_h=int(hidden_size))
 	elif model == 'densenet':
-		model = densenet.densenet_cifar(nh=int(n_hidden), n_h=int(hidden_size))
+		model_ = densenet.densenet_cifar(nh=int(n_hidden), n_h=int(hidden_size))
 
 	if cuda:
-		model = model.cuda()
+		model_ = model_.cuda()
 
-	optimizer = optim.SGD(model.parameters(), lr=lr, weight_decay=l2, momentum=momentum)
+	optimizer = optim.SGD(model_.parameters(), lr=lr, weight_decay=l2, momentum=momentum)
 
-	trainer = TrainLoop(model, optimizer, train_loader, valid_loader, margin=margin, lambda_=lambda_, n_hidden, hidden_size, patience=int(patience), verbose=-1, cp_name=cp_name, save_cp=True, checkpoint_path=checkpoint_path, swap=swap, cuda=cuda)
+	trainer = TrainLoop(model_, optimizer, train_loader, valid_loader, margin=margin, lambda_=lambda_, n_hidden, hidden_size, patience=int(patience), verbose=-1, cp_name=cp_name, save_cp=True, checkpoint_path=checkpoint_path, swap=swap, cuda=cuda)
 
 	for i in range(5):
 
@@ -84,6 +84,16 @@ def train(lr, l2, momentum, margin, lambda_, patience, swap, model, n_hidden, hi
 			print('Best cos EER in file ' + cp_name + ' was: {}'.format(cost[1]))
 			print('Best Error Rate in file ' + cp_name + ' was: {}'.format(cost[2]))
 			print(' ')
+			print('With hyperparameters:')
+			print('Selected model: {}'.format(model))
+			print('Batch size: {}'.format(batch_size))
+			print('LR: {}'.format(lr))
+			print('Momentum: {}'.format(momentum))
+			print('l2: {}'.format(l2))
+			print('lambda: {}'.format(lambda_))
+			print('Margin: {}'.format(margin))
+			print('Swap: {}'.format(swap))
+			print('Patience: {}'.format(patience))
 
 			return cost
 		except:
