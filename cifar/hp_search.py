@@ -95,7 +95,7 @@ def train(lr, l2, momentum, margin, lambda_, patience, swap, model, n_hidden, hi
 			print('Swap: {}'.format(swap))
 			print('Patience: {}'.format(patience))
 
-			return cost
+			return cost[0]
 		except:
 			pass
 
