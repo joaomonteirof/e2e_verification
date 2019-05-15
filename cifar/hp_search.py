@@ -86,6 +86,8 @@ def train(lr, l2, momentum, margin, lambda_, patience, swap, model, n_hidden, hi
 			print(' ')
 			print('With hyperparameters:')
 			print('Selected model: {}'.format(model))
+			print('Hidden layer size size: {}'.format(hidden_size))
+			print('Number of hidden layers: {}'.format(n_hidden))
 			print('Batch size: {}'.format(batch_size))
 			print('LR: {}'.format(lr))
 			print('Momentum: {}'.format(momentum))
@@ -94,6 +96,7 @@ def train(lr, l2, momentum, margin, lambda_, patience, swap, model, n_hidden, hi
 			print('Margin: {}'.format(margin))
 			print('Swap: {}'.format(swap))
 			print('Patience: {}'.format(patience))
+			print(' ')
 
 			return cost[0]
 		except:
