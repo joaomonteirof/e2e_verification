@@ -110,7 +110,7 @@ class Bottleneck(nn.Module):
 		return out
 
 class ResNet_lstm(nn.Module):
-	def __init__(self, n_z=256, nh=1, n_h=512, layers=[2,2,2,2], block=Bottleneck, proj_size=100, ncoef=23):
+	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,6,3], block=Bottleneck, proj_size=100, ncoef=23):
 		self.inplanes = 32
 		super(ResNet_lstm, self).__init__()
 	
