@@ -107,6 +107,8 @@ lambda_=instru.var.Array(1).asfloat().bounded(1, 5).exponentiated(base=10, coeff
 patience=instru.var.Array(1).asfloat().bounded(1, 100)
 swap=instru.var.OrderedDiscrete([True, False])
 latent_size=instru.var.Array(1).asfloat().bounded(64, 512)
+n_hidden=instru.var.Array(1).asfloat().bounded(1, 5)
+hidden_size=instru.var.Array(1).asfloat().bounded(64, 512)
 n_frames=instru.var.Array(1).asfloat().bounded(600, 1000)
 model=args.model
 ncoef=args.ncoef
