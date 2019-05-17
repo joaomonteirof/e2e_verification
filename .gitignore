@@ -16,3 +16,4 @@
 *.awk
 */data/*
 */__pycache__/*
+*/tmp/*
