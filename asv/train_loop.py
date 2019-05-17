@@ -168,9 +168,9 @@ class TrainLoop(object):
 				print('Best e2e eer and corresponding epoch: {:0.4f}, {}'.format(np.min(self.history['e2e_eer']), 1+np.argmin(self.history['e2e_eer'])))
 				print('Best cos eer and corresponding epoch: {:0.4f}, {}'.format(np.min(self.history['cos_eer']), 1+np.argmin(self.history['cos_eer'])))
 
-			return np.min(self.history['e2e_eer']), np.min(self.history['cos_eer'])
+			return [np.min(self.history['e2e_eer']), np.min(self.history['cos_eer'])]
 		else:
-			return np.min(self.history['train_loss'])
+			return [np.min(self.history['train_loss'])]
 
 	def train_step(self, batch):
 
