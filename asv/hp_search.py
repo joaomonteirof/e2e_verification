@@ -72,7 +72,7 @@ parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path',
 args=parser.parse_args()
 args.cuda=True if not args.no_cuda and torch.cuda.is_available() else False
 
-def train(lr, l2, momentum, margin, lambda_, patience, swap, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, epochs, batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, valid_n_cycles, cp_path):
+def train(lr, l2, momentum, margin, lambda_, patience, swap, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, valid_n_cycles, cp_path):
 
 	if cuda:
 		device=get_freer_gpu()
@@ -84,7 +84,7 @@ def train(lr, l2, momentum, margin, lambda_, patience, swap, latent_size, n_hidd
 	valid_loader=torch.utils.data.DataLoader(valid_dataset, batch_size=batch_size, shuffle=False, num_workers=n_workers, worker_init_fn=set_np_randomseed)
 
 	if args.model == 'resnet_lstm':
-		model = model_.ResNet_lstm(n_z=int(latent_size), nh=int(n_hidden), n_h=int(hidden_size), proj_size=len(train_dataset.speakers_list), ncoef=ncoef)
+		model = model_.ResNet_lstm(n_z=int(latent_size), nh=int(n_hidden), n_h=int(hidden_size), proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob)
 
 	if cuda:
 		model=model.cuda(device)
@@ -105,9 +105,10 @@ lambda_=instru.var.Array(1).asfloat().bounded(1, 5).exponentiated(base=10, coeff
 patience=instru.var.Array(1).asfloat().bounded(1, 100)
 swap=instru.var.OrderedDiscrete([True, False])
 latent_size=instru.var.Array(1).asfloat().bounded(64, 512)
-n_hidden=instru.var.Array(1).asfloat().bounded(1, 5)
+n_hidden=instru.var.Array(1).asfloat().bounded(1, 6)
 hidden_size=instru.var.Array(1).asfloat().bounded(64, 512)
 n_frames=instru.var.Array(1).asfloat().bounded(600, 1000)
+dropout_prob=instru.var.Array(1).asfloat().bounded(0.01, 0.50)
 model=args.model
 ncoef=args.ncoef
 epochs=args.epochs
@@ -120,7 +121,7 @@ valid_hdf_file=args.valid_hdf_file
 valid_n_cycles=args.valid_n_cycles
 checkpoint_path=args.checkpoint_path
 
-instrum=instru.Instrumentation(lr, l2, momentum, margin, lambda_, patience, swap, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, epochs, batch_size, n_workers, cuda, train_hdf_file, data_info_path, valid_hdf_file, valid_n_cycles, checkpoint_path)
+instrum=instru.Instrumentation(lr, l2, momentum, margin, lambda_, patience, swap, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, n_workers, cuda, train_hdf_file, data_info_path, valid_hdf_file, valid_n_cycles, checkpoint_path)
 
 hp_optimizer=optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget, num_workers=args.hp_workers)
 

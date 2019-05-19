@@ -72,12 +72,12 @@ parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path',
 args=parser.parse_args()
 args.cuda=True if not args.no_cuda and torch.cuda.is_available() else False
 
-def train(lr, l2, momentum, margin, lambda_, patience, swap, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, epochs, batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, n_cycles, valid_n_cycles, submission_file, tmp_dir, cp_path):
+def train(lr, l2, momentum, margin, lambda_, patience, swap, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, n_cycles, valid_n_cycles, submission_file, tmp_dir, cp_path):
 
 	file_name = get_file_name(tmp_dir)
 	np.random.seed()
 
-	command = 'qsub' + ' ' + submission_file + ' ' + str(lr) + ' ' + str(l2) + ' ' + str(momentum) + ' ' + str(margin) + ' ' + str(lambda_) + ' ' + str(int(patience)) + ' ' + str(swap) + ' ' + str(int(latent_size)) + ' ' + str(int(n_hidden)) + ' ' + str(int(hidden_size)) + ' ' + str(int(n_frames)) + ' ' + str(model) + ' ' + str(ncoef) + ' ' + str(epochs) + ' ' + str(batch_size) + ' ' + str(n_workers) + ' ' + str(cuda) + ' ' + str(train_hdf_file) + ' ' + str(valid_hdf_file) + ' ' + str(n_cycles) + ' ' + str(valid_n_cycles) + ' ' + str(file_name) + ' ' + str(cp_path) + ' ' + str(file_name.split('/')[-1]+'t')
+	command = 'qsub' + ' ' + submission_file + ' ' + str(lr) + ' ' + str(l2) + ' ' + str(momentum) + ' ' + str(margin) + ' ' + str(lambda_) + ' ' + str(int(patience)) + ' ' + str(swap) + ' ' + str(int(latent_size)) + ' ' + str(int(n_hidden)) + ' ' + str(int(hidden_size)) + ' ' + str(int(n_frames)) + ' ' + str(model) + ' ' + str(ncoef) + ' ' + str(dropout_prob) + ' ' + str(epochs) + ' ' + str(batch_size) + ' ' + str(n_workers) + ' ' + str(cuda) + ' ' + str(train_hdf_file) + ' ' + str(valid_hdf_file) + ' ' + str(n_cycles) + ' ' + str(valid_n_cycles) + ' ' + str(file_name) + ' ' + str(cp_path) + ' ' + str(file_name.split('/')[-1]+'t')
 
 	for j in range(10):
 
@@ -105,6 +105,7 @@ def train(lr, l2, momentum, margin, lambda_, patience, swap, latent_size, n_hidd
 			print('Embeddings size: {}'.format(int(latent_size)))
 			print('Number of hidden layers: {}'.format(int(n_hidden)))
 			print('Size of hidden layers: {}'.format(int(hidden_size)))
+			print('Dropout rate: {}'.format(dropout_prob))
 			print('LR: {}'.format(lr))
 			print('momentum: {}'.format(momentum))
 			print('l2: {}'.format(l2))
@@ -122,12 +123,13 @@ lr=instru.var.Array(1).asfloat().bounded(1, 4).exponentiated(base=10, coeff=-1)
 l2=instru.var.Array(1).asfloat().bounded(1, 5).exponentiated(base=10, coeff=-1)
 momentum=instru.var.Array(1).asfloat().bounded(0.10, 0.95)
 margin=instru.var.Array(1).asfloat().bounded(0.10, 1.00)
-lambda_=instru.var.Array(1).asfloat().bounded(1, 5).exponentiated(base=10, coeff=-1)
+lambda_=instru.var.Array(1).asfloat().bounded(1, 6).exponentiated(base=10, coeff=-1)
 patience=instru.var.Array(1).asfloat().bounded(1, 100)
 swap=instru.var.OrderedDiscrete([True, False])
 latent_size=instru.var.Array(1).asfloat().bounded(64, 512)
 n_hidden=instru.var.Array(1).asfloat().bounded(1, 5)
 hidden_size=instru.var.Array(1).asfloat().bounded(64, 512)
+dropout_prob=instru.var.Array(1).asfloat().bounded(0.01, 0.50)
 n_frames=instru.var.Array(1).asfloat().bounded(600, 1000)
 model=args.model
 ncoef=args.ncoef
@@ -147,7 +149,7 @@ tmp_dir = os.getcwd() + '/' + args.temp_folder + '/'
 if not os.path.isdir(tmp_dir):
 	os.mkdir(tmp_dir)
 
-instrum=instru.Instrumentation(lr, l2, momentum, margin, lambda_, patience, swap, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, epochs, batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, n_cycles, valid_n_cycles, sub_file, tmp_dir, checkpoint_path)
+instrum=instru.Instrumentation(lr, l2, momentum, margin, lambda_, patience, swap, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, n_cycles, valid_n_cycles, sub_file, tmp_dir, checkpoint_path)
 
 hp_optimizer=optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget, num_workers=args.hp_workers)
 

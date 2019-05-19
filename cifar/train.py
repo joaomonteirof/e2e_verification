@@ -33,6 +33,7 @@ parser.add_argument('--n-workers', type=int, default=4, metavar='N', help='Worke
 parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
 parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
 parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
+parser.add_argument('--dropout-prob', type=float, default=0.25, metavar='p', help='Dropout probability (default: 0.25)')
 parser.add_argument('--save-every', type=int, default=1, metavar='N', help='how many epochs to wait before logging training status. Default is 1')
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 parser.add_argument('--no-cp', action='store_true', default=False, help='Disables checkpointing')
@@ -55,11 +56,11 @@ validset = datasets.CIFAR10(root='./data', train=False, download=True, transform
 valid_loader = torch.utils.data.DataLoader(validset, batch_size=args.valid_batch_size, shuffle=False, num_workers=args.n_workers)
 
 if args.model == 'vgg':
-	model = vgg.VGG('VGG16', nh=args.n_hidden, n_h=args.hidden_size)
+	model = vgg.VGG('VGG16', nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob)
 elif args.model == 'resnet':
-	model = resnet.ResNet18(nh=args.n_hidden, n_h=args.hidden_size)
+	model = resnet.ResNet18(nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob)
 elif args.model == 'densenet':
-	model = densenet.densenet_cifar(nh=args.n_hidden, n_h=args.hidden_size)
+	model = densenet.densenet_cifar(nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob)
 
 if args.cuda:
 	model = model.cuda()
@@ -79,5 +80,6 @@ if args.verbose >0:
 	print('Margin: {}'.format(args.margin))
 	print('Swap: {}'.format(args.swap))
 	print('Patience: {}'.format(args.patience))
+	print('Dropout rate: {}'.format(args.dropout_prob))
 
 trainer.train(n_epochs=args.epochs, save_every=args.save_every)

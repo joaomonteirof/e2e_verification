@@ -47,6 +47,7 @@ parser.add_argument('--ncoef', type=int, default=23, metavar='N', help='number o
 parser.add_argument('--latent-size', type=int, default=256, metavar='S', help='latent layer dimension (default: 256)')
 parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
 parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
+parser.add_argument('--dropout-prob', type=float, default=0.25, metavar='p', help='Dropout probability (default: 0.25)')
 parser.add_argument('--n-frames', type=int, default=800, metavar='N', help='maximum number of frames per utterance (default: 800)')
 parser.add_argument('--n-cycles', type=int, default=3, metavar='N', help='cycles over speakers list to complete 1 epoch')
 parser.add_argument('--valid-n-cycles', type=int, default=300, metavar='N', help='cycles over speakers list to complete 1 epoch')
@@ -73,7 +74,7 @@ valid_dataset = Loader(hdf5_name = args.valid_hdf_file, max_nb_frames = args.n_f
 valid_loader = torch.utils.data.DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.workers, worker_init_fn=set_np_randomseed)
 
 if args.model == 'resnet_lstm':
-	model = model_.ResNet_lstm(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=args.ncoef)
+	model = model_.ResNet_lstm(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=args.ncoef, dropout_prob=args.dropout_prob)
 
 if args.cuda:
 	model = model.cuda(device)

@@ -65,7 +65,7 @@ class Bottleneck(nn.Module):
 
 
 class ResNet(nn.Module):
-	def __init__(self, block, num_blocks, nh=1, n_h=512, num_classes=10):
+	def __init__(self, block, num_blocks, nh=1, n_h=512, num_classes=10, dropout_prob=0.25):
 		super(ResNet, self).__init__()
 		self.in_planes = 64
 
@@ -77,7 +77,7 @@ class ResNet(nn.Module):
 		self.layer4 = self._make_layer(block, 512, num_blocks[3], stride=2)
 		self.linear = nn.Linear(512*block.expansion, num_classes)
 
-		self.classifier = self.make_bin_layers(n_in=2*512*block.expansion, n_h_layers=nh, h_size=n_h)
+		self.classifier = self.make_bin_layers(n_in=2*512*block.expansion, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
 
 	def _make_layer(self, block, planes, num_blocks, stride):
 		strides = [stride] + [1]*(num_blocks-1)
@@ -98,7 +98,7 @@ class ResNet(nn.Module):
 
 		return self.linear(out), out
 
-	def make_bin_layers(self, n_in, n_h_layers, h_size):
+	def make_bin_layers(self, n_in, n_h_layers, h_size, dropout_p):
 
 		classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
 
@@ -106,7 +106,7 @@ class ResNet(nn.Module):
 			classifier.append(nn.Linear(h_size, h_size))
 			classifier.append(nn.LeakyReLU(0.1))
 
-		classifier.append(nn.Dropout(p=0.25))
+		classifier.append(nn.Dropout(p=dropout_p))
 		classifier.append(nn.Linear(h_size, 1))
 		classifier.append(nn.Sigmoid())
 
@@ -119,17 +119,17 @@ class ResNet(nn.Module):
 		
 		return z
 
-def ResNet18(nh=1, n_h=512):
-	return ResNet(BasicBlock, [2,2,2,2], nh, n_h)
+def ResNet18(nh=1, n_h=512, dropout_prob=0.25):
+	return ResNet(BasicBlock, [2,2,2,2], nh=nh, n_h=n_h, dropout_prob=dropout_prob)
 
-def ResNet34(nh=1, n_h=512):
-	return ResNet(BasicBlock, [3,4,6,3], nh, n_h)
+def ResNet34(nh=1, n_h=512, dropout_prob=0.25):
+	return ResNet(BasicBlock, [3,4,6,3], nh=nh, n_h=n_h, dropout_prob=dropout_prob)
 
-def ResNet50(nh=1, n_h=512):
-	return ResNet(Bottleneck, [3,4,6,3], nh, n_h)
+def ResNet50(nh=1, n_h=512, dropout_prob=0.25):
+	return ResNet(Bottleneck, [3,4,6,3], nh=nh, n_h=n_h, dropout_prob=dropout_prob)
 
-def ResNet101(nh=1, n_h=512):
-	return ResNet(Bottleneck, [3,4,23,3], nh, n_h)
+def ResNet101(nh=1, n_h=512, dropout_prob=0.25):
+	return ResNet(Bottleneck, [3,4,23,3], nh=nh, n_h=n_h, dropout_prob=dropout_prob)
 
-def ResNet152(nh=1, n_h=512):
-	return ResNet(Bottleneck, [3,8,36,3], nh, n_h)
+def ResNet152(nh=1, n_h=512, dropout_prob=0.25):
+	return ResNet(Bottleneck, [3,8,36,3], nh=nh, n_h=n_h, dropout_prob=dropout_prob)

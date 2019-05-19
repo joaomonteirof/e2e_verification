@@ -40,7 +40,7 @@ parser.add_argument('--checkpoint-path', type=str, default='./', metavar='Path',
 args = parser.parse_args()
 args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
-def train(lr, l2, momentum, margin, lambda_, patience, swap, model, n_hidden, hidden_size, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, checkpoint_path):
+def train(lr, l2, momentum, margin, lambda_, patience, swap, model, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, checkpoint_path):
 
 	cp_name = get_cp_name(checkpoint_path)
 
@@ -56,11 +56,11 @@ def train(lr, l2, momentum, margin, lambda_, patience, swap, model, n_hidden, hi
 	valid_loader = torch.utils.data.DataLoader(validset, batch_size=valid_batch_size, shuffle=False, num_workers=n_workers)
 
 	if model == 'vgg':
-		model_ = vgg.VGG('VGG16', nh=int(n_hidden), n_h=int(hidden_size))
+		model_ = vgg.VGG('VGG16', nh=int(n_hidden), n_h=int(hidden_size), dropout_prob=dropout_prob)
 	elif model == 'resnet':
-		model_ = resnet.ResNet18(nh=int(n_hidden), n_h=int(hidden_size))
+		model_ = resnet.ResNet18(nh=int(n_hidden), n_h=int(hidden_size), dropout_prob=dropout_prob)
 	elif model == 'densenet':
-		model_ = densenet.densenet_cifar(nh=int(n_hidden), n_h=int(hidden_size))
+		model_ = densenet.densenet_cifar(nh=int(n_hidden), n_h=int(hidden_size), dropout_prob=dropout_prob)
 
 	if cuda:
 		model_ = model_.cuda()
@@ -88,6 +88,7 @@ def train(lr, l2, momentum, margin, lambda_, patience, swap, model, n_hidden, hi
 			print('Selected model: {}'.format(model))
 			print('Hidden layer size size: {}'.format(int(hidden_size)))
 			print('Number of hidden layers: {}'.format(int(n_hidden)))
+			print('Dropout rate: {}'.format(dropout_prob))
 			print('Batch size: {}'.format(batch_size))
 			print('LR: {}'.format(lr))
 			print('Momentum: {}'.format(momentum))
@@ -114,6 +115,7 @@ patience = instru.var.Array(1).asfloat().bounded(1, 100)
 swap = instru.var.OrderedDiscrete([True, False])
 n_hidden=instru.var.Array(1).asfloat().bounded(1, 5)
 hidden_size=instru.var.Array(1).asfloat().bounded(64, 512)
+dropout_prob=instru.var.Array(1).asfloat().bounded(0.01, 0.50)
 model = args.model
 epochs = args.epochs
 batch_size = args.batch_size
@@ -124,7 +126,7 @@ data_path = args.data_path
 valid_data_path = args.valid_data_path
 checkpoint_path=args.checkpoint_path
 
-instrum = instru.Instrumentation(lr, l2, momentum, margin, lambda_, patience, swap, model, n_hidden, hidden_size, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, checkpoint_path)
+instrum = instru.Instrumentation(lr, l2, momentum, margin, lambda_, patience, swap, model, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, checkpoint_path)
 
 hp_optimizer = optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget)
 

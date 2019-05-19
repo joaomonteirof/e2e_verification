@@ -42,6 +42,7 @@ parser.add_argument('--ncoef', type=int, default=23, metavar='N', help='number o
 parser.add_argument('--latent-size', type=int, default=256, metavar='S', help='latent layer dimension (default: 256)')
 parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
 parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
+parser.add_argument('--dropout-prob', type=float, default=0.25, metavar='p', help='Dropout probability (default: 0.25)')
 parser.add_argument('--n-frames', type=int, default=1000, metavar='N', help='maximum number of frames per utterance (default: 1000)')
 parser.add_argument('--n-cycles', type=int, default=10, metavar='N', help='cycles over speakers list to complete 1 epoch')
 parser.add_argument('--valid-n-cycles', type=int, default=300, metavar='N', help='cycles over speakers list to complete 1 epoch')
@@ -75,7 +76,7 @@ else:
 	valid_loader=None
 
 if args.model == 'resnet_lstm':
-	model = model_.ResNet_lstm(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=args.ncoef)
+	model = model_.ResNet_lstm(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=args.ncoef, dropout_prob=args.dropout_prob)
 
 if args.pretrained_path is not None:
 	ckpt = torch.load(args.pretrained_path, map_location = lambda storage, loc: storage)

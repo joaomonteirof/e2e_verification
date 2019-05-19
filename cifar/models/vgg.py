@@ -13,12 +13,12 @@ cfg = {
 
 
 class VGG(nn.Module):
-	def __init__(self, vgg_name, nh=1, n_h=512):
+	def __init__(self, vgg_name, nh=1, n_h=512, dropout_prob=0.25):
 		super(VGG, self).__init__()
 		self.features = self._make_layers(cfg[vgg_name])
 		self.classifier = nn.Linear(512, 10)
 
-		self.bin_classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h)
+		self.bin_classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
 
 	def forward(self, x):
 		features = self.features(x)
@@ -40,7 +40,7 @@ class VGG(nn.Module):
 		layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
 		return nn.Sequential(*layers)
 
-	def make_bin_layers(self, n_in, n_h_layers, h_size):
+	def make_bin_layers(self, n_in, n_h_layers, h_size, dropout_p):
 
 		classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
 
@@ -48,7 +48,7 @@ class VGG(nn.Module):
 			classifier.append(nn.Linear(h_size, h_size))
 			classifier.append(nn.LeakyReLU(0.1))
 
-		classifier.append(nn.Dropout(p=0.25))
+		classifier.append(nn.Dropout(p=dropout_p))
 		classifier.append(nn.Linear(h_size, 1))
 		classifier.append(nn.Sigmoid())
 

@@ -110,7 +110,7 @@ class Bottleneck(nn.Module):
 		return out
 
 class ResNet_lstm(nn.Module):
-	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,6,3], block=Bottleneck, proj_size=100, ncoef=23):
+	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,6,3], block=Bottleneck, proj_size=100, ncoef=23, dropout_prob=0.25):
 		self.inplanes = 32
 		super(ResNet_lstm, self).__init__()
 	
@@ -134,7 +134,7 @@ class ResNet_lstm(nn.Module):
 
 		self.out_proj=nn.Sequential( nn.Linear(n_z, proj_size) )
 
-		self.classifier = self.make_bin_layers(n_in=2*n_z, n_h_layers=nh, h_size=n_h)
+		self.classifier = self.make_bin_layers(n_in=2*n_z, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
 
 		self.initialize_params()
 
@@ -162,7 +162,7 @@ class ResNet_lstm(nn.Module):
 
 		return nn.Sequential(*layers)
 
-	def make_bin_layers(self, n_in, n_h_layers, h_size):
+	def make_bin_layers(self, n_in, n_h_layers, h_size, dropout_p):
 
 		classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
 
@@ -170,7 +170,7 @@ class ResNet_lstm(nn.Module):
 			classifier.append(nn.Linear(h_size, h_size))
 			classifier.append(nn.LeakyReLU(0.1))
 
-		classifier.append(nn.Dropout(p=0.25))
+		classifier.append(nn.Dropout(p=dropout_p))
 		classifier.append(nn.Linear(h_size, 1))
 		classifier.append(nn.Sigmoid())
 
