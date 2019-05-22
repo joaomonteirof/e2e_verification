@@ -22,7 +22,7 @@ def compute_eer(y, y_score):
 
 class TrainLoop(object):
 
-	def __init__(self, model, optimizer, train_loader, valid_loader, margin, lambda_, patience, verbose=-1, device=0, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, swap=False, pretrain=False, cuda=True):
+	def __init__(self, model, optimizer, train_loader, valid_loader, margin, lambda_, patience, verbose=-1, device=0, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True):
 		if checkpoint_path is None:
 			# Save to current directory
 			self.checkpoint_path = os.getcwd()
@@ -35,7 +35,6 @@ class TrainLoop(object):
 		self.cuda_mode = cuda
 		self.pretrain = pretrain
 		self.model = model
-		self.swap = swap
 		self.lambda_ = lambda_
 		self.optimizer = optimizer
 		self.train_loader = train_loader
@@ -43,12 +42,11 @@ class TrainLoop(object):
 		self.total_iters = 0
 		self.cur_epoch = 0
 		self.margin = margin
-		self.harvester = HardestNegativeTripletSelector(margin=self.margin, cpu=not self.cuda_mode)
-		self.harvester_bin = AllTripletSelector()
+		self.harvester = AllTripletSelector()
 		self.verbose = verbose
 		self.save_cp = save_cp
 		self.device = device
-		self.history = {'train_loss': [], 'train_loss_batch': [], 'triplet_loss': [], 'triplet_loss_batch': [], 'ce_loss': [], 'ce_loss_batch': [], 'bin_loss': [], 'bin_loss_batch': [], 'reg_entropy': [], 'reg_entropy_batch': []}
+		self.history = {'train_loss': [], 'train_loss_batch': [], 'ce_loss': [], 'ce_loss_batch': [], 'bin_loss': [], 'bin_loss_batch': []}
 
 		if self.valid_loader is not None:
 			self.history['e2e_eer'] = []
@@ -90,37 +88,27 @@ class TrainLoop(object):
 			else:
 
 				train_loss_epoch=0.0
-				triplet_loss_epoch=0.0
 				ce_loss_epoch=0.0
 				bin_loss_epoch=0.0
-				entropy_reg_epoch=0.0
 				for t, batch in train_iter:
-					train_loss, triplet_loss, ce_loss, bin_loss, entropy_reg = self.train_step(batch)
+					train_loss, ce_loss, bin_loss = self.train_step(batch)
 					self.history['train_loss_batch'].append(train_loss)
-					self.history['triplet_loss_batch'].append(triplet_loss)
 					self.history['ce_loss_batch'].append(ce_loss)
 					self.history['bin_loss_batch'].append(bin_loss)
-					self.history['reg_entropy_batch'].append(entropy_reg)
 					train_loss_epoch+=train_loss
-					triplet_loss_epoch+=triplet_loss
 					ce_loss_epoch+=ce_loss
 					bin_loss_epoch+=bin_loss
-					entropy_reg_epoch+=entropy_reg
 					self.total_iters += 1
 
 				self.history['train_loss'].append(train_loss_epoch/(t+1))
-				self.history['triplet_loss'].append(triplet_loss_epoch/(t+1))
 				self.history['ce_loss'].append(ce_loss_epoch/(t+1))
 				self.history['bin_loss'].append(bin_loss_epoch/(t+1))
-				self.history['reg_entropy'].append(entropy_reg_epoch/(t+1))
 
 				if self.verbose>0:
 					print(' ')
 					print('Total train loss: {:0.4f}'.format(self.history['train_loss'][-1]))
 					print('CE loss: {:0.4f}'.format(self.history['ce_loss'][-1]))
-					print('triplet loss: {:0.4f}'.format(self.history['triplet_loss'][-1]))
 					print('Binary classification loss: {:0.4f}'.format(self.history['bin_loss'][-1]))
-					print('Max entropy regularizer: {:0.4f}'.format(self.history['reg_entropy'][-1]))
 					print(' ')
 
 			if self.valid_loader is not None:
@@ -186,33 +174,16 @@ class TrainLoop(object):
 
 		if self.cuda_mode:
 			utterances = utterances.cuda(self.device)
+			y = y.cuda(self.device).squeeze()
 
 		embeddings = self.model.forward(utterances)
 
 		embeddings_norm = torch.div(embeddings, torch.norm(embeddings, 2, 1).unsqueeze(1).expand_as(embeddings))
 
-		# Get hardest triplets
-		triplets_idx, entropy_indices = self.harvester.get_triplets(embeddings_norm.detach(), y)
-
-		if self.cuda_mode:
-			triplets_idx = triplets_idx.cuda(self.device)
-
-		emb_a = torch.index_select(embeddings_norm, 0, triplets_idx[:, 0])
-		emb_p = torch.index_select(embeddings_norm, 0, triplets_idx[:, 1])
-		emb_n = torch.index_select(embeddings_norm, 0, triplets_idx[:, 2])
-
-		triplet_loss = self.triplet_loss(emb_a, emb_p, emb_n)
-
-		entropy_regularizer = -torch.log(torch.nn.functional.pairwise_distance(embeddings_norm, embeddings_norm[entropy_indices,:])).mean()*self.lambda_
-
-		if self.cuda_mode:
-			y = y.cuda(self.device)
-
-		ce_loss = F.cross_entropy(self.model.out_proj(embeddings), y.squeeze())
-
+		ce_loss = F.cross_entropy(self.model.out_proj(embeddings_norm, y), y)
 
 		# Get all triplets now for bin classifier
-		triplets_idx = self.harvester_bin.get_triplets(embeddings_norm.detach(), y)
+		triplets_idx = self.harvester.get_triplets(embeddings_norm.detach(), y)
 
 		if self.cuda_mode:
 			triplets_idx = triplets_idx.cuda(self.device)
@@ -234,11 +205,11 @@ class TrainLoop(object):
 
 		loss_bin = torch.nn.BCEWithLogitsLoss()(pred_bin, y_)
 
-		loss = triplet_loss + ce_loss + loss_bin + entropy_regularizer
+		loss = ce_loss + loss_bin
 		loss.backward()
 		self.optimizer.step()
 
-		return loss.item(), triplet_loss.item(), ce_loss.item(), loss_bin.item(), entropy_regularizer.item()
+		return loss.item(), ce_loss.item(), loss_bin.item()
 
 
 	def pretrain_step(self, batch):
@@ -293,12 +264,6 @@ class TrainLoop(object):
 			cos_scores_n = torch.nn.functional.cosine_similarity(emb_a, emb_n)
 
 		return np.concatenate([e2e_scores_p.detach().cpu().numpy(), e2e_scores_n.detach().cpu().numpy()], 0), np.concatenate([cos_scores_p.detach().cpu().numpy(), cos_scores_n.detach().cpu().numpy()], 0), np.concatenate([np.ones(e2e_scores_p.size(0)), np.zeros(e2e_scores_n.size(0))], 0)
-
-	def triplet_loss(self, emba, embp, embn, reduce_=True):
-
-		loss_ = torch.nn.TripletMarginLoss(margin=self.margin, p=2.0, eps=1e-06, swap=self.swap, reduction='mean' if reduce_ else 'none')(emba, embp, embn)
-
-		return loss_
 
 	def checkpointing(self):
 

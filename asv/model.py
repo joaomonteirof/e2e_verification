@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.init as init
+from utils.losses import AMSoftmax, Softmax
 
 class SelfAttention(nn.Module):
 	def __init__(self, hidden_size):
@@ -110,7 +111,7 @@ class Bottleneck(nn.Module):
 		return out
 
 class ResNet_lstm(nn.Module):
-	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,6,3], block=Bottleneck, proj_size=100, ncoef=23, dropout_prob=0.25):
+	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,6,3], block=Bottleneck, proj_size=100, ncoef=23, dropout_prob=0.25, sm_type='softmax'):
 		self.inplanes = 32
 		super(ResNet_lstm, self).__init__()
 	
@@ -124,19 +125,24 @@ class ResNet_lstm(nn.Module):
 		self.layer4 = self._make_layer(block, 128, layers[3], stride=2)
 
 		self.lstm = nn.LSTM(512, 256, 2, bidirectional=True, batch_first=False)
-		
-		self.attention = SelfAttention(512)
 
 		self.fc = nn.Linear(2*512+256,512)
 		self.lbn = nn.BatchNorm1d(512)
 
 		self.fc_mu = nn.Linear(512, n_z)
 
-		self.out_proj=nn.Sequential( nn.Linear(n_z, proj_size) )
-
 		self.classifier = self.make_bin_layers(n_in=2*n_z, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
 
 		self.initialize_params()
+
+		self.attention = SelfAttention(512)
+
+		if sm_type=='softmax':
+			self.out_proj=Softmax(input_features=n_z, output_features=proj_size)
+		elif sm_type=='am_softmax':
+			self.out_proj=AMSoftmax(input_features=n_z, output_features=proj_size)
+		else:
+			raise NotImplementedError
 
 	def initialize_params(self):
 

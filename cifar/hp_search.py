@@ -35,12 +35,13 @@ parser.add_argument('--valid-data-path', type=str, default='./data/cifar10_test_
 parser.add_argument('--n-workers', type=int, default=4, metavar='N', help='Workers for data loading. Default is 4')
 parser.add_argument('--budget', type=int, default=100, metavar='N', help='Maximum training runs')
 parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
+parser.add_argument('--softmax', choices=['softmax', 'am_softmax'], default='softmax', help='Softmax type')
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 parser.add_argument('--checkpoint-path', type=str, default='./', metavar='Path', help='Path for checkpointing')
 args = parser.parse_args()
 args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
-def train(lr, l2, momentum, margin, lambda_, patience, swap, model, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, checkpoint_path):
+def train(lr, l2, momentum, margin, lambda_, patience, swap, model, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, checkpoint_path, softmax):
 
 	cp_name = get_cp_name(checkpoint_path)
 
@@ -56,11 +57,11 @@ def train(lr, l2, momentum, margin, lambda_, patience, swap, model, n_hidden, hi
 	valid_loader = torch.utils.data.DataLoader(validset, batch_size=valid_batch_size, shuffle=False, num_workers=n_workers)
 
 	if model == 'vgg':
-		model_ = vgg.VGG('VGG16', nh=int(n_hidden), n_h=int(hidden_size), dropout_prob=dropout_prob)
+		model_ = vgg.VGG('VGG16', nh=int(n_hidden), n_h=int(hidden_size), dropout_prob=dropout_prob, sm_type=softmax)
 	elif model == 'resnet':
-		model_ = resnet.ResNet18(nh=int(n_hidden), n_h=int(hidden_size), dropout_prob=dropout_prob)
+		model_ = resnet.ResNet18(nh=int(n_hidden), n_h=int(hidden_size), dropout_prob=dropout_prob, sm_type=softmax)
 	elif model == 'densenet':
-		model_ = densenet.densenet_cifar(nh=int(n_hidden), n_h=int(hidden_size), dropout_prob=dropout_prob)
+		model_ = densenet.densenet_cifar(nh=int(n_hidden), n_h=int(hidden_size), dropout_prob=dropout_prob, sm_type=softmax)
 
 	if cuda:
 		model_ = model_.cuda()
@@ -97,6 +98,7 @@ def train(lr, l2, momentum, margin, lambda_, patience, swap, model, n_hidden, hi
 			print('Margin: {}'.format(margin))
 			print('Swap: {}'.format(swap))
 			print('Patience: {}'.format(patience))
+			print('Softmax Mode is: {}'.format(softmax))
 			print(' ')
 
 			return cost[0]
@@ -125,8 +127,9 @@ cuda = args.cuda
 data_path = args.data_path
 valid_data_path = args.valid_data_path
 checkpoint_path=args.checkpoint_path
+softmax=args.softmax
 
-instrum = instru.Instrumentation(lr, l2, momentum, margin, lambda_, patience, swap, model, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, checkpoint_path)
+instrum = instru.Instrumentation(lr, l2, momentum, margin, lambda_, patience, swap, model, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, checkpoint_path, softmax)
 
 hp_optimizer = optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget)
 

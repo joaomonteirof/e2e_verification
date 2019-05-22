@@ -22,7 +22,6 @@ parser.add_argument('--l2', type=float, default=5e-4, metavar='lambda', help='L2
 parser.add_argument('--margin', type=float, default=0.3, metavar='m', help='margin fro triplet loss (default: 0.3)')
 parser.add_argument('--patience', type=int, default=10, metavar='S', help='Epochs to wait before decreasing LR by a factor of 0.5 (default: 10)')
 parser.add_argument('--lamb', type=float, default=0.1, metavar='l', help='Entropy regularization penalty (default: 0.1)')
-parser.add_argument('--swap', action='store_true', default=False, help='Swaps anchor and positive depending on distance to negative example')
 parser.add_argument('--momentum', type=float, default=0.9, metavar='lambda', help='Momentum (default: 0.9)')
 parser.add_argument('--checkpoint-epoch', type=int, default=None, metavar='N', help='epoch to load for checkpointing. If None, training starts from scratch')
 parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
@@ -31,6 +30,7 @@ parser.add_argument('--valid-data-path', type=str, default='./data/', metavar='P
 parser.add_argument('--seed', type=int, default=42, metavar='S', help='random seed (default: 42)')
 parser.add_argument('--n-workers', type=int, default=4, metavar='N', help='Workers for data loading. Default is 4')
 parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
+parser.add_argument('--softmax', choices=['softmax', 'am_softmax'], default='softmax', help='Softmax type')
 parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
 parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
 parser.add_argument('--dropout-prob', type=float, default=0.25, metavar='p', help='Dropout probability (default: 0.25)')
@@ -56,18 +56,18 @@ validset = datasets.CIFAR10(root='./data', train=False, download=True, transform
 valid_loader = torch.utils.data.DataLoader(validset, batch_size=args.valid_batch_size, shuffle=False, num_workers=args.n_workers)
 
 if args.model == 'vgg':
-	model = vgg.VGG('VGG16', nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob)
+	model = vgg.VGG('VGG16', nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax)
 elif args.model == 'resnet':
-	model = resnet.ResNet18(nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob)
+	model = resnet.ResNet18(nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax)
 elif args.model == 'densenet':
-	model = densenet.densenet_cifar(nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob)
+	model = densenet.densenet_cifar(nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax)
 
 if args.cuda:
 	model = model.cuda()
 
 optimizer = optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.l2, momentum=args.momentum)
 
-trainer = TrainLoop(model, optimizer, train_loader, valid_loader, margin=args.margin, lambda_=args.lamb, patience=args.patience, verbose=args.verbose, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, swap=args.swap, cuda=args.cuda)
+trainer = TrainLoop(model, optimizer, train_loader, valid_loader, margin=args.margin, lambda_=args.lamb, patience=args.patience, verbose=args.verbose, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, cuda=args.cuda)
 
 if args.verbose >0:
 	print('Cuda Mode is: {}'.format(args.cuda))
@@ -78,8 +78,8 @@ if args.verbose >0:
 	print('l2: {}'.format(args.l2))
 	print('lambda: {}'.format(args.lamb))
 	print('Margin: {}'.format(args.margin))
-	print('Swap: {}'.format(args.swap))
 	print('Patience: {}'.format(args.patience))
 	print('Dropout rate: {}'.format(args.dropout_prob))
+	print('Softmax Mode is: {}'.format(args.softmax))
 
 trainer.train(n_epochs=args.epochs, save_every=args.save_every)

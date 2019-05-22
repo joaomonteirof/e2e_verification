@@ -39,9 +39,9 @@ parser.add_argument('--momentum', type=float, default=0.9, metavar='m', help='Mo
 parser.add_argument('--l2', type=float, default=1e-5, metavar='L2', help='Weight decay coefficient (default: 0.00001)')
 parser.add_argument('--margin', type=float, default=0.3, metavar='m', help='margin fro triplet loss (default: 0.3)')
 parser.add_argument('--lamb', type=float, default=0.001, metavar='l', help='Entropy regularization penalty (default: 0.001)')
-parser.add_argument('--swap', type=str, default=None, help='Swaps anchor and positive depending on distance to negative example')
 parser.add_argument('--patience', type=int, default=10, metavar='S', help='Epochs to wait before decreasing LR by a factor of 0.5 (default: 10)')
 parser.add_argument('--model', choices=['resnet_lstm'], default='resnet_lstm', help='Model arch according to input type')
+parser.add_argument('--softmax', choices=['softmax', 'am_softmax'], default='softmax', help='Softmax type')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
 parser.add_argument('--ncoef', type=int, default=23, metavar='N', help='number of MFCCs (default: 23)')
 parser.add_argument('--latent-size', type=int, default=256, metavar='S', help='latent layer dimension (default: 256)')
@@ -74,14 +74,14 @@ valid_dataset = Loader(hdf5_name = args.valid_hdf_file, max_nb_frames = args.n_f
 valid_loader = torch.utils.data.DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.workers, worker_init_fn=set_np_randomseed)
 
 if args.model == 'resnet_lstm':
-	model = model_.ResNet_lstm(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=args.ncoef, dropout_prob=args.dropout_prob)
+	model = model_.ResNet_lstm(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=args.ncoef, dropout_prob=args.dropout_prob, sm_type=args.softmax)
 
 if args.cuda:
 	model = model.cuda(device)
 
 optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.l2)
 
-trainer = TrainLoop(model, optimizer, train_loader, valid_loader, margin=args.margin, lambda_=args.lamb, patience=args.patience, verbose=-1, device=device, cp_name=args.cp_name, save_cp=True, checkpoint_path=args.checkpoint_path, swap=args.swap, pretrain=False, cuda=args.cuda)
+trainer = TrainLoop(model, optimizer, train_loader, valid_loader, margin=args.margin, lambda_=args.lamb, patience=args.patience, verbose=-1, device=device, cp_name=args.cp_name, save_cp=True, checkpoint_path=args.checkpoint_path, pretrain=False, cuda=args.cuda)
 
 best_eer = trainer.train(n_epochs=args.epochs, save_every=args.epochs+10)
 

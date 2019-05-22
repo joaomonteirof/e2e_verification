@@ -27,7 +27,6 @@ parser.add_argument('--momentum', type=float, default=0.9, metavar='m', help='Mo
 parser.add_argument('--l2', type=float, default=1e-5, metavar='L2', help='Weight decay coefficient (default: 0.00001)')
 parser.add_argument('--margin', type=float, default=0.3, metavar='m', help='margin fro triplet loss (default: 0.3)')
 parser.add_argument('--lamb', type=float, default=0.001, metavar='l', help='Entropy regularization penalty (default: 0.001)')
-parser.add_argument('--swap', action='store_true', default=False, help='Swaps anchor and positive depending on distance to negative example')
 parser.add_argument('--patience', type=int, default=10, metavar='S', help='Epochs to wait before decreasing LR by a factor of 0.5 (default: 10)')
 parser.add_argument('--checkpoint-epoch', type=int, default=None, metavar='N', help='epoch to load for checkpointing. If None, training starts from scratch')
 parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
@@ -35,6 +34,7 @@ parser.add_argument('--pretrained-path', type=str, default=None, metavar='Path',
 parser.add_argument('--train-hdf-file', type=str, default='./data/train.hdf', metavar='Path', help='Path to hdf data')
 parser.add_argument('--valid-hdf-file', type=str, default=None, metavar='Path', help='Path to hdf data')
 parser.add_argument('--model', choices=['resnet_lstm'], default='resnet_lstm', help='Model arch according to input type')
+parser.add_argument('--softmax', choices=['softmax', 'am_softmax'], default='softmax', help='Softmax type')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
 parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
 parser.add_argument('--save-every', type=int, default=1, metavar='N', help='how many epochs to wait before logging training status. Default is 1')
@@ -76,7 +76,7 @@ else:
 	valid_loader=None
 
 if args.model == 'resnet_lstm':
-	model = model_.ResNet_lstm(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=args.ncoef, dropout_prob=args.dropout_prob)
+	model = model_.ResNet_lstm(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=args.ncoef, dropout_prob=args.dropout_prob, sm_type=args.softmax)
 
 if args.pretrained_path is not None:
 	ckpt = torch.load(args.pretrained_path, map_location = lambda storage, loc: storage)
@@ -94,13 +94,14 @@ if args.cuda:
 
 optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.l2)
 
-trainer = TrainLoop(model, optimizer, train_loader, valid_loader, margin=args.margin, lambda_=args.lamb, patience=args.patience, verbose=args.verbose, device=device, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, swap=args.swap, pretrain=args.pretrain, cuda=args.cuda)
+trainer = TrainLoop(model, optimizer, train_loader, valid_loader, margin=args.margin, lambda_=args.lamb, patience=args.patience, verbose=args.verbose, device=device, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, pretrain=args.pretrain, cuda=args.cuda)
 
 if args.verbose > 0:
 	print(' ')
 	print('Cuda Mode: {}'.format(args.cuda))
 	print('Pretrain Mode: {}'.format(args.pretrain))
 	print('Selected model: {}'.format(args.model))
+	print('Softmax Mode is: {}'.format(args.softmax))
 	print('Embeddings size: {}'.format(args.latent_size))
 	print('Number of hidden layers: {}'.format(args.n_hidden))
 	print('Size of hidden layers: {}'.format(args.hidden_size))
@@ -111,7 +112,6 @@ if args.verbose > 0:
 	print('l2: {}'.format(args.l2))
 	print('lambda: {}'.format(args.lamb))
 	print('Margin: {}'.format(args.margin))
-	print('Swap: {}'.format(args.swap))
 	print('Patience: {}'.format(args.patience))
 	print(' ')
 

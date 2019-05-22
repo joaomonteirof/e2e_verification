@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 import torch.nn.functional as F
 
+from models.losses import AMSoftmax, Softmax
 
 cfg = {
 	'VGG11': [64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
@@ -13,18 +14,23 @@ cfg = {
 
 
 class VGG(nn.Module):
-	def __init__(self, vgg_name, nh=1, n_h=512, dropout_prob=0.25):
+	def __init__(self, vgg_name, nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax'):
 		super(VGG, self).__init__()
 		self.features = self._make_layers(cfg[vgg_name])
-		self.classifier = nn.Linear(512, 10)
+
+		if sm_type=='softmax':
+			self.out_proj=Softmax(input_features=512, output_features=10)
+		elif sm_type=='am_softmax':
+			self.out_proj=AMSoftmax(input_features=512, output_features=10)
+		else:
+			raise NotImplementedError
 
 		self.bin_classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
 
 	def forward(self, x):
 		features = self.features(x)
 		features = features.view(features.size(0), -1)
-		out = self.classifier(features)
-		return out, features
+		return features
 
 	def _make_layers(self, cfg):
 		layers = []

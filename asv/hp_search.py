@@ -62,6 +62,7 @@ parser.add_argument('--epochs', type=int, default=200, metavar='N', help='number
 parser.add_argument('--budget', type=int, default=30, metavar='N', help='Maximum training runs')
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 parser.add_argument('--model', choices=['resnet_lstm'], default='resnet_lstm', help='Model arch according to input type')
+parser.add_argument('--softmax', choices=['softmax', 'am_softmax'], default='softmax', help='Softmax type')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
 parser.add_argument('--hp-workers', type=int, help='number of search workers', default=1)
 parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
@@ -72,7 +73,7 @@ parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path',
 args=parser.parse_args()
 args.cuda=True if not args.no_cuda and torch.cuda.is_available() else False
 
-def train(lr, l2, momentum, margin, lambda_, patience, swap, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, valid_n_cycles, cp_path):
+def train(lr, l2, momentum, margin, lambda_, patience, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, valid_n_cycles, cp_path, softmax):
 
 	if cuda:
 		device=get_freer_gpu()
@@ -84,7 +85,7 @@ def train(lr, l2, momentum, margin, lambda_, patience, swap, latent_size, n_hidd
 	valid_loader=torch.utils.data.DataLoader(valid_dataset, batch_size=batch_size, shuffle=False, num_workers=n_workers, worker_init_fn=set_np_randomseed)
 
 	if args.model == 'resnet_lstm':
-		model = model_.ResNet_lstm(n_z=int(latent_size), nh=int(n_hidden), n_h=int(hidden_size), proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob)
+		model = model_.ResNet_lstm(n_z=int(latent_size), nh=int(n_hidden), n_h=int(hidden_size), proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)
 
 	if cuda:
 		model=model.cuda(device)
@@ -93,7 +94,7 @@ def train(lr, l2, momentum, margin, lambda_, patience, swap, latent_size, n_hidd
 
 	optimizer=optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=l2)
 
-	trainer=TrainLoop(model, optimizer, train_loader, valid_loader, margin=margin, lambda_=lambda_, patience=int(patience), verbose=-1, device=device, cp_name=get_file_name(cp_path), save_cp=False, checkpoint_path=cp_path, swap=swap, pretrain=False, cuda=cuda)
+	trainer=TrainLoop(model, optimizer, train_loader, valid_loader, margin=margin, lambda_=lambda_, patience=int(patience), verbose=-1, device=device, cp_name=get_file_name(cp_path), save_cp=False, checkpoint_path=cp_path, pretrain=False, cuda=cuda)
 
 	return trainer.train(n_epochs=epochs)
 
@@ -103,7 +104,6 @@ momentum=instru.var.Array(1).asfloat().bounded(0.10, 0.95)
 margin=instru.var.Array(1).asfloat().bounded(0.10, 1.00)
 lambda_=instru.var.Array(1).asfloat().bounded(1, 5).exponentiated(base=10, coeff=-1)
 patience=instru.var.Array(1).asfloat().bounded(1, 100)
-swap=instru.var.OrderedDiscrete([True, False])
 latent_size=instru.var.Array(1).asfloat().bounded(64, 512)
 n_hidden=instru.var.Array(1).asfloat().bounded(1, 6)
 hidden_size=instru.var.Array(1).asfloat().bounded(64, 512)
@@ -120,8 +120,9 @@ data_info_path=args.data_info_path
 valid_hdf_file=args.valid_hdf_file
 valid_n_cycles=args.valid_n_cycles
 checkpoint_path=args.checkpoint_path
+softmax=args.softmax
 
-instrum=instru.Instrumentation(lr, l2, momentum, margin, lambda_, patience, swap, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, n_workers, cuda, train_hdf_file, data_info_path, valid_hdf_file, valid_n_cycles, checkpoint_path)
+instrum=instru.Instrumentation(lr, l2, momentum, margin, lambda_, patience, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, n_workers, cuda, train_hdf_file, data_info_path, valid_hdf_file, valid_n_cycles, checkpoint_path, softmax)
 
 hp_optimizer=optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget, num_workers=args.hp_workers)
 

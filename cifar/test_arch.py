@@ -23,9 +23,9 @@ elif args.model == 'densenet':
 
 batch = torch.rand(3, 3, 32, 32)
 
-pred, emb = model.forward(batch)
+emb = model.forward(batch)
 
-print(pred.size(), emb.size())
+print(emb.size())
 
 emb = torch.cat([emb,emb],1)
 
