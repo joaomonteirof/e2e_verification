@@ -49,6 +49,7 @@ class TrainLoop(object):
 		if self.valid_loader is not None:
 			self.history['e2e_eer'] = []
 			self.history['cos_eer'] = []
+			self.history['ErrorRate'] = []
 			self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, factor=0.5, patience=patience, verbose=True if self.verbose>0 else False, threshold=1e-4, min_lr=1e-7)
 		else:
 			self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[20, 100, 200, 300, 400], gamma=0.1)
@@ -111,10 +112,11 @@ class TrainLoop(object):
 
 			if self.valid_loader is not None:
 
+				tot_correct, tot_ = 0, 0
 				e2e_scores, cos_scores, labels = None, None, None
 
 				for t, batch in enumerate(self.valid_loader):
-					e2e_scores_batch, cos_scores_batch, labels_batch = self.valid(batch)
+					correct, total, e2e_scores_batch, cos_scores_batch, labels_batch = self.valid(batch)
 
 					try:
 						e2e_scores = np.concatenate([e2e_scores, e2e_scores_batch], 0)
@@ -123,13 +125,18 @@ class TrainLoop(object):
 					except:
 						e2e_scores, cos_scores, labels = e2e_scores_batch, cos_scores_batch, labels_batch
 
+					tot_correct += correct
+					tot_ += total
+
 				self.history['e2e_eer'].append(compute_eer(labels, e2e_scores))
 				self.history['cos_eer'].append(compute_eer(labels, cos_scores))
+				self.history['ErrorRate'].append(1.-float(tot_correct)/tot_)
 
 				if self.verbose>0:
 					print(' ')
 					print('Current e2e EER, best e2e EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['e2e_eer'][-1], np.min(self.history['e2e_eer']), 1+np.argmin(self.history['e2e_eer'])))
 					print('Current cos EER, best cos EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['cos_eer'][-1], np.min(self.history['cos_eer']), 1+np.argmin(self.history['cos_eer'])))
+					print('Current Error rate, best Error rate, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['ErrorRate'][-1], np.min(self.history['ErrorRate']), 1+np.argmin(self.history['ErrorRate'])))
 
 				self.scheduler.step(np.min([self.history['e2e_eer'][-1], self.history['cos_eer'][-1]]))
 
@@ -154,7 +161,7 @@ class TrainLoop(object):
 				print('Best e2e eer and corresponding epoch: {:0.4f}, {}'.format(np.min(self.history['e2e_eer']), 1+np.argmin(self.history['e2e_eer'])))
 				print('Best cos eer and corresponding epoch: {:0.4f}, {}'.format(np.min(self.history['cos_eer']), 1+np.argmin(self.history['cos_eer'])))
 
-			return [np.min(self.history['e2e_eer']), np.min(self.history['cos_eer'])]
+			return [np.min(self.history['e2e_eer']), np.min(self.history['cos_eer']), np.min(self.history['ErrorRate'])]
 		else:
 			return [np.min(self.history['train_loss'])]
 
@@ -234,7 +241,10 @@ class TrainLoop(object):
 
 			embeddings_norm = F.normalize(embeddings, p=2, dim=1)
 
-			ce_loss = F.cross_entropy(self.model.out_proj(embeddings_norm, y), y)
+			out = self.model.out_proj(embeddings_norm, y)
+
+			pred = F.softmax(out, dim=1).max(1)[1].long()
+			correct = pred.squeeze().eq(y.squeeze()).detach().sum().item()
 
 			# Get all triplets now for bin classifier
 			triplets_idx = self.harvester.get_triplets(embeddings_norm.detach(), y)
@@ -252,7 +262,7 @@ class TrainLoop(object):
 			cos_scores_p = torch.nn.functional.cosine_similarity(emb_a, emb_p)
 			cos_scores_n = torch.nn.functional.cosine_similarity(emb_a, emb_n)
 
-		return np.concatenate([e2e_scores_p.detach().cpu().numpy(), e2e_scores_n.detach().cpu().numpy()], 0), np.concatenate([cos_scores_p.detach().cpu().numpy(), cos_scores_n.detach().cpu().numpy()], 0), np.concatenate([np.ones(e2e_scores_p.size(0)), np.zeros(e2e_scores_n.size(0))], 0)
+		return correct, x.size(0), np.concatenate([e2e_scores_p.detach().cpu().numpy(), e2e_scores_n.detach().cpu().numpy()], 0), np.concatenate([cos_scores_p.detach().cpu().numpy(), cos_scores_n.detach().cpu().numpy()], 0), np.concatenate([np.ones(e2e_scores_p.size(0)), np.zeros(e2e_scores_n.size(0))], 0)
 
 	def checkpointing(self):
 
