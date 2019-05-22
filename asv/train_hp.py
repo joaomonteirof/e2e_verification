@@ -59,11 +59,6 @@ args = parser.parse_args()
 args.cuda = True if args.cuda=='True' and torch.cuda.is_available() else False
 args.swap = True if args.swap=='True' else False
 
-if args.cuda:
-	device = get_freer_gpu()
-else:
-	device = None
-
 train_dataset = Loader_mining(hdf5_name = args.train_hdf_file, max_nb_frames = args.n_frames, n_cycles=args.n_cycles)
 
 train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, worker_init_fn=set_np_randomseed)
@@ -73,6 +68,11 @@ valid_loader = torch.utils.data.DataLoader(valid_dataset, batch_size=args.batch_
 
 if args.model == 'resnet_lstm':
 	model = model_.ResNet_lstm(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=args.ncoef, dropout_prob=args.dropout_prob, sm_type=args.softmax)
+
+if args.cuda:
+	device = get_freer_gpu()
+else:
+	device = None
 
 if args.cuda:
 	model = model.cuda(device)

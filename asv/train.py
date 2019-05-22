@@ -51,11 +51,6 @@ parser.add_argument('--verbose', type=int, default=1, metavar='N', help='Verbose
 args = parser.parse_args()
 args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
-if args.cuda:
-	device = get_freer_gpu()
-else:
-	device = None
-
 torch.manual_seed(args.seed)
 if args.cuda:
 	torch.cuda.manual_seed(args.seed)
@@ -86,6 +81,11 @@ if args.pretrained_path is not None:
 	except:
 		print("Unexpected error:", sys.exc_info()[0])
 		raise
+
+if args.cuda:
+	device = get_freer_gpu()
+else:
+	device = None
 
 if args.cuda:
 	model = model.cuda(device)
