@@ -8,7 +8,7 @@ import os
 from glob import glob
 from tqdm import tqdm
 
-from utils.harvester import HardestNegativeTripletSelector, AllTripletSelector
+from harvester import HardestNegativeTripletSelector, AllTripletSelector
 
 from sklearn import metrics
 
