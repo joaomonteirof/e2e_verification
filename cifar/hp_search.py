@@ -7,9 +7,10 @@ from train_loop import TrainLoop
 import torch.optim as optim
 from torchvision import datasets, transforms
 from models import vgg, resnet, densenet
-from data_load import Loader
 import numpy as np
 import os
+import sys
+from time import sleep
 
 def set_np_randomseed(worker_id):
 	np.random.seed(np.random.get_state()[1][0]+worker_id)
@@ -24,6 +25,21 @@ def get_cp_name(dir_):
 		fname = dir_ + str(np.random.randint(1,999999999,1)[0]) + '.pt'
 
 	return fname.split('/')[-1]
+
+def get_freer_gpu(trials=10):
+	sleep(2)
+	for j in range(trials):
+		os.system('nvidia-smi -q -d Memory |grep -A4 GPU|grep Free >tmp')
+		memory_available = [int(x.split()[2]) for x in open('tmp', 'r').readlines()]
+		dev_ = torch.device('cuda:'+str(np.argmax(memory_available)))
+		try:
+			a = torch.rand(1).cuda(dev_)
+			return dev_
+		except:
+			pass
+
+	print('NO GPU AVAILABLE!!!')
+	exit(1)
 
 # Training settings
 parser = argparse.ArgumentParser(description='Cifar10 Classification')
@@ -65,11 +81,11 @@ def train(lr, l2, momentum, patience, swap, model, n_hidden, hidden_size, dropou
 
 	if args.cuda:
 		device = get_freer_gpu()
-		model = model.cuda(device)
+		model_ = model_.cuda(device)
 
 	optimizer = optim.SGD(model_.parameters(), lr=lr, weight_decay=l2, momentum=momentum)
 
-	trainer = TrainLoop(model_, optimizer, train_loader, valid_loader, patience=int(patience), verbose=-1, cp_name=cp_name, save_cp=True, checkpoint_path=checkpoint_path, swap=swap, cuda=cuda)
+	trainer = TrainLoop(model_, optimizer, train_loader, valid_loader, patience=int(patience), verbose=-1, cp_name=cp_name, save_cp=True, checkpoint_path=checkpoint_path, cuda=cuda)
 
 	for i in range(5):
 
