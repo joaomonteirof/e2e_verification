@@ -2,6 +2,7 @@ import math
 import torch
 from torch import nn
 from scipy.special import binom
+import torch.nn.functional as F
 
 class AMSoftmax(nn.Module):
 
@@ -27,7 +28,7 @@ class AMSoftmax(nn.Module):
 
 		self.w.to(embeddings.device)
 
-		w_norm = torch.div(self.w, torch.norm(self.w, 2, 0))
+		w_norm = F.normalize(self.w, p=2, dim=0)
 
 		cos_theta = embeddings.mm(self.w)
 		cos_theta = torch.clamp(cos_theta, -1.0, 1.0)

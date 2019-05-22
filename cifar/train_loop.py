@@ -170,7 +170,7 @@ class TrainLoop(object):
 
 		embeddings = self.model.forward(x)
 
-		embeddings_norm = torch.div(embeddings, torch.norm(embeddings, 2, 1).unsqueeze(1).expand_as(embeddings))
+		embeddings_norm = F.normalize(embeddings, p=2, dim=1)
 
 		ce_loss = F.cross_entropy(self.model.out_proj(embeddings_norm, y), y)
 
@@ -207,11 +207,12 @@ class TrainLoop(object):
 
 		x, y = batch
 
-		x, y = x.to(self.device), y.to(self.device)
+		x, y = x.to(self.device), y.to(self.device).squeeze()
 
 		embeddings = self.model.forward(utt)
+		embeddings_norm = F.normalize(embeddings, p=2, dim=1)
 
-		loss = F.cross_entropy(self.model.out_proj(embeddings), y.squeeze())
+		loss = F.cross_entropy(self.model.out_proj(embeddings_norm, y), y)
 
 		loss.backward()
 		self.optimizer.step()
@@ -231,7 +232,7 @@ class TrainLoop(object):
 
 			embeddings = self.model.forward(x)
 
-			embeddings_norm = torch.div(embeddings, torch.norm(embeddings, 2, 1).unsqueeze(1).expand_as(embeddings))
+			embeddings_norm = F.normalize(embeddings, p=2, dim=1)
 
 			ce_loss = F.cross_entropy(self.model.out_proj(embeddings_norm, y), y)
 

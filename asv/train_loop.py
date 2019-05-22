@@ -176,7 +176,7 @@ class TrainLoop(object):
 
 		embeddings = self.model.forward(utterances)
 
-		embeddings_norm = torch.div(embeddings, torch.norm(embeddings, 2, 1).unsqueeze(1).expand_as(embeddings))
+		embeddings_norm = F.normalize(embeddings, p=2, dim=1)
 
 		ce_loss = F.cross_entropy(self.model.out_proj(embeddings_norm, y), y)
 
@@ -221,11 +221,13 @@ class TrainLoop(object):
 		utt = utt[:,:,:,:ridx]
 
 		if self.cuda_mode:
-			utt, y = utt.cuda(self.device), y.cuda(self.device)
+			utt, y = utt.cuda(self.device), y.cuda(self.device).squeeze()
 
 		embeddings = self.model.forward(utt)
 
-		loss = F.cross_entropy(self.model.out_proj(embeddings), y.squeeze())
+		embeddings_norm = F.normalize(embeddings, p=2, dim=1)
+
+		loss = F.cross_entropy(self.model.out_proj(embeddings_norm, y), y)
 
 		loss.backward()
 		self.optimizer.step()
