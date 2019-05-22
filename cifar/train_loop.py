@@ -22,7 +22,7 @@ def compute_eer(y, y_score):
 
 class TrainLoop(object):
 
-	def __init__(self, model, optimizer, train_loader, valid_loader, margin, lambda_, patience, verbose=-1, device=0, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True):
+	def __init__(self, model, optimizer, train_loader, valid_loader, patience, verbose=-1, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True):
 		if checkpoint_path is None:
 			# Save to current directory
 			self.checkpoint_path = os.getcwd()
@@ -35,17 +35,15 @@ class TrainLoop(object):
 		self.cuda_mode = cuda
 		self.pretrain = pretrain
 		self.model = model
-		self.lambda_ = lambda_
 		self.optimizer = optimizer
 		self.train_loader = train_loader
 		self.valid_loader = valid_loader
 		self.total_iters = 0
 		self.cur_epoch = 0
-		self.margin = margin
 		self.harvester = AllTripletSelector()
 		self.verbose = verbose
 		self.save_cp = save_cp
-		self.device = device
+		self.device = next(self.model.parameters()).device
 		self.history = {'train_loss': [], 'train_loss_batch': [], 'ce_loss': [], 'ce_loss_batch': [], 'bin_loss': [], 'bin_loss_batch': []}
 
 		if self.valid_loader is not None:
@@ -165,18 +163,12 @@ class TrainLoop(object):
 		self.model.train()
 		self.optimizer.zero_grad()
 
-		utterances, y = batch
-		utterances.resize_(utterances.size(0)*utterances.size(1), utterances.size(2), utterances.size(3), utterances.size(4))
-		y.resize_(y.numel())
+		x, y = batch
 
-		ridx = np.random.randint(utterances.size(3)//4, utterances.size(3))
-		utterances = utterances[:,:,:,:ridx]
+		x = x.to(self.device)
+		y = y.to(self.device)
 
-		if self.cuda_mode:
-			utterances = utterances.cuda(self.device)
-			y = y.cuda(self.device).squeeze()
-
-		embeddings = self.model.forward(utterances)
+		embeddings = self.model.forward(x)
 
 		embeddings_norm = torch.div(embeddings, torch.norm(embeddings, 2, 1).unsqueeze(1).expand_as(embeddings))
 
@@ -184,9 +176,7 @@ class TrainLoop(object):
 
 		# Get all triplets now for bin classifier
 		triplets_idx = self.harvester.get_triplets(embeddings_norm.detach(), y)
-
-		if self.cuda_mode:
-			triplets_idx = triplets_idx.cuda(self.device)
+		triplets_idx = triplets_idx.to(self.device)
 
 		emb_a = torch.index_select(embeddings, 0, triplets_idx[:, 0])
 		emb_p = torch.index_select(embeddings, 0, triplets_idx[:, 1])
@@ -197,9 +187,7 @@ class TrainLoop(object):
 		emb_ = torch.cat([emb_ap, emb_an],0)
 
 		y_ = torch.cat([torch.ones(emb_ap.size(0)), torch.zeros(emb_an.size(0))],0)
-
-		if self.cuda_mode:
-			y_ = y_.cuda(self.device)
+		y_ = y_.to(self.device)
 
 		pred_bin = self.model.forward_bin(emb_).squeeze()
 
@@ -217,13 +205,9 @@ class TrainLoop(object):
 		self.model.train()
 		self.optimizer.zero_grad()
 
-		utt, y = batch
+		x, y = batch
 
-		ridx = np.random.randint(utt.size(3)//2, utt.size(3))
-		utt = utt[:,:,:,:ridx]
-
-		if self.cuda_mode:
-			utt, y = utt.cuda(self.device), y.cuda(self.device)
+		x, y = x.to(self.device), y.to(self.device)
 
 		embeddings = self.model.forward(utt)
 
@@ -240,20 +224,24 @@ class TrainLoop(object):
 
 		with torch.no_grad():
 
-			xa, xp, xn = batch
+			x, y = batch
 
-			ridx = np.random.randint(xa.size(3)//2, xa.size(3))
+			x = x.to(self.device)
+			y = y.to(self.device)
 
-			xa, xp, xn = xa[:,:,:,:ridx], xp[:,:,:,:ridx], xn[:,:,:,:ridx]
+			embeddings = self.model.forward(x)
 
-			if self.cuda_mode:
-				xa = xa.contiguous().cuda(self.device)
-				xp = xp.contiguous().cuda(self.device)
-				xn = xn.contiguous().cuda(self.device)
+			embeddings_norm = torch.div(embeddings, torch.norm(embeddings, 2, 1).unsqueeze(1).expand_as(embeddings))
 
-			emb_a = self.model.forward(xa)
-			emb_p = self.model.forward(xp)
-			emb_n = self.model.forward(xn)
+			ce_loss = F.cross_entropy(self.model.out_proj(embeddings_norm, y), y)
+
+			# Get all triplets now for bin classifier
+			triplets_idx = self.harvester.get_triplets(embeddings_norm.detach(), y)
+			triplets_idx = triplets_idx.to(self.device)
+
+			emb_a = torch.index_select(embeddings, 0, triplets_idx[:, 0])
+			emb_p = torch.index_select(embeddings, 0, triplets_idx[:, 1])
+			emb_n = torch.index_select(embeddings, 0, triplets_idx[:, 2])
 
 			emb_ap = torch.cat([emb_a, emb_p],1)
 			emb_an = torch.cat([emb_a, emb_n],1)

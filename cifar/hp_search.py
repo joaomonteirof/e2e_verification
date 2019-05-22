@@ -41,7 +41,7 @@ parser.add_argument('--checkpoint-path', type=str, default='./', metavar='Path',
 args = parser.parse_args()
 args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
-def train(lr, l2, momentum, margin, lambda_, patience, swap, model, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, checkpoint_path, softmax):
+def train(lr, l2, momentum, patience, swap, model, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, checkpoint_path, softmax):
 
 	cp_name = get_cp_name(checkpoint_path)
 
@@ -63,12 +63,13 @@ def train(lr, l2, momentum, margin, lambda_, patience, swap, model, n_hidden, hi
 	elif model == 'densenet':
 		model_ = densenet.densenet_cifar(nh=int(n_hidden), n_h=int(hidden_size), dropout_prob=dropout_prob, sm_type=softmax)
 
-	if cuda:
-		model_ = model_.cuda()
+	if args.cuda:
+		device = get_freer_gpu()
+		model = model.cuda(device)
 
 	optimizer = optim.SGD(model_.parameters(), lr=lr, weight_decay=l2, momentum=momentum)
 
-	trainer = TrainLoop(model_, optimizer, train_loader, valid_loader, margin=margin, lambda_=lambda_, patience=int(patience), verbose=-1, cp_name=cp_name, save_cp=True, checkpoint_path=checkpoint_path, swap=swap, cuda=cuda)
+	trainer = TrainLoop(model_, optimizer, train_loader, valid_loader, patience=int(patience), verbose=-1, cp_name=cp_name, save_cp=True, checkpoint_path=checkpoint_path, swap=swap, cuda=cuda)
 
 	for i in range(5):
 
@@ -94,9 +95,6 @@ def train(lr, l2, momentum, margin, lambda_, patience, swap, model, n_hidden, hi
 			print('LR: {}'.format(lr))
 			print('Momentum: {}'.format(momentum))
 			print('l2: {}'.format(l2))
-			print('lambda: {}'.format(lambda_))
-			print('Margin: {}'.format(margin))
-			print('Swap: {}'.format(swap))
 			print('Patience: {}'.format(patience))
 			print('Softmax Mode is: {}'.format(softmax))
 			print(' ')
@@ -111,8 +109,6 @@ def train(lr, l2, momentum, margin, lambda_, patience, swap, model, n_hidden, hi
 lr = instru.var.Array(1).asfloat().bounded(1, 4).exponentiated(base=10, coeff=-1)
 l2 = instru.var.Array(1).asfloat().bounded(1, 5).exponentiated(base=10, coeff=-1)
 momentum = instru.var.Array(1).asfloat().bounded(0.10, 0.95)
-margin = instru.var.Array(1).asfloat().bounded(0.10, 1.00)
-lambda_ = instru.var.Array(1).asfloat().bounded(1, 5).exponentiated(base=10, coeff=-1)
 patience = instru.var.Array(1).asfloat().bounded(1, 100)
 swap = instru.var.OrderedDiscrete([True, False])
 n_hidden=instru.var.Array(1).asfloat().bounded(1, 5)
@@ -129,7 +125,7 @@ valid_data_path = args.valid_data_path
 checkpoint_path=args.checkpoint_path
 softmax=args.softmax
 
-instrum = instru.Instrumentation(lr, l2, momentum, margin, lambda_, patience, swap, model, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, checkpoint_path, softmax)
+instrum = instru.Instrumentation(lr, l2, momentum, patience, swap, model, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, checkpoint_path, softmax)
 
 hp_optimizer = optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget)
 
