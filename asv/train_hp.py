@@ -57,7 +57,6 @@ parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path',
 parser.add_argument('--cp-name', type=str, default=None)
 args = parser.parse_args()
 args.cuda = True if args.cuda=='True' and torch.cuda.is_available() else False
-args.swap = True if args.swap=='True' else False
 
 train_dataset = Loader_mining(hdf5_name = args.train_hdf_file, max_nb_frames = args.n_frames, n_cycles=args.n_cycles)
 
