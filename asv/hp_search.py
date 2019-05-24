@@ -118,7 +118,7 @@ data_info_path=args.data_info_path
 valid_hdf_file=args.valid_hdf_file
 valid_n_cycles=args.valid_n_cycles
 checkpoint_path=args.checkpoint_path
-softmax=args.softmax
+softmax=instru.var.OrderedDiscrete(['softmax', 'am_softmax'])
 
 instrum=instru.Instrumentation(lr, l2, momentum, patience, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, n_workers, cuda, train_hdf_file, data_info_path, valid_hdf_file, valid_n_cycles, checkpoint_path, softmax)
 
