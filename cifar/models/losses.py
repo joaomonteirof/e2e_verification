@@ -23,14 +23,13 @@ class AMSoftmax(nn.Module):
 	def init_parameters(self):
 		nn.init.kaiming_normal_(self.w)
 
-	def forward(self, embeddings, target=None):
-		assert target is not None
+	def forward(self, embeddings, target):
 
 		self.w.to(embeddings.device)
 
 		w_norm = F.normalize(self.w, p=2, dim=0)
 
-		cos_theta = embeddings.mm(self.w)
+		cos_theta = embeddings.mm(w_norm)
 		cos_theta = torch.clamp(cos_theta, -1.0, 1.0)
 
 		phi_theta = cos_theta - self.m
