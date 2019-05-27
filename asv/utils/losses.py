@@ -38,7 +38,7 @@ class AMSoftmax(nn.Module):
 		target_onehot = torch.zeros(embeddings.size(0), w_norm.size(1)).to(embeddings.device)
 		target_onehot.scatter_(1, target.view(-1,1), 1)
 
-		logits = torch.where(target_onehot==1, phi_theta, cos_theta)
+		logits = self.s*torch.where(target_onehot==1, phi_theta, cos_theta)
 
 		return logits
 
