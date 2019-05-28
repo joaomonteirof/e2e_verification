@@ -12,8 +12,7 @@ import os
 import sys
 from time import sleep
 
-def set_np_randomseed(worker_id):
-	np.random.seed(np.random.get_state()[1][0]+worker_id)
+from utils import *
 
 def get_cp_name(dir_):
 
@@ -25,21 +24,6 @@ def get_cp_name(dir_):
 		fname = dir_ + str(np.random.randint(1,999999999,1)[0]) + '.pt'
 
 	return fname.split('/')[-1]
-
-def get_freer_gpu(trials=10):
-	sleep(2)
-	for j in range(trials):
-		os.system('nvidia-smi -q -d Memory |grep -A4 GPU|grep Free >tmp')
-		memory_available = [int(x.split()[2]) for x in open('tmp', 'r').readlines()]
-		dev_ = torch.device('cuda:'+str(np.argmax(memory_available)))
-		try:
-			a = torch.rand(1).cuda(dev_)
-			return dev_
-		except:
-			pass
-
-	print('NO GPU AVAILABLE!!!')
-	exit(1)
 
 # Training settings
 parser = argparse.ArgumentParser(description='Cifar10 Classification')

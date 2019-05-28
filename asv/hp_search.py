@@ -12,33 +12,7 @@ from data_load import Loader, Loader_softmax, Loader_mining, Loader_pretrain, Lo
 import os
 import sys
 
-def set_np_randomseed(worker_id):
-	np.random.seed(np.random.get_state()[1][0]+worker_id)
-
-def get_freer_gpu():
-	os.system('nvidia-smi -q -d Memory |grep -A4 GPU|grep Free >tmp')
-	memory_available = [int(x.split()[2]) for x in open('tmp', 'r').readlines()]
-	dev_=torch.device('cuda:'+str(np.argmax(memory_available)))
-	a=torch.torch.cuda.FloatTensor((10000,)).cuda(dev_)
-	return torch.device('cuda:'+str(np.argmax(memory_available)))
-
-def set_device(trials=10):
-	a=torch.cuda.FloatTensor(int(1e20))
-
-	for i in range(torch.cuda.device_count()):
-		for j in range(trials):
-
-			torch.cuda.set_device(i)
-			try:
-				a=a.cuda(i)
-				del a
-				torch.cuda.empty_cache()
-				return i
-			except:
-				pass
-
-	print('NO GPU AVAILABLE!!!')
-	exit(1)
+from utils.utils import *
 
 def get_file_name(dir_):
 

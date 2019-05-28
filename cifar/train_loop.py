@@ -2,23 +2,13 @@ import torch
 import torch.nn.functional as F
 
 import numpy as np
-import pickle
 
 import os
-from glob import glob
 from tqdm import tqdm
 
 from harvester import HardestNegativeTripletSelector, AllTripletSelector
 
-from sklearn import metrics
-
-def compute_eer(y, y_score):
-	fpr, tpr, thresholds = metrics.roc_curve(y, y_score, pos_label=1)
-	fnr = 1 - tpr
-	eer_threshold = thresholds[np.nanargmin(np.abs(fnr-fpr))]
-	eer = fpr[np.nanargmin(np.abs(fnr-fpr))]
-
-	return eer
+from utils import compute_eer
 
 class TrainLoop(object):
 
