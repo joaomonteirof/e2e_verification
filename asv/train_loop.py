@@ -191,7 +191,7 @@ class TrainLoop(object):
 
 		pred_bin = self.model.forward_bin(emb_).squeeze()
 
-		loss_bin = torch.nn.BCEWithLogitsLoss()(pred_bin, y_)
+		loss_bin = torch.nn.BCELoss()(pred_bin, y_)
 
 		loss = ce_loss + loss_bin
 		loss.backward()
