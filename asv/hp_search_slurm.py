@@ -87,6 +87,7 @@ def train(lr, l2, momentum, patience, latent_size, n_hidden, hidden_size, n_fram
 			print('Best EER in result file ' + file_name.split('/')[-1].split('.p')[0] + ' was: {}'.format(result))
 			print(' ')
 			print('With hyperparameters:')
+			print('Softmax mode: {}'.format(softmax)
 			print('Embeddings size: {}'.format(int(latent_size)))
 			print('Number of hidden layers: {}'.format(int(n_hidden)))
 			print('Size of hidden layers: {}'.format(int(hidden_size)))
@@ -95,6 +96,7 @@ def train(lr, l2, momentum, patience, latent_size, n_hidden, hidden_size, n_fram
 			print('momentum: {}'.format(momentum))
 			print('l2: {}'.format(l2))
 			print('Patience: {}'.format(int(patience)))
+			print('Max. number of frames: {}'.format(int(n_frames)))
 			print(' ')
 
 			return result
