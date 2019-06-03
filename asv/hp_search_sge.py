@@ -59,7 +59,7 @@ parser.add_argument('--no-cuda', action='store_true', default=False, help='Disab
 parser.add_argument('--sub-file', type=str, default='./run_hp.sh', metavar='Path', help='Path to sge submission file')
 parser.add_argument('--train-hdf-file', type=str, default='./data/train.hdf', metavar='Path', help='Path to hdf data')
 parser.add_argument('--valid-hdf-file', type=str, default=None, metavar='Path', help='Path to hdf data')
-parser.add_argument('--model', choices=['resnet_lstm', 'resnet_small'], default='resnet_lstm', help='Model arch according to input type')
+parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'all'], default='resnet_lstm', help='Model arch according to input type')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
 parser.add_argument('--hp-workers', type=int, help='number of search workers', default=1)
 parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
@@ -102,6 +102,7 @@ def train(lr, l2, momentum, patience, latent_size, n_hidden, hidden_size, n_fram
 			print('Best EER in result file ' + file_name.split('/')[-1].split('.p')[0] + ' was: {}'.format(result))
 			print(' ')
 			print('With hyperparameters:')
+			print('Model: {}'.format(model))
 			print('Softmax mode: {}'.format(softmax))
 			print('Embeddings size: {}'.format(int(latent_size)))
 			print('Number of hidden layers: {}'.format(int(n_hidden)))
@@ -127,7 +128,7 @@ n_hidden=instru.var.Array(1).asfloat().bounded(1, 5)
 hidden_size=instru.var.Array(1).asfloat().bounded(64, 512)
 dropout_prob=instru.var.Array(1).asfloat().bounded(0.01, 0.50)
 n_frames=instru.var.Array(1).asfloat().bounded(600, 1000)
-model=args.model
+model=instru.var.OrderedDiscrete(['resnet_mfcc', 'resnet_lstm', 'resnet_stats', 'resnet_small']) if args.model=='all' else args.model
 ncoef=args.ncoef
 epochs=args.epochs
 batch_size=args.batch_size
