@@ -18,7 +18,7 @@ args = parser.parse_args()
 
 if args.model == 'resnet_stats' or  args.model == 'all':
 	batch = torch.rand(3, 1, args.ncoef, 200)
-	model = model_.ResNet_mfcc(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=100, ncoef=args.ncoef)
+	model = model_.ResNet_stats(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=100, ncoef=args.ncoef)
 	print('resnet_stats')
 	mu = model.forward(batch)
 	print(mu.size())

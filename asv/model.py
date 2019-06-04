@@ -37,94 +37,115 @@ class SelfAttention(nn.Module):
 
 		return representations
 
-def conv3x3(in_planes, out_planes, stride=1):
-	"""3x3 convolution with padding"""
-	return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False)
-
 class BasicBlock(nn.Module):
 	expansion = 1
 
-	def __init__(self, inplanes, planes, stride=1, downsample=None):
+	def __init__(self, in_planes, planes, stride=1):
 		super(BasicBlock, self).__init__()
-		self.conv1 = conv3x3(inplanes, planes, stride)
+		self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
 		self.bn1 = nn.BatchNorm2d(planes)
-		self.activation = nn.ELU()
-		self.conv2 = conv3x3(planes, planes)
+		self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False)
 		self.bn2 = nn.BatchNorm2d(planes)
-		self.downsample = downsample
-		self.stride = stride
+
+		self.shortcut = nn.Sequential()
+		if stride != 1 or in_planes != self.expansion*planes:
+			self.shortcut = nn.Sequential(nn.Conv2d(in_planes, self.expansion*planes, kernel_size=1, stride=stride, bias=False), nn.BatchNorm2d(self.expansion*planes))
 
 	def forward(self, x):
-		residual = x
-
-		out = self.conv1(x)
-		out = self.bn1(out)
-		out = self.activation(out)
-
-		out = self.conv2(out)
-		out = self.bn2(out)
-
-		if self.downsample is not None:
-			residual = self.downsample(x)
-
-		out += residual
-		out = self.activation(out)
-
+		out = F.relu(self.bn1(self.conv1(x)))
+		out = self.bn2(self.conv2(out))
+		out += self.shortcut(x)
+		out = F.relu(out)
 		return out
+
 
 class Bottleneck(nn.Module):
 	expansion = 4
 
-	def __init__(self, inplanes, planes, stride=1, downsample=None):
+	def __init__(self, in_planes, planes, stride=1):
 		super(Bottleneck, self).__init__()
-		self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
+		self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=1, bias=False)
 		self.bn1 = nn.BatchNorm2d(planes)
-		self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
-							   padding=1, bias=False)
+		self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
 		self.bn2 = nn.BatchNorm2d(planes)
-		self.conv3 = nn.Conv2d(planes, planes * self.expansion, kernel_size=1, bias=False)
-		self.bn3 = nn.BatchNorm2d(planes * self.expansion)
-		self.activation = nn.ELU()
-		self.downsample = downsample
-		self.stride = stride
+		self.conv3 = nn.Conv2d(planes, self.expansion*planes, kernel_size=1, bias=False)
+		self.bn3 = nn.BatchNorm2d(self.expansion*planes)
+
+		self.shortcut = nn.Sequential()
+		if stride != 1 or in_planes != self.expansion*planes:
+			self.shortcut = nn.Sequential( nn.Conv2d(in_planes, self.expansion*planes, kernel_size=1, stride=stride, bias=False), nn.BatchNorm2d(self.expansion*planes) )
 
 	def forward(self, x):
-		residual = x
+		out = F.relu(self.bn1(self.conv1(x)))
+		out = F.relu(self.bn2(self.conv2(out)))
+		out = self.bn3(self.conv3(out))
+		out += self.shortcut(x)
+		out = F.relu(out)
+		return out
 
-		out = self.conv1(x)
-		out = self.bn1(out)
-		out = self.activation(out)
+class PreActBlock(nn.Module):
+	'''Pre-activation version of the BasicBlock.'''
+	expansion = 1
 
-		out = self.conv2(out)
-		out = self.bn2(out)
-		out = self.activation(out)
+	def __init__(self, in_planes, planes, stride=1):
+		super(PreActBlock, self).__init__()
+		self.bn1 = nn.BatchNorm2d(in_planes)
+		self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
+		self.bn2 = nn.BatchNorm2d(planes)
+		self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False)
 
-		out = self.conv3(out)
-		out = self.bn3(out)
+		if stride != 1 or in_planes != self.expansion*planes:
+			self.shortcut = nn.Sequential(nn.Conv2d(in_planes, self.expansion*planes, kernel_size=1, stride=stride, bias=False))
 
-		if self.downsample is not None:
-			residual = self.downsample(x)
+	def forward(self, x):
+		out = F.relu(self.bn1(x))
+		shortcut = self.shortcut(out) if hasattr(self, 'shortcut') else x
+		out = self.conv1(out)
+		out = self.conv2(F.relu(self.bn2(out)))
+		out += shortcut
+		return out
 
-		out += residual
-		out = self.activation(out)
 
+class PreActBottleneck(nn.Module):
+	'''Pre-activation version of the original Bottleneck module.'''
+	expansion = 4
+
+	def __init__(self, in_planes, planes, stride=1):
+		super(PreActBottleneck, self).__init__()
+		self.bn1 = nn.BatchNorm2d(in_planes)
+		self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=1, bias=False)
+		self.bn2 = nn.BatchNorm2d(planes)
+		self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
+		self.bn3 = nn.BatchNorm2d(planes)
+		self.conv3 = nn.Conv2d(planes, self.expansion*planes, kernel_size=1, bias=False)
+
+		if stride != 1 or in_planes != self.expansion*planes:
+			self.shortcut = nn.Sequential(nn.Conv2d(in_planes, self.expansion*planes, kernel_size=1, stride=stride, bias=False))
+
+	def forward(self, x):
+		out = F.relu(self.bn1(x))
+		shortcut = self.shortcut(out) if hasattr(self, 'shortcut') else x
+		out = self.conv1(out)
+		out = self.conv2(F.relu(self.bn2(out)))
+		out = self.conv3(F.relu(self.bn3(out)))
+		out += shortcut
 		return out
 
 class ResNet_stats(nn.Module):
-	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,6,3], block=Bottleneck, proj_size=100, ncoef=23, dropout_prob=0.25, sm_type='softmax'):
-		self.inplanes = 32
+	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,6,3], block=PreActBottleneck, proj_size=100, ncoef=23, dropout_prob=0.25, sm_type='softmax'):
+		self.in_planes = 32
 		super(ResNet_stats, self).__init__()
 	
 		self.conv1 = nn.Conv2d(1, 32, kernel_size=(ncoef,3), stride=(1,1), padding=(0,1), bias=False)
 		self.bn1 = nn.BatchNorm2d(32)
-		self.activation = nn.ELU()
+		self.activation = nn.ReLU()
 		
-		self.layer1 = self._make_layer(block, 16, layers[0],stride=1)
-		self.layer2 = self._make_layer(block, 32, layers[1], stride=1)
-		self.layer3 = self._make_layer(block, 64, layers[2], stride=2)
-		self.layer4 = self._make_layer(block, 128, layers[3], stride=2)
+		self.layer1 = self._make_layer(block, 64, layers[0], stride=1)
+		self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
+		self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
+		self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
 
-		self.fc = nn.Linear(2*512,512)
+		self.fc = nn.Linear(block.expansion*512*2,512)
 		self.lbn = nn.BatchNorm1d(512)
 
 		self.fc_mu = nn.Linear(512, n_z)
@@ -151,17 +172,12 @@ class ResNet_stats(nn.Module):
 				layer.weight.data.fill_(1)
 				layer.bias.data.zero_()
 
-	def _make_layer(self, block, planes, blocks, stride=1):
-		downsample = None
-		if stride != 1 or self.inplanes != planes * block.expansion:
-			downsample = nn.Sequential(nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False), nn.BatchNorm2d(planes * block.expansion) )
-
+	def _make_layer(self, block, planes, num_blocks, stride):
+		strides = [stride] + [1]*(num_blocks-1)
 		layers = []
-		layers.append(block(self.inplanes, planes, stride, downsample))
-		self.inplanes = planes * block.expansion
-		for i in range(1, blocks):
-			layers.append(block(self.inplanes, planes))
-
+		for stride in strides:
+			layers.append(block(self.in_planes, planes, stride))
+			self.in_planes = planes * block.expansion
 		return nn.Sequential(*layers)
 
 	def make_bin_layers(self, n_in, n_h_layers, h_size, dropout_p):
@@ -179,7 +195,7 @@ class ResNet_stats(nn.Module):
 		return classifier
 
 	def forward(self, x):
-	
+
 		x = self.conv1(x)
 		x = self.activation(self.bn1(x))
 		x = self.layer1(x)
@@ -187,10 +203,9 @@ class ResNet_stats(nn.Module):
 		x = self.layer3(x)
 		x = self.layer4(x)
 		x = x.squeeze(2)
-
 		x = torch.cat([x.mean(-1), x.std(-1)], dim=1)
 
-		fc = F.elu(self.lbn(self.fc(x)))
+		fc = F.relu(self.lbn(self.fc(x)))
 		mu = self.fc_mu(fc)
 
 		return mu
@@ -203,20 +218,20 @@ class ResNet_stats(nn.Module):
 		return z
 
 class ResNet_mfcc(nn.Module):
-	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,6,3], block=Bottleneck, proj_size=100, ncoef=23, dropout_prob=0.25, sm_type='softmax'):
-		self.inplanes = 32
+	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,6,3], block=PreActBottleneck, proj_size=100, ncoef=23, dropout_prob=0.25, sm_type='softmax'):
+		self.in_planes = 32
 		super(ResNet_mfcc, self).__init__()
 
 		self.conv1 = nn.Conv2d(1, 32, kernel_size=(ncoef,3), stride=(1,1), padding=(0,1), bias=False)
 		self.bn1 = nn.BatchNorm2d(32)
-		self.activation = nn.ELU()
+		self.activation = nn.ReLU()
 		
-		self.layer1 = self._make_layer(block, 16, layers[0],stride=1)
-		self.layer2 = self._make_layer(block, 32, layers[1], stride=1)
-		self.layer3 = self._make_layer(block, 64, layers[2], stride=2)
-		self.layer4 = self._make_layer(block, 128, layers[3], stride=2)
+		self.layer1 = self._make_layer(block, 64, layers[0], stride=1)
+		self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
+		self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
+		self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
 
-		self.fc = nn.Linear(2*512,512)
+		self.fc = nn.Linear(block.expansion*512*2,512)
 		self.lbn = nn.BatchNorm1d(512)
 
 		self.fc_mu = nn.Linear(512, n_z)
@@ -225,7 +240,7 @@ class ResNet_mfcc(nn.Module):
 
 		self.initialize_params()
 
-		self.attention = SelfAttention(512)
+		self.attention = SelfAttention(block.expansion*512)
 
 		if sm_type=='softmax':
 			self.out_proj=Softmax(input_features=n_z, output_features=proj_size)
@@ -245,17 +260,12 @@ class ResNet_mfcc(nn.Module):
 				layer.weight.data.fill_(1)
 				layer.bias.data.zero_()
 
-	def _make_layer(self, block, planes, blocks, stride=1):
-		downsample = None
-		if stride != 1 or self.inplanes != planes * block.expansion:
-			downsample = nn.Sequential(nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False), nn.BatchNorm2d(planes * block.expansion) )
-
+	def _make_layer(self, block, planes, num_blocks, stride):
+		strides = [stride] + [1]*(num_blocks-1)
 		layers = []
-		layers.append(block(self.inplanes, planes, stride, downsample))
-		self.inplanes = planes * block.expansion
-		for i in range(1, blocks):
-			layers.append(block(self.inplanes, planes))
-
+		for stride in strides:
+			layers.append(block(self.in_planes, planes, stride))
+			self.in_planes = planes * block.expansion
 		return nn.Sequential(*layers)
 
 	def make_bin_layers(self, n_in, n_h_layers, h_size, dropout_p):
@@ -284,7 +294,7 @@ class ResNet_mfcc(nn.Module):
 
 		stats = self.attention(x.permute(0,2,1).contiguous())
 
-		fc = F.elu(self.lbn(self.fc(stats)))
+		fc = F.relu(self.lbn(self.fc(stats)))
 
 		mu = self.fc_mu(fc)
 		return mu
@@ -297,20 +307,20 @@ class ResNet_mfcc(nn.Module):
 		return z
 
 class ResNet_lstm(nn.Module):
-	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,6,3], block=Bottleneck, proj_size=100, ncoef=23, dropout_prob=0.25, sm_type='softmax'):
-		self.inplanes = 32
+	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,6,3], block=PreActBottleneck, proj_size=100, ncoef=23, dropout_prob=0.25, sm_type='softmax'):
+		self.in_planes = 32
 		super(ResNet_lstm, self).__init__()
 	
 		self.conv1 = nn.Conv2d(1, 32, kernel_size=(ncoef,3), stride=(1,1), padding=(0,1), bias=False)
 		self.bn1 = nn.BatchNorm2d(32)
-		self.activation = nn.ELU()
+		self.activation = nn.ReLU()
 		
-		self.layer1 = self._make_layer(block, 16, layers[0],stride=1)
-		self.layer2 = self._make_layer(block, 32, layers[1], stride=1)
-		self.layer3 = self._make_layer(block, 64, layers[2], stride=2)
-		self.layer4 = self._make_layer(block, 128, layers[3], stride=2)
+		self.layer1 = self._make_layer(block, 64, layers[0], stride=1)
+		self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
+		self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
+		self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
 
-		self.lstm = nn.LSTM(512, 256, 2, bidirectional=True, batch_first=False)
+		self.lstm = nn.LSTM(block.expansion*512, 256, 2, bidirectional=True, batch_first=False)
 
 		self.fc = nn.Linear(2*512+256,512)
 		self.lbn = nn.BatchNorm1d(512)
@@ -341,17 +351,12 @@ class ResNet_lstm(nn.Module):
 				layer.weight.data.fill_(1)
 				layer.bias.data.zero_()
 
-	def _make_layer(self, block, planes, blocks, stride=1):
-		downsample = None
-		if stride != 1 or self.inplanes != planes * block.expansion:
-			downsample = nn.Sequential(nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False), nn.BatchNorm2d(planes * block.expansion) )
-
+	def _make_layer(self, block, planes, num_blocks, stride):
+		strides = [stride] + [1]*(num_blocks-1)
 		layers = []
-		layers.append(block(self.inplanes, planes, stride, downsample))
-		self.inplanes = planes * block.expansion
-		for i in range(1, blocks):
-			layers.append(block(self.inplanes, planes))
-
+		for stride in strides:
+			layers.append(block(self.in_planes, planes, stride))
+			self.in_planes = planes * block.expansion
 		return nn.Sequential(*layers)
 
 	def make_bin_layers(self, n_in, n_h_layers, h_size, dropout_p):
@@ -393,7 +398,7 @@ class ResNet_lstm(nn.Module):
 
 		x = torch.cat([stats,h_.mean(0)],dim=1)
 
-		fc = F.elu(self.lbn(self.fc(x)))
+		fc = F.relu(self.lbn(self.fc(x)))
 		emb = self.fc_mu(fc)
 		return emb
 
@@ -405,29 +410,29 @@ class ResNet_lstm(nn.Module):
 		return z
 
 class ResNet_small(nn.Module):
-	def __init__(self, n_z=256, nh=1, n_h=512, layers=[2,2,2,2], block=BasicBlock, proj_size=0, ncoef=23, dropout_prob=0.25, sm_type='none'):
-		self.inplanes = 16
+	def __init__(self, n_z=256, nh=1, n_h=512, layers=[2,2,2,2], block=PreActBlock, proj_size=0, ncoef=23, dropout_prob=0.25, sm_type='none'):
+		self.in_planes = 32
 		super(ResNet_small, self).__init__()
 
-		self.conv1 = nn.Conv2d(1, 16, kernel_size=(ncoef,3), stride=(1,1), padding=(0,1), bias=False)
-		self.bn1 = nn.BatchNorm2d(16)
-		self.activation = nn.ELU()
+		self.conv1 = nn.Conv2d(1, 32, kernel_size=(ncoef,3), stride=(1,1), padding=(0,1), bias=False)
+		self.bn1 = nn.BatchNorm2d(32)
+		self.activation = nn.ReLU()
 		
-		self.layer1 = self._make_layer(block, 16, layers[0],stride=1)
-		self.layer2 = self._make_layer(block, 32, layers[1], stride=1)
-		self.layer3 = self._make_layer(block, 64, layers[2], stride=2)
-		self.layer4 = self._make_layer(block, 128, layers[3], stride=2)
+		self.layer1 = self._make_layer(block, 64, layers[0], stride=1)
+		self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
+		self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
+		self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
 
-		self.fc = nn.Linear(2*128,128)
-		self.lbn = nn.BatchNorm1d(128)
+		self.fc = nn.Linear(block.expansion*512*2,512)
+		self.lbn = nn.BatchNorm1d(512)
 
-		self.fc_mu = nn.Linear(128, n_z)
+		self.fc_mu = nn.Linear(512, n_z)
 
 		self.classifier = self.make_bin_layers(n_in=2*n_z, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
 
 		self.initialize_params()
 
-		self.attention = SelfAttention(128)
+		self.attention = SelfAttention(block.expansion*512)
 
 		if proj_size>0 and sm_type!='none':
 			if sm_type=='softmax':
@@ -448,17 +453,12 @@ class ResNet_small(nn.Module):
 				layer.weight.data.fill_(1)
 				layer.bias.data.zero_()
 
-	def _make_layer(self, block, planes, blocks, stride=1):
-		downsample = None
-		if stride != 1 or self.inplanes != planes * block.expansion:
-			downsample = nn.Sequential(nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False), nn.BatchNorm2d(planes * block.expansion) )
-
+	def _make_layer(self, block, planes, num_blocks, stride):
+		strides = [stride] + [1]*(num_blocks-1)
 		layers = []
-		layers.append(block(self.inplanes, planes, stride, downsample))
-		self.inplanes = planes * block.expansion
-		for i in range(1, blocks):
-			layers.append(block(self.inplanes, planes))
-
+		for stride in strides:
+			layers.append(block(self.in_planes, planes, stride))
+			self.in_planes = planes * block.expansion
 		return nn.Sequential(*layers)
 
 	def make_bin_layers(self, n_in, n_h_layers, h_size, dropout_p):
@@ -487,7 +487,7 @@ class ResNet_small(nn.Module):
 
 		stats = self.attention(x.permute(0,2,1).contiguous())
 
-		fc = F.elu(self.lbn(self.fc(stats)))
+		fc = F.relu(self.lbn(self.fc(stats)))
 
 		mu = self.fc_mu(fc)
 		return mu

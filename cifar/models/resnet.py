@@ -63,6 +63,54 @@ class Bottleneck(nn.Module):
 		out = F.relu(out)
 		return out
 
+class PreActBlock(nn.Module):
+	'''Pre-activation version of the BasicBlock.'''
+	expansion = 1
+
+	def __init__(self, in_planes, planes, stride=1):
+		super(PreActBlock, self).__init__()
+		self.bn1 = nn.BatchNorm2d(in_planes)
+		self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
+		self.bn2 = nn.BatchNorm2d(planes)
+		self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False)
+
+		if stride != 1 or in_planes != self.expansion*planes:
+			self.shortcut = nn.Sequential(nn.Conv2d(in_planes, self.expansion*planes, kernel_size=1, stride=stride, bias=False))
+
+	def forward(self, x):
+		out = F.relu(self.bn1(x))
+		shortcut = self.shortcut(out) if hasattr(self, 'shortcut') else x
+		out = self.conv1(out)
+		out = self.conv2(F.relu(self.bn2(out)))
+		out += shortcut
+		return out
+
+
+class PreActBottleneck(nn.Module):
+	'''Pre-activation version of the original Bottleneck module.'''
+	expansion = 4
+
+	def __init__(self, in_planes, planes, stride=1):
+		super(PreActBottleneck, self).__init__()
+		self.bn1 = nn.BatchNorm2d(in_planes)
+		self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=1, bias=False)
+		self.bn2 = nn.BatchNorm2d(planes)
+		self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
+		self.bn3 = nn.BatchNorm2d(planes)
+		self.conv3 = nn.Conv2d(planes, self.expansion*planes, kernel_size=1, bias=False)
+
+		if stride != 1 or in_planes != self.expansion*planes:
+			self.shortcut = nn.Sequential(nn.Conv2d(in_planes, self.expansion*planes, kernel_size=1, stride=stride, bias=False))
+
+	def forward(self, x):
+		out = F.relu(self.bn1(x))
+		shortcut = self.shortcut(out) if hasattr(self, 'shortcut') else x
+		out = self.conv1(out)
+		out = self.conv2(F.relu(self.bn2(out)))
+		out = self.conv3(F.relu(self.bn3(out)))
+		out += shortcut
+		return out
+
 
 class ResNet(nn.Module):
 	def __init__(self, block, num_blocks, nh, n_h, sm_type, num_classes=10, dropout_prob=0.25):
@@ -125,17 +173,18 @@ class ResNet(nn.Module):
 		
 		return z
 
+
 def ResNet18(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax'):
-	return ResNet(BasicBlock, [2,2,2,2], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob)
+	return ResNet(PreActBlock, [2,2,2,2], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob)
 
 def ResNet34(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax'):
-	return ResNet(BasicBlock, [3,4,6,3], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob)
+	return ResNet(PreActBlock, [3,4,6,3], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob)
 
 def ResNet50(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax'):
-	return ResNet(Bottleneck, [3,4,6,3], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob)
+	return ResNet(PreActBottleneck, [3,4,6,3], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob)
 
 def ResNet101(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax'):
-	return ResNet(Bottleneck, [3,4,23,3], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob)
+	return ResNet(PreActBottleneck, [3,4,23,3], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob)
 
 def ResNet152(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax'):
-	return ResNet(Bottleneck, [3,8,36,3], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob)
+	return ResNet(PreActBottleneck, [3,8,36,3], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob)
