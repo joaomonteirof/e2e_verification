@@ -498,3 +498,92 @@ class ResNet_small(nn.Module):
 			z = l(z)
 		
 		return z
+
+class ResNet_large(nn.Module):
+	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,23,3], block=PreActBottleneck, proj_size=100, ncoef=23, dropout_prob=0.25, sm_type='softmax'):
+		self.in_planes = 32
+		super(ResNet_large, self).__init__()
+
+		self.conv1 = nn.Conv2d(1, 32, kernel_size=(ncoef,3), stride=(1,1), padding=(0,1), bias=False)
+		self.bn1 = nn.BatchNorm2d(32)
+		self.activation = nn.ReLU()
+		
+		self.layer1 = self._make_layer(block, 64, layers[0], stride=1)
+		self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
+		self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
+		self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
+
+		self.fc = nn.Linear(block.expansion*512*2,512)
+		self.lbn = nn.BatchNorm1d(512)
+
+		self.fc_mu = nn.Linear(512, n_z)
+
+		self.classifier = self.make_bin_layers(n_in=2*n_z, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
+
+		self.initialize_params()
+
+		self.attention = SelfAttention(block.expansion*512)
+
+		if sm_type=='softmax':
+			self.out_proj=Softmax(input_features=n_z, output_features=proj_size)
+		elif sm_type=='am_softmax':
+			self.out_proj=AMSoftmax(input_features=n_z, output_features=proj_size)
+		else:
+			raise NotImplementedError
+
+	def initialize_params(self):
+
+		for layer in self.modules():
+			if isinstance(layer, torch.nn.Conv2d):
+				init.kaiming_normal_(layer.weight, a=0, mode='fan_out')
+			elif isinstance(layer, torch.nn.Linear):
+				init.kaiming_uniform_(layer.weight)
+			elif isinstance(layer, torch.nn.BatchNorm2d) or isinstance(layer, torch.nn.BatchNorm1d):
+				layer.weight.data.fill_(1)
+				layer.bias.data.zero_()
+
+	def _make_layer(self, block, planes, num_blocks, stride):
+		strides = [stride] + [1]*(num_blocks-1)
+		layers = []
+		for stride in strides:
+			layers.append(block(self.in_planes, planes, stride))
+			self.in_planes = planes * block.expansion
+		return nn.Sequential(*layers)
+
+	def make_bin_layers(self, n_in, n_h_layers, h_size, dropout_p):
+
+		classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
+
+		for i in range(n_h_layers-1):
+			classifier.append(nn.Linear(h_size, h_size))
+			classifier.append(nn.LeakyReLU(0.1))
+
+		classifier.append(nn.Dropout(p=dropout_p))
+		classifier.append(nn.Linear(h_size, 1))
+		classifier.append(nn.Sigmoid())
+
+		return classifier
+
+	def forward(self, x):
+	
+		x = self.conv1(x)
+		x = self.activation(self.bn1(x))
+		x = self.layer1(x)
+		x = self.layer2(x)
+		x = self.layer3(x)
+		x = self.layer4(x)
+		x = x.squeeze(2)
+
+		stats = self.attention(x.permute(0,2,1).contiguous())
+
+		fc = F.relu(self.lbn(self.fc(stats)))
+
+		mu = self.fc_mu(fc)
+		return mu
+
+	def forward_bin(self, z):
+
+		for l in self.classifier:
+			z = l(z)
+		
+		return z
