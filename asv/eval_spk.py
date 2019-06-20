@@ -88,8 +88,6 @@ if __name__ == '__main__':
 			for k,v in read_mat_scp(file_):
 				test_data[k] = v
 
-	unlab_emb = None
-
 	if args.unlab_data:
 
 		files_list = glob.glob(args.unlab_data+'*.scp')
@@ -108,7 +106,7 @@ if __name__ == '__main__':
 				unlab_emb.append(model.forward(unlab_utt_data).detach().unsqueeze(0))
 
 
-		unlab_emb=torch.cat(unlab_emb, 0).mean(0)
+		unlab_emb=torch.cat(unlab_emb, 0).mean(0).unsqueeze(0)
 
 
 	spk2utt = read_spk2utt(args.spk2utt)
@@ -117,7 +115,10 @@ if __name__ == '__main__':
 
 	print('\nAll data ready. Start of scoring')
 
-	scores = []
+	cos_scores = []
+	e2e_scores = []
+	out_e2e = []
+	out_cos = []
 	mem_embeddings_enroll = {}
 	mem_embeddings_test = {}
 
@@ -177,10 +178,37 @@ if __name__ == '__main__':
 
 				mem_embeddings_test[test_utt] = emb_test
 
-			scores.append( torch.nn.functional.cosine_similarity(emb_enroll, emb_test).mean().item() )
+			e2e_scores.append( model.forward_bin(torch.cat([emb_enroll, emb_test],1)).squeeze().item() )
+			cos_scores.append( torch.nn.functional.cosine_similarity(emb_enroll, emb_test).mean().item() )
 
-		print('\nScoring done')
+			out_e2e.append([enroll_utt, test_utt, e2e_scores[-1]])
+			out_cos.append([enroll_utt, test_utt, cos_scores[-1]])
 
-		eer, auc, avg_precision, acc, threshold = compute_metrics(np.asarray(labels), np.asarray(scores))
+	print('\nScoring done')
 
-		print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
+	with open(args.out_path+'e2e_scores.out', 'w') as f:
+		for el in out_e2e:
+			item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
+			f.write("%s" % item)
+
+	with open(args.out_path+'cos_scores.out', 'w') as f:
+		for el in out_cos:
+			item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
+			f.write("%s" % item)
+
+	e2e_scores = np.asarray(e2e_scores)
+	cos_scores = np.asarray(cos_scores)
+	all_scores = (e2e_scores + 0.5*(cos_scores+1.))*0.5
+	labels = np.asarray(labels)
+
+	eer, auc, avg_precision, acc, threshold = compute_metrics(labels, e2e_scores)
+	print('\nE2E eval:')
+	print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
+
+	eer, auc, avg_precision, acc, threshold = compute_metrics(labels, cos_scores)
+	print('\nCOS eval:')
+	print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
+
+	eer, auc, avg_precision, acc, threshold = compute_metrics(labels, all_scores)
+	print('\nCOS eval:')
+	print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
