@@ -35,6 +35,8 @@ if __name__ == '__main__':
 	parser.add_argument('--ncoef', type=int, default=23, metavar='N', help='number of MFCCs (default: 23)')
 	parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large'], default='resnet_lstm', help='Model arch according to input type')
 	parser.add_argument('--latent-size', type=int, default=200, metavar='S', help='latent layer dimension (default: 200)')
+	parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
+	parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 	args = parser.parse_args()
 	args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
@@ -186,12 +188,12 @@ if __name__ == '__main__':
 
 	print('\nScoring done')
 
-	with open(args.out_path+'e2e_scores.out', 'w') as f:
+	with open(args.out_path+'e2e_scores_spk.out', 'w') as f:
 		for el in out_e2e:
 			item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
 			f.write("%s" % item)
 
-	with open(args.out_path+'cos_scores.out', 'w') as f:
+	with open(args.out_path+'cos_scores_spk.out', 'w') as f:
 		for el in out_cos:
 			item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
 			f.write("%s" % item)
