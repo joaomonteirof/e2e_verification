@@ -97,6 +97,8 @@ if __name__ == '__main__':
 			for k,v in read_mat_scp(file_):
 				test_data[k] = v
 
+	unlab_emb = None
+
 	if args.unlab_data:
 
 		files_list = glob.glob(args.unlab_data+'*.scp')
