@@ -150,7 +150,6 @@ if __name__ == '__main__':
 				test_utt_data = prep_feats(test_data[test_utt])
 
 				if args.cuda:
-					enroll_utt_data = enroll_utt_data.cuda(device)
 					test_utt_data = test_utt_data.cuda(device)
 
 				if unlab_emb is None:
