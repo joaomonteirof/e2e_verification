@@ -62,7 +62,13 @@ if __name__ == '__main__':
 		model = model_.ResNet_large(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=1, ncoef=args.ncoef)
 
 	ckpt = torch.load(args.cp_path, map_location = lambda storage, loc: storage)
-	model.load_state_dict(ckpt['model_state'], strict=False)
+	try:
+		model.load_state_dict(ckpt['model_state'], strict=True)
+	except RuntimeError as err:
+		print("Runtime Error: {0}".format(err))
+	except:
+		print("Unexpected error:", sys.exc_info()[0])
+		raise
 
 	model.eval()
 
