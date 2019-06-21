@@ -137,36 +137,7 @@ if __name__ == '__main__':
 
 		for i in range(len(labels)):
 
-			try:
-
-				emb_enroll = mem_embeddings_enroll[speakers_enroll[i]]
-
-			except KeyError:
-
-				enroll_utts = spk2utt[speakers_enroll[i]]
-
-				emb_enroll = None
-
-				for k, enroll_utt in enumerate(enroll_utts):
-
-					enroll_utt_data = prep_feats(enroll_data[enroll_utt])
-
-					if args.cuda:
-						enroll_utt_data = enroll_utt_data.cuda(device)
-
-					new_emb_enroll = model.forward(enroll_utt_data).detach()
-
-					if emb_enroll is None:
-						emb_enroll = new_emb_enroll
-					else:
-						emb_enroll += new_emb_enroll
-
-				emb_enroll /= (k+1.)
-
-				if unlab_emb is not None:
-					emb_enroll -= unlab_emb
-
-				mem_embeddings_enroll[speakers_enroll[i]] = emb_enroll
+			## Get test embedding
 
 			test_utt = utterances_test[i]
 
@@ -189,7 +160,41 @@ if __name__ == '__main__':
 
 				mem_embeddings_test[test_utt] = emb_test
 
-			e2e_scores.append( model.forward_bin(torch.cat([emb_enroll, emb_test],1)).squeeze().item() )
+
+			## Get enroll embedding and e2e scoring
+
+			if speakers_enroll[i] in mem_embeddings_enroll:
+				emb_enroll = mem_embeddings_enroll[speakers_enroll[i]]
+			else:
+				emb_enroll = None
+
+			enroll_utts = spk2utt[speakers_enroll[i]]
+
+			for k, enroll_utt in enumerate(enroll_utts):
+
+				e2e_scores_utt = []
+
+				enroll_utt_data = prep_feats(enroll_data[enroll_utt])
+
+				if args.cuda:
+					enroll_utt_data = enroll_utt_data.cuda(device)
+
+				new_emb_enroll = model.forward(enroll_utt_data).detach()
+
+				if unlab_emb is not None:
+					new_emb_enroll -= unlab_emb
+
+				e2e_scores_utt.append( model.forward_bin(torch.cat([new_emb_enroll, emb_test],1)).squeeze().item() )
+
+				if emb_enroll is None:
+					emb_enroll = new_emb_enroll
+				elif not speakers_enroll[i] in mem_embeddings_enroll:
+					emb_enroll += new_emb_enroll
+
+			if not speakers_enroll[i] in mem_embeddings_enroll:
+				mem_embeddings_enroll[speakers_enroll[i]] = emb_enroll/(k+1.)
+
+			e2e_scores.append( np.mean(e2e_scores_utt) )
 			cos_scores.append( torch.nn.functional.cosine_similarity(emb_enroll, emb_test).mean().item() )
 
 			out_e2e.append([enroll_utt, test_utt, e2e_scores[-1]])
