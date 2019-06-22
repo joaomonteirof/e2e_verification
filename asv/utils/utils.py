@@ -8,6 +8,33 @@ import sys
 import pickle
 from time import sleep
 
+def calibrate(scores):
+
+	max_ = np.max(scores)
+	min_ = np.min(scores)
+
+	return (scores-min_)/(max_-min_)
+
+def compute_MAD(scores_set, x_median):
+	return np.median(np.abs(scores_set - x_median))
+
+def is_outlier(x, x_median, MAD):
+	M = np.abs(.6745*(x - x_median)/MAD)
+	if M>3.5:
+		return True
+	else:
+		return False
+
+def get_non_outliers(scores_set):
+	non_outliers = []
+	median = np.median(scores_set)
+	MAD = compute_MAD(scores_set, median)
+	for score in scores_set:
+		if not is_outlier(score, median, MAD):
+			non_outliers.append(score)
+
+	return non_outliers
+
 def set_np_randomseed(worker_id):
 	np.random.seed(np.random.get_state()[1][0]+worker_id)
 

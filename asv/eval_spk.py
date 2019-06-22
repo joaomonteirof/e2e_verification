@@ -162,39 +162,36 @@ if __name__ == '__main__':
 
 			## Get enroll embedding and e2e scoring
 
-			if speakers_enroll[i] in mem_embeddings_enroll:
-				emb_enroll = mem_embeddings_enroll[speakers_enroll[i]]
-			else:
-				emb_enroll = None
-
 			enroll_utts = spk2utt[speakers_enroll[i]]
 
 			for k, enroll_utt in enumerate(enroll_utts):
 
 				e2e_scores_utt = []
+				cos_scores_utt = []
 
-				enroll_utt_data = prep_feats(enroll_data[enroll_utt])
+				try:
+					emb_enroll = mem_embeddings_enroll[enroll_utt]
 
-				if args.cuda:
-					enroll_utt_data = enroll_utt_data.cuda(device)
+				except KeyError:
 
-				new_emb_enroll = model.forward(enroll_utt_data).detach()
+					enroll_utt_data = prep_feats(enroll_data[enroll_utt])
 
-				if unlab_emb is not None:
-					new_emb_enroll -= unlab_emb
+					if args.cuda:
+						enroll_utt_data = enroll_utt_data.to(device)
 
-				e2e_scores_utt.append( model.forward_bin(torch.cat([new_emb_enroll, emb_test],1)).squeeze().item() )
+					emb_enroll = model.forward(enroll_utt_data).detach()
 
-				if emb_enroll is None:
-					emb_enroll = new_emb_enroll
-				elif not speakers_enroll[i] in mem_embeddings_enroll:
-					emb_enroll += new_emb_enroll
+					if unlab_emb is not None:
+						emb_enroll -= unlab_emb
 
-			if not speakers_enroll[i] in mem_embeddings_enroll:
-				mem_embeddings_enroll[speakers_enroll[i]] = emb_enroll/(k+1.)
+					mem_embeddings_enroll[enroll_utt] = emb_enroll
 
-			e2e_scores.append( np.mean(e2e_scores_utt) )
-			cos_scores.append( torch.nn.functional.cosine_similarity(emb_enroll, emb_test).mean().item() )
+				e2e_scores_utt.append( model.forward_bin(torch.cat([emb_enroll, emb_test],1)).squeeze().item() )
+				cos_scores_utt.append( torch.nn.functional.cosine_similarity(emb_enroll, emb_test).mean().item() )
+
+
+			e2e_scores.append( np.mean(get_non_outliers(e2e_scores_utt)) )
+			cos_scores.append( np.mean(get_non_outliers(cos_scores_utt)) )
 
 			out_e2e.append([enroll_utt, test_utt, e2e_scores[-1]])
 			out_cos.append([enroll_utt, test_utt, cos_scores[-1]])
