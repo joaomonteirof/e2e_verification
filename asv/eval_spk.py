@@ -38,6 +38,7 @@ if __name__ == '__main__':
 	parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
 	parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
 	parser.add_argument('--out-path', type=str, default='./', metavar='Path', help='Path for saving computed scores')
+	parser.add_argument('--max-nscores', type=int, default=200, metavar='S', help='Max. number of test scores to consider (default: 200)')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 	args = parser.parse_args()
 	args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
@@ -162,9 +163,9 @@ if __name__ == '__main__':
 
 			## Get enroll embedding and e2e scoring
 
-			enroll_utts = spk2utt[speakers_enroll[i]]
+			enroll_utts = list(np.random.choice(spk2utt[speakers_enroll[i]], min(len(spk2utt[speakers_enroll[i]]), args.max_nscores)))
 
-			for k, enroll_utt in enumerate(enroll_utts):
+			for enroll_utt in enroll_utts:
 
 				e2e_scores_utt = []
 				cos_scores_utt = []
