@@ -2,11 +2,39 @@ import numpy as np
 from sklearn import metrics
 
 import torch
-
+import itertools
 import os
 import sys
 import pickle
 from time import sleep
+
+def parse_spk2utt(spk2utt):
+
+	utt_list, spk_list = [], []
+
+	for spk, utts in spk2utt.items():
+		utt_list.extend(utts)
+		spk_list.extend([spk]*len(utts))
+
+	return utt_list, spk_list
+
+def create_trials(spk2utt):
+
+	utt_list, spk_list = parse_spk2utt(spk2utt)
+
+	enroll_utts, test_utts, labels = [], [], []
+
+	for prod_exs in itertools.combinations(list(range(len(spk_list))), 2):
+
+		enroll_ex.append(utt_list[prod_exs[0]])
+		test_ex.append(utt_list[prod_exs[1]])
+
+		if spk_list[prod_exs[0]]==spk_list[prod_exs[1]]:
+			labels.append(1)
+		else:
+			labels.append(0)
+
+	return enroll_utts, test_utts, labels
 
 def calibrate(scores):
 
