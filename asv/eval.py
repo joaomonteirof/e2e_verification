@@ -26,7 +26,6 @@ def prep_feats(data_, min_nb_frames=100):
 if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser(description='Evaluation')
-	parser.add_argument('--enroll-data', type=str, default='./data/enroll/', metavar='Path', help='Path to input data')
 	parser.add_argument('--test-data', type=str, default='./data/test/', metavar='Path', help='Path to input data')
 	parser.add_argument('--trials-path', type=str, default=None, help='Path to trials file. If None, will be created from spk2utt')
 	parser.add_argument('--spk2utt', type=str, default=None, metavar='Path', help='Path to spk2utt file. Will be used in case no trials file is provided')
@@ -72,19 +71,6 @@ if __name__ == '__main__':
 	if args.cuda:
 		model = model.cuda(device)
 
-	enroll_data = None
-
-	files_list = glob.glob(args.enroll_data+'*.scp')
-
-	for file_ in files_list:
-		if enroll_data is None:
-			enroll_data = { k:v for k,v in read_mat_scp(file_) }
-		else:
-			for k,v in read_mat_scp(file_):
-				enroll_data[k] = v
-
-	files_list = glob.glob(args.test_data+'*.scp')
-
 	test_data = None
 
 	for file_ in files_list:
@@ -120,7 +106,7 @@ if __name__ == '__main__':
 				emb_enroll = mem_embeddings[enroll_utt]
 			except KeyError:
 
-				enroll_utt_data = prep_feats(enroll_data[enroll_utt])
+				enroll_utt_data = prep_feats(test_data[enroll_utt])
 
 				if args.cuda:
 					enroll_utt_data = enroll_utt_data.cuda(device)
