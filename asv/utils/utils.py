@@ -26,8 +26,8 @@ def create_trials(spk2utt):
 
 	for prod_exs in itertools.combinations(list(range(len(spk_list))), 2):
 
-		enroll_ex.append(utt_list[prod_exs[0]])
-		test_ex.append(utt_list[prod_exs[1]])
+		enroll_utts.append(utt_list[prod_exs[0]])
+		test_utts.append(utt_list[prod_exs[1]])
 
 		if spk_list[prod_exs[0]]==spk_list[prod_exs[1]]:
 			labels.append(1)
