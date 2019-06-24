@@ -1,99 +1,3 @@
-import argparse
-import numpy as np
-import torch
-from kaldi_io import read_mat_scp
-from sklearn import metrics
-import scipy.io as sio
-import model as model_
-import glob
-import pickle
-import os
-import sys
-
-from utils.utils import *
-
-if __name__ == '__main__':
-
-	parser = argparse.ArgumentParser(description='Evaluation')
-	parser.add_argument('--enroll-data', type=str, default='./data/enroll/', metavar='Path', help='Path to input data')
-	parser.add_argument('--test-data', type=str, default='./data/test/', metavar='Path', help='Path to input data')
-	parser.add_argument('--trials-path', type=str, default=None, help='Path to trials file. If None, will be created from spk2utt')
-	parser.add_argument('--spk2utt', type=str, default=None, metavar='Path', help='Path to spk2utt file. Will be used in case no trials file is provided')
-	parser.add_argument('--cp-path', type=str, default=None, metavar='Path', help='Path for file containing model')
-	parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large'], default='resnet_lstm', help='Model arch according to input type')
-	parser.add_argument('--ncoef', type=int, default=23, metavar='N', help='number of MFCCs (default: 23)')
-	parser.add_argument('--latent-size', type=int, default=256, metavar='S', help='latent layer dimension (default: 256)')
-	parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
-	parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
-	parser.add_argument('--out-path', type=str, default='./', metavar='Path', help='Path for saving computed scores')
-	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
-	args = parser.parse_args()
-	args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
-
-	if args.cp_path is None:
-		raise ValueError('There is no checkpoint/model path. Use arg --cp-path to indicate the path!')
-
-	print('Cuda Mode is: {}'.format(args.cuda))
-
-	if args.cuda:
-		device = get_freer_gpu()
-
-	if args.model == 'resnet_stats':
-		model = model_.ResNet_stats(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=1, ncoef=args.ncoef)
-	elif args.model == 'resnet_mfcc':
-		model = model_.ResNet_mfcc(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=1, ncoef=args.ncoef)
-	if args.model == 'resnet_lstm':
-		model = model_.ResNet_lstm(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=1, ncoef=args.ncoef)
-	elif args.model == 'resnet_small':
-		model = model_.ResNet_small(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=1, ncoef=args.ncoef)
-	elif args.model == 'resnet_large':
-		model = model_.ResNet_large(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=1, ncoef=args.ncoef)
-
-	ckpt = torch.load(args.cp_path, map_location = lambda storage, loc: storage)
-	try:
-		model.load_state_dict(ckpt['model_state'], strict=True)
-	except RuntimeError as err:
-		print("Runtime Error: {0}".format(err))
-	except:
-		print("Unexpected error:", sys.exc_info()[0])
-		raise
-
-	if args.cuda:
-		model = model.cuda(device)
-
-	enroll_data = None
-
-	files_list = glob.glob(args.enroll_data+'*.scp')
-
-	for file_ in files_list:
-		if enroll_data is None:
-			enroll_data = { k:v for k,v in read_mat_scp(file_) }
-		else:
-			for k,v in read_mat_scp(file_):
-				enroll_data[k] = v
-
-	files_list = glob.glob(args.test_data+'*.scp')
-
-	test_data = None
-
-	for file_ in files_list:
-		if test_data is None:
-			test_data = { k:v for k,v in read_mat_scp(file_) }
-		else:
-			for k,v in read_mat_scp(file_):
-				test_data[k] = v
-
-	if args.trials_path:
-		utterances_enroll, utterances_test, labels = read_trials(args.trials_path)
-	else:
-		spk2utt = read_spk2utt(args.spk2utt)
-		utterances_enroll, utterances_test, labels = create_trials(spk2utt)
-
-	print('\nAll data ready. Start of scoring')
-
-
-
-
 from __future__ import print_function
 import argparse
 import torch
@@ -105,7 +9,7 @@ import numpy as np
 import os
 import sys
 
-from utils.utils import *
+from utils import *
 
 if __name__ == '__main__':
 
@@ -127,11 +31,11 @@ if __name__ == '__main__':
 	labels_list = [x[1] for x in validset]
 
 	if args.model == 'vgg':
-		model = vgg.VGG('VGG16', nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax)
+		model = vgg.VGG('VGG16', nh=args.n_hidden, n_h=args.hidden_size)
 	elif args.model == 'resnet':
-		model = resnet.ResNet18(nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax)
+		model = resnet.ResNet18(nh=args.n_hidden, n_h=args.hidden_size)
 	elif args.model == 'densenet':
-		model = densenet.densenet_cifar(nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax)
+		model = densenet.densenet_cifar(nh=args.n_hidden, n_h=args.hidden_size)
 
 	if args.cuda:
 		device = get_freer_gpu()
@@ -151,35 +55,39 @@ if __name__ == '__main__':
 
 		for i in range(len(labels)):
 
+			enroll_ex = str(idxs_enroll[i])
+
 			try:
 				emb_enroll = mem_embeddings[enroll_ex]
 			except KeyError:
 
-				enroll_ex = validset[idxs_enroll[i]][0].unsqueeze(0)
+				enroll_ex_data = validset[idxs_enroll[i]][0].unsqueeze(0)
 
 				if args.cuda:
-					enroll_ex = enroll_ex.cuda(device)
+					enroll_ex_data = enroll_ex_data.cuda(device)
 
-				emb_enroll = model.forward(enroll_ex).detach()
-				mem_embeddings[enroll_utt] = emb_enroll
+				emb_enroll = model.forward(enroll_ex_data).detach()
+				mem_embeddings[str(idxs_enroll[i])] = emb_enroll
+
+			test_ex = str(idxs_test[i])
 
 			try:
-				emb_test = mem_embeddings[test_utt]
+				emb_test = mem_embeddings[test_ex]
 			except KeyError:
 
-				test_ex = validset[idxs_test[i]][0].unsqueeze(0)
+				test_ex_data = validset[idxs_test[i]][0].unsqueeze(0)
 
 				if args.cuda:
-					test_ex = test_ex.cuda(device)
+					test_ex_data = test_ex_data.cuda(device)
 
-				emb_test = model.forward(test_utt_data).detach()
-				mem_embeddings[test_utt] = emb_test
+				emb_test = model.forward(test_ex_data).detach()
+				mem_embeddings[str(idxs_test[i])] = emb_test
 
 			e2e_scores.append( model.forward_bin(torch.cat([emb_enroll, emb_test],1)).squeeze().item() )
 			cos_scores.append( torch.nn.functional.cosine_similarity(emb_enroll, emb_test).mean().item() )
 
-			out_e2e.append([enroll_utt, test_utt, e2e_scores[-1]])
-			out_cos.append([enroll_utt, test_utt, cos_scores[-1]])
+			out_e2e.append([str(idxs_enroll[i]), str(idxs_test[i]), e2e_scores[-1]])
+			out_cos.append([str(idxs_enroll[i]), str(idxs_test[i]), cos_scores[-1]])
 
 	print('\nScoring done')
 
