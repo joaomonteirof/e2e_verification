@@ -91,6 +91,54 @@ if __name__ == '__main__':
 
 	print('\nAll data ready. Start of scoring')
 
+
+
+
+from __future__ import print_function
+import argparse
+import torch
+from train_loop import TrainLoop
+import torch.optim as optim
+from torchvision import datasets, transforms
+from models import vgg, resnet, densenet
+import numpy as np
+import os
+import sys
+
+from utils.utils import *
+
+if __name__ == '__main__':
+
+
+	parser = argparse.ArgumentParser(description='Cifar10 Evaluation')
+	parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
+	parser.add_argument('--data-path', type=str, default='./data/', metavar='Path', help='Path to data')
+	parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
+	parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
+	parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
+	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
+	args = parser.parse_args()
+	args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
+
+	transform_train = transforms.Compose([transforms.RandomCrop(32, padding=4), transforms.RandomHorizontalFlip(), transforms.ToTensor(),])
+	transform_test = transforms.Compose([transforms.ToTensor(), transforms.Normalize([x / 255 for x in [125.3, 123.0, 113.9]], [x / 255 for x in [63.0, 62.1, 66.7]])])
+
+	validset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
+	labels_list = [x[1] for x in validset]
+
+	if args.model == 'vgg':
+		model = vgg.VGG('VGG16', nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax)
+	elif args.model == 'resnet':
+		model = resnet.ResNet18(nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax)
+	elif args.model == 'densenet':
+		model = densenet.densenet_cifar(nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax)
+
+	if args.cuda:
+		device = get_freer_gpu()
+		model = model.cuda(device)
+
+	idxs_enroll, idxs_test, labels = create_trials_labels(labels_list)
+
 	cos_scores = []
 	e2e_scores = []
 	out_e2e = []
@@ -103,33 +151,26 @@ if __name__ == '__main__':
 
 		for i in range(len(labels)):
 
-			enroll_utt = utterances_enroll[i]
-
 			try:
-				emb_enroll = mem_embeddings[enroll_utt]
+				emb_enroll = mem_embeddings[enroll_ex]
 			except KeyError:
 
-				enroll_utt_data = prep_feats(enroll_data[enroll_utt])
+				enroll_ex = validset[idxs_enroll[i]][0].unsqueeze(0)
 
 				if args.cuda:
-					enroll_utt_data = enroll_utt_data.cuda(device)
+					enroll_ex = enroll_ex.cuda(device)
 
-				emb_enroll = model.forward(enroll_utt_data).detach()
+				emb_enroll = model.forward(enroll_ex).detach()
 				mem_embeddings[enroll_utt] = emb_enroll
-
-
-
-			test_utt = utterances_test[i]
 
 			try:
 				emb_test = mem_embeddings[test_utt]
 			except KeyError:
 
-				test_utt_data = prep_feats(test_data[test_utt])
+				test_ex = validset[idxs_test[i]][0].unsqueeze(0)
 
 				if args.cuda:
-					enroll_utt_data = enroll_utt_data.cuda(device)
-					test_utt_data = test_utt_data.cuda(device)
+					test_ex = test_ex.cuda(device)
 
 				emb_test = model.forward(test_utt_data).detach()
 				mem_embeddings[test_utt] = emb_test
@@ -168,79 +209,3 @@ if __name__ == '__main__':
 	eer, auc, avg_precision, acc, threshold = compute_metrics(labels, all_scores)
 	print('\nCOS eval:')
 	print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
-
-
-from __future__ import print_function
-import argparse
-import torch
-from torch.utils.data import DataLoader
-from train_loop import TrainLoop
-import torch.optim as optim
-from torchvision import datasets, transforms
-from models import vgg, resnet, densenet
-import numpy as np
-from time import sleep
-import os
-import sys
-
-def set_np_randomseed(worker_id):
-	np.random.seed(np.random.get_state()[1][0]+worker_id)
-
-def get_freer_gpu(trials=10):
-	sleep(2)
-	for j in range(trials):
-		os.system('nvidia-smi -q -d Memory |grep -A4 GPU|grep Free >tmp')
-		memory_available = [int(x.split()[2]) for x in open('tmp', 'r').readlines()]
-		dev_ = torch.device('cuda:'+str(np.argmax(memory_available)))
-		try:
-			a = torch.rand(1).cuda(dev_)
-			return dev_
-		except:
-			pass
-
-	print('NO GPU AVAILABLE!!!')
-	exit(1)
-
-# Training settings
-parser = argparse.ArgumentParser(description='Cifar10 Evaluation')
-parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
-parser.add_argument('--data-path', type=str, default='./data/', metavar='Path', help='Path to data')
-parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
-parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
-parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
-parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
-args = parser.parse_args()
-args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
-
-transform_train = transforms.Compose([transforms.RandomCrop(32, padding=4), transforms.RandomHorizontalFlip(), transforms.ToTensor(),])
-transform_test = transforms.ToTensor()
-
-validset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
-
-if args.model == 'vgg':
-	model = vgg.VGG('VGG16', nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax)
-elif args.model == 'resnet':
-	model = resnet.ResNet18(nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax)
-elif args.model == 'densenet':
-	model = densenet.densenet_cifar(nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax)
-
-if args.cuda:
-	device = get_freer_gpu()
-	model = model.cuda(device)
-
-optimizer = optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.l2, momentum=args.momentum)
-
-trainer = TrainLoop(model, optimizer, train_loader, valid_loader, patience=args.patience, verbose=args.verbose, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, cuda=args.cuda)
-
-if args.verbose >0:
-	print('Cuda Mode is: {}'.format(args.cuda))
-	print('Selected model: {}'.format(args.model))
-	print('Batch size: {}'.format(args.batch_size))
-	print('LR: {}'.format(args.lr))
-	print('Momentum: {}'.format(args.momentum))
-	print('l2: {}'.format(args.l2))
-	print('Patience: {}'.format(args.patience))
-	print('Dropout rate: {}'.format(args.dropout_prob))
-	print('Softmax Mode is: {}'.format(args.softmax))
-
-trainer.train(n_epochs=args.epochs, save_every=args.save_every)
