@@ -39,6 +39,7 @@ if __name__ == '__main__':
 	parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
 	parser.add_argument('--out-path', type=str, default='./', metavar='Path', help='Path for saving computed scores')
 	parser.add_argument('--max-nscores', type=int, default=200, metavar='S', help='Max. number of test scores to consider (default: 200)')
+	parser.add_argument('--remove-outliers', action='store_true', default=False, help='Enables outliers removal')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 	args = parser.parse_args()
 	args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
@@ -191,8 +192,8 @@ if __name__ == '__main__':
 				cos_scores_utt.append( torch.nn.functional.cosine_similarity(emb_enroll, emb_test).mean().item() )
 
 
-			e2e_scores.append( np.mean(get_non_outliers(e2e_scores_utt)) )
-			cos_scores.append( np.mean(get_non_outliers(cos_scores_utt)) )
+			e2e_scores.append( np.mean(get_non_outliers(e2e_scores_utt) if args.remove_outliers else e2e_scores_utt) )
+			cos_scores.append( np.mean(get_non_outliers(cos_scores_utt) if args.remove_outliers else cos_scores_utt) )
 
 			out_e2e.append([enroll_utt, test_utt, e2e_scores[-1]])
 			out_cos.append([enroll_utt, test_utt, cos_scores[-1]])
