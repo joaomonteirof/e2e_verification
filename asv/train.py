@@ -55,7 +55,6 @@ if args.cuda:
 	torch.cuda.manual_seed(args.seed)
 
 train_dataset = Loader(hdf5_name = args.train_hdf_file, max_nb_frames = args.n_frames)
-
 train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, worker_init_fn=set_np_randomseed)
 
 if args.valid_hdf_file is not None:
