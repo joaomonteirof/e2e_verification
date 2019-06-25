@@ -6,7 +6,7 @@ import torch.optim as optim
 import torch.utils.data
 import model as model_
 import numpy as np
-from data_load import Loader, Loader_mining
+from data_load import Loader
 import os
 import sys
 import pickle
@@ -16,6 +16,7 @@ from utils.utils import *
 # Training settings
 parser = argparse.ArgumentParser(description='Train for hp search')
 parser.add_argument('--batch-size', type=int, default=64, metavar='N', help='input batch size for training (default: 64)')
+parser.add_argument('--valid-batch-size', type=int, default=64, metavar='N', help='input batch size for training (default: 64)')
 parser.add_argument('--epochs', type=int, default=500, metavar='N', help='number of epochs to train (default: 500)')
 parser.add_argument('--lr', type=float, default=0.001, metavar='LR', help='learning rate (default: 0.001)')
 parser.add_argument('--momentum', type=float, default=0.9, metavar='m', help='Momentum paprameter (default: 0.9)')
@@ -30,8 +31,6 @@ parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='l
 parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
 parser.add_argument('--dropout-prob', type=float, default=0.25, metavar='p', help='Dropout probability (default: 0.25)')
 parser.add_argument('--n-frames', type=int, default=800, metavar='N', help='maximum number of frames per utterance (default: 800)')
-parser.add_argument('--n-cycles', type=int, default=3, metavar='N', help='cycles over speakers list to complete 1 epoch')
-parser.add_argument('--valid-n-cycles', type=int, default=300, metavar='N', help='cycles over speakers list to complete 1 epoch')
 parser.add_argument('--train-hdf-file', type=str, default='./data/train.hdf', metavar='Path', help='Path to hdf data')
 parser.add_argument('--valid-hdf-file', type=str, default=None, metavar='Path', help='Path to hdf data')
 parser.add_argument('--cuda', type=str, default=None)
@@ -41,12 +40,11 @@ parser.add_argument('--cp-name', type=str, default=None)
 args = parser.parse_args()
 args.cuda = True if args.cuda=='True' and torch.cuda.is_available() else False
 
-train_dataset = Loader_mining(hdf5_name = args.train_hdf_file, max_nb_frames = args.n_frames, n_cycles=args.n_cycles)
-
+train_dataset = Loader_mining(hdf5_name = args.train_hdf_file, max_nb_frames = args.n_frames)
 train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, worker_init_fn=set_np_randomseed)
 
-valid_dataset = Loader(hdf5_name = args.valid_hdf_file, max_nb_frames = args.n_frames, n_cycles=args.valid_n_cycles)
-valid_loader = torch.utils.data.DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.workers, worker_init_fn=set_np_randomseed)
+valid_dataset = Loader(hdf5_name = args.valid_hdf_file, max_nb_frames = args.n_frames)
+valid_loader = torch.utils.data.DataLoader(valid_dataset, batch_size=args.valid_batch_size, shuffle=False, num_workers=args.workers, worker_init_fn=set_np_randomseed)
 
 if args.model == 'resnet_stats':
 	model = model_.ResNet_stats(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=args.ncoef, dropout_prob=args.dropout_prob, sm_type=args.softmax)

@@ -6,7 +6,7 @@ import numpy as np
 import os
 from tqdm import tqdm
 
-from utils.harvester import HardestNegativeTripletSelector, AllTripletSelector
+from utils.harvester import AllTripletSelector
 
 from utils.utils import compute_eer
 
@@ -228,20 +228,25 @@ class TrainLoop(object):
 
 		with torch.no_grad():
 
-			xa, xp, xn = batch
+			utterances, y = batch
 
-			ridx = np.random.randint(xa.size(3)//2, xa.size(3))
-
-			xa, xp, xn = xa[:,:,:,:ridx], xp[:,:,:,:ridx], xn[:,:,:,:ridx]
+			ridx = np.random.randint(utterances.size(3)//4, utterances.size(3))
+			utterances = utterances[:,:,:,:ridx]
 
 			if self.cuda_mode:
-				xa = xa.contiguous().cuda(self.device)
-				xp = xp.contiguous().cuda(self.device)
-				xn = xn.contiguous().cuda(self.device)
+				utterances = utterances.cuda(self.device)
+				y = y.cuda(self.device).squeeze()
 
-			emb_a = self.model.forward(xa)
-			emb_p = self.model.forward(xp)
-			emb_n = self.model.forward(xn)
+			embeddings = self.model.forward(utterances)
+			embeddings_norm = F.normalize(embeddings, p=2, dim=1)
+
+			# Get all triplets now for bin classifier
+			triplets_idx = self.harvester.get_triplets(embeddings_norm.detach(), y)
+			triplets_idx = triplets_idx.to(self.device)
+
+			emb_a = torch.index_select(embeddings, 0, triplets_idx[:, 0])
+			emb_p = torch.index_select(embeddings, 0, triplets_idx[:, 1])
+			emb_n = torch.index_select(embeddings, 0, triplets_idx[:, 2])
 
 			emb_ap = torch.cat([emb_a, emb_p],1)
 			emb_an = torch.cat([emb_a, emb_n],1)
