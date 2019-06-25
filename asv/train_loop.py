@@ -12,7 +12,7 @@ from utils.utils import compute_eer
 
 class TrainLoop(object):
 
-	def __init__(self, model, optimizer, train_loader, valid_loader, patience, verbose=-1, device=0, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True):
+	def __init__(self, model, optimizer, train_loader, valid_loader, patience, n_views=2, verbose=-1, device=0, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True):
 		if checkpoint_path is None:
 			# Save to current directory
 			self.checkpoint_path = os.getcwd()
@@ -30,6 +30,7 @@ class TrainLoop(object):
 		self.valid_loader = valid_loader
 		self.total_iters = 0
 		self.cur_epoch = 0
+		self.n_views = n_views
 		self.harvester = AllTripletSelector()
 		self.verbose = verbose
 		self.save_cp = save_cp
@@ -155,15 +156,23 @@ class TrainLoop(object):
 
 		utterances, y = batch
 
-		ridx = np.random.randint(utterances.size(3)//4, utterances.size(3))
-		utterances = utterances[:,:,:,:ridx]
+		embeddings_list = []
+		y_list = []
 
-		if self.cuda_mode:
-			utterances = utterances.cuda(self.device)
-			y = y.cuda(self.device).squeeze()
+		for i in range(self.n_views):
 
-		embeddings = self.model.forward(utterances)
+			ridx = np.random.randint(utterances.size(3)//4, utterances.size(3))
+			utterances = utterances[:,:,:,:ridx]
 
+			if self.cuda_mode:
+				utterances = utterances.cuda(self.device)
+				y = y.cuda(self.device).squeeze()
+
+			y_list.append(y)
+			embeddings_list.append( self.model.forward(utterances) )
+
+		y = torch.cat(y_list, dim=0)
+		embeddings = torch.cat(embeddings_list, dim=0)
 		embeddings_norm = F.normalize(embeddings, p=2, dim=1)
 
 		ce_loss = F.cross_entropy(self.model.out_proj(embeddings_norm, y), y)
