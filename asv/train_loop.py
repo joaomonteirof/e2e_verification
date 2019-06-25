@@ -154,8 +154,6 @@ class TrainLoop(object):
 		self.optimizer.zero_grad()
 
 		utterances, y = batch
-		utterances.resize_(utterances.size(0)*utterances.size(1), utterances.size(2), utterances.size(3), utterances.size(4))
-		y.resize_(y.numel())
 
 		ridx = np.random.randint(utterances.size(3)//4, utterances.size(3))
 		utterances = utterances[:,:,:,:ridx]
