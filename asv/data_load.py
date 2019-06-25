@@ -18,7 +18,6 @@ class Loader(Dataset):
 	def __init__(self, hdf5_name, max_nb_frames):
 		super(Loader, self).__init__()
 		self.hdf5_name = hdf5_name
-		self.n_cycles = n_cycles
 		self.max_nb_frames = int(max_nb_frames)
 
 		self.create_lists()
