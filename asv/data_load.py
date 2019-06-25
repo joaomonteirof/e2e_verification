@@ -60,9 +60,9 @@ class Loader(Dataset):
 		self.utt2spk = {}
 		self.utt_list = []
 
-		for i, spk in self.speakers_list:
+		for i, spk in enumerate(open_file):
 			for utt in list(open_file[spk]):
-				self.utt2label[utt] = torch.LongTensor(i)
+				self.utt2label[utt] = torch.LongTensor([i])
 				self.utt2spk[utt] = spk
 				self.utt_list.append(utt)
 
