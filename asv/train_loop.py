@@ -154,25 +154,19 @@ class TrainLoop(object):
 		self.model.train()
 		self.optimizer.zero_grad()
 
-		utterances, y = batch
+		utterances, utterances_1, utterances_2, y = batch
 
-		embeddings_list = []
-		y_list = []
+		utterances = torch.cat(utterances, utterances_1, utterances_2, dim=0)
+		y = torch.cat(3*[y], dim=0)
 
-		for i in range(self.n_views):
+		ridx = np.random.randint(utterances.size(3)//4, utterances.size(3))
+		utterances = utterances[:,:,:,:ridx]
 
-			ridx = np.random.randint(utterances.size(3)//4, utterances.size(3))
-			utterances = utterances[:,:,:,:ridx]
+		if self.cuda_mode:
+			utterances = utterances.to(self.device)
+			y = y.to(self.device).squeeze()
 
-			if self.cuda_mode:
-				utterances = utterances.cuda(self.device)
-				y = y.cuda(self.device).squeeze()
-
-			y_list.append(y)
-			embeddings_list.append( self.model.forward(utterances) )
-
-		y = torch.cat(y_list, dim=0)
-		embeddings = torch.cat(embeddings_list, dim=0)
+		embeddings = self.model.forward(utterances)
 		embeddings_norm = F.normalize(embeddings, p=2, dim=1)
 
 		ce_loss = F.cross_entropy(self.model.out_proj(embeddings_norm, y), y)
@@ -237,14 +231,17 @@ class TrainLoop(object):
 
 		with torch.no_grad():
 
-			utterances, y = batch
+			utterances, utterances_1, utterances_2, y = batch
+
+			utterances = torch.cat(utterances, utterances_1, utterances_2, dim=0)
+			y = torch.cat(3*[y], dim=0)
 
 			ridx = np.random.randint(utterances.size(3)//4, utterances.size(3))
 			utterances = utterances[:,:,:,:ridx]
 
 			if self.cuda_mode:
-				utterances = utterances.cuda(self.device)
-				y = y.cuda(self.device).squeeze()
+				utterances = utterances.to(self.device)
+				y = y.to(self.device).squeeze()
 
 			embeddings = self.model.forward(utterances)
 			embeddings_norm = F.normalize(embeddings, p=2, dim=1)

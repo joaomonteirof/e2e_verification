@@ -27,13 +27,17 @@ class Loader(Dataset):
 	def __getitem__(self, index):
 
 		utt = self.utt_list[index]
+		spk = self.utt2spk[utt]
 
 		if not self.open_file: self.open_file = h5py.File(self.hdf5_name, 'r')
 
-		utt_data = self.prep_utterance( self.open_file[self.utt2spk[utt]][utt] )
+		utt_data = self.prep_utterance( self.open_file[spk][utt] )
 		utt_data = torch.from_numpy( utt_data )
 
-		return utt_data, self.utt2label[utt]
+		utt_1, utt_2 = np.random.choice(self.spk2utt[spk], 2)
+		utt_1_data, utt_2_data = torch.from_numpy( self.prep_utterance( self.open_file[spk][utt_1] ) ), torch.from_numpy( self.prep_utterance( self.open_file[spk][utt_2] ) )
+
+		return utt_data, utt_1_data, utt_2_data, self.utt2label[utt]
 
 	def __len__(self):
 		return len(self.utt_list)
@@ -58,10 +62,13 @@ class Loader(Dataset):
 
 		self.utt2label = {}
 		self.utt2spk = {}
+		self.spk2utt = {}
 		self.utt_list = []
 
 		for i, spk in enumerate(open_file):
-			for utt in list(open_file[spk]):
+			spk_utt_list = list(open_file[spk])
+			self.spk2utt[spk] = spk_utt_list
+			for utt in spk_utt_list:
 				self.utt2label[utt] = torch.LongTensor([i])
 				self.utt2spk[utt] = spk
 				self.utt_list.append(utt)
