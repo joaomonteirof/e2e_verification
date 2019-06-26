@@ -156,7 +156,7 @@ class TrainLoop(object):
 
 		utterances, utterances_1, utterances_2, y = batch
 
-		utterances = torch.cat(utterances, utterances_1, utterances_2, dim=0)
+		utterances = torch.cat([utterances, utterances_1, utterances_2], dim=0)
 		y = torch.cat(3*[y], dim=0)
 
 		ridx = np.random.randint(utterances.size(3)//4, utterances.size(3))
@@ -233,7 +233,7 @@ class TrainLoop(object):
 
 			utterances, utterances_1, utterances_2, y = batch
 
-			utterances = torch.cat(utterances, utterances_1, utterances_2, dim=0)
+			utterances = torch.cat([utterances, utterances_1, utterances_2], dim=0)
 			y = torch.cat(3*[y], dim=0)
 
 			ridx = np.random.randint(utterances.size(3)//4, utterances.size(3))
