@@ -40,7 +40,7 @@ parser.add_argument('--cp-name', type=str, default=None)
 args = parser.parse_args()
 args.cuda = True if args.cuda=='True' and torch.cuda.is_available() else False
 
-train_dataset = Loader_mining(hdf5_name = args.train_hdf_file, max_nb_frames = args.n_frames)
+train_dataset = Loader(hdf5_name = args.train_hdf_file, max_nb_frames = args.n_frames)
 train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, worker_init_fn=set_np_randomseed)
 
 valid_dataset = Loader(hdf5_name = args.valid_hdf_file, max_nb_frames = args.n_frames)
