@@ -154,10 +154,10 @@ class TrainLoop(object):
 		self.model.train()
 		self.optimizer.zero_grad()
 
-		utterances, utterances_1, utterances_2, y = batch
+		utterances, utterances_1, utterances_2, utterances_3, utterances_4, y = batch
 
-		utterances = torch.cat([utterances, utterances_1, utterances_2], dim=0)
-		y = torch.cat(3*[y], dim=0)
+		utterances = torch.cat([utterances, utterances_1, utterances_2, utterances_3, utterances_4], dim=0)
+		y = torch.cat(5*[y], dim=0)
 
 		ridx = np.random.randint(utterances.size(3)//4, utterances.size(3))
 		utterances = utterances[:,:,:,:ridx]
@@ -231,10 +231,10 @@ class TrainLoop(object):
 
 		with torch.no_grad():
 
-			utterances, utterances_1, utterances_2, y = batch
+			utterances, utterances_1, utterances_2, utterances_3, utterances_4, y = batch
 
-			utterances = torch.cat([utterances, utterances_1, utterances_2], dim=0)
-			y = torch.cat(3*[y], dim=0)
+			utterances = torch.cat([utterances, utterances_1, utterances_2, utterances_3, utterances_4], dim=0)
+			y = torch.cat(5*[y], dim=0)
 
 			ridx = np.random.randint(utterances.size(3)//4, utterances.size(3))
 			utterances = utterances[:,:,:,:ridx]

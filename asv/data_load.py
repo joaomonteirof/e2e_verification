@@ -34,10 +34,14 @@ class Loader(Dataset):
 		utt_data = self.prep_utterance( self.open_file[spk][utt] )
 		utt_data = torch.from_numpy( utt_data )
 
-		utt_1, utt_2 = np.random.choice(self.spk2utt[spk], 2)
-		utt_1_data, utt_2_data = torch.from_numpy( self.prep_utterance( self.open_file[spk][utt_1] ) ), torch.from_numpy( self.prep_utterance( self.open_file[spk][utt_2] ) )
+		utt_1, utt_2, utt_3, utt_4 = np.random.choice(self.spk2utt[spk], 4)
 
-		return utt_data, utt_1_data, utt_2_data, self.utt2label[utt]
+		utt_1_data = torch.from_numpy( self.prep_utterance( self.open_file[spk][utt_1] ) )
+		utt_2_data = torch.from_numpy( self.prep_utterance( self.open_file[spk][utt_2] ) )
+		utt_3_data = torch.from_numpy( self.prep_utterance( self.open_file[spk][utt_3] ) )
+		utt_4_data = torch.from_numpy( self.prep_utterance( self.open_file[spk][utt_4] ) )
+
+		return utt_data, utt_1_data, utt_2_data, utt_3_data, utt_4_data, self.utt2label[utt]
 
 	def __len__(self):
 		return len(self.utt_list)
