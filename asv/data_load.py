@@ -70,11 +70,11 @@ class Loader(Dataset):
 		self.utt_list = []
 
 		for i, spk in enumerate(self.spk2utt):
-			spk_utt_list = np.random.permutation(list(open_file[spk]))
+			spk_utt_list = np.random.permutation(list(self.spk2utt[spk]))
 
 			idxs = strided_app(np.arange(len(spk_utt_list)),5,5)
 
-			for idxs_list in spk_utt_list:
+			for idxs_list in idxs:
 				if len(idxs_list)==5:
 					self.utt_list.append([spk_utt_list[utt_idx] for utt_idx in idxs_list])
 					self.utt_list[-1].append(spk)
