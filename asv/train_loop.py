@@ -52,6 +52,7 @@ class TrainLoop(object):
 		while (self.cur_epoch < n_epochs):
 
 			np.random.seed()
+			self.train_loader.dataset.update_lists()
 
 			if self.verbose>0:
 				print(' ')
