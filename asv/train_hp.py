@@ -6,7 +6,7 @@ import torch.optim as optim
 import torch.utils.data
 import model as model_
 import numpy as np
-from data_load import Loader
+from data_load import Loader, Loader_valid
 import os
 import sys
 import pickle
@@ -43,7 +43,7 @@ args.cuda = True if args.cuda=='True' and torch.cuda.is_available() else False
 train_dataset = Loader(hdf5_name = args.train_hdf_file, max_nb_frames = args.n_frames)
 train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, worker_init_fn=set_np_randomseed)
 
-valid_dataset = Loader(hdf5_name = args.valid_hdf_file, max_nb_frames = args.n_frames)
+valid_dataset = Loader_valid(hdf5_name = args.valid_hdf_file, max_nb_frames = args.n_frames)
 valid_loader = torch.utils.data.DataLoader(valid_dataset, batch_size=args.valid_batch_size, shuffle=False, num_workers=args.workers, worker_init_fn=set_np_randomseed)
 
 if args.model == 'resnet_stats':
