@@ -69,6 +69,25 @@ optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, we
 
 trainer = TrainLoop(model, optimizer, train_loader, valid_loader, patience=args.patience, verbose=-1, device=device, cp_name=args.cp_name, save_cp=True, checkpoint_path=args.checkpoint_path, pretrain=False, cuda=args.cuda)
 
+print(' ')
+print('Cuda Mode: {}'.format(args.cuda))
+print('Selected model: {}'.format(args.model))
+print('Softmax Mode is: {}'.format(args.softmax))
+print('Embeddings size: {}'.format(args.latent_size))
+print('Number of hidden layers: {}'.format(args.n_hidden))
+print('Size of hidden layers: {}'.format(args.hidden_size))
+print('Number of train speakers: {}'.format(train_dataset.n_speakers))
+print('Number of train examples: {}'.format(len(train_dataset.utt_list)))
+print('Number of valid speakers: {}'.format(valid_dataset.n_speakers))
+print('Number of valid examples: {}'.format(len(valid_dataset.utt_list)))
+print('Batch size: {}'.format(args.batch_size))
+print('Valid batch size: {}'.format(args.valid_batch_size))
+print('LR: {}'.format(args.lr))
+print('momentum: {}'.format(args.momentum))
+print('l2: {}'.format(args.l2))
+print('Patience: {}'.format(args.patience))
+print(' ')
+
 best_eer = trainer.train(n_epochs=args.epochs, save_every=args.epochs+10)
 
 out_file = open(args.out_file, 'wb')
