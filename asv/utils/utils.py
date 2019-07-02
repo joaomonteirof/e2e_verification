@@ -70,7 +70,7 @@ def get_non_outliers(scores_set):
 	return non_outliers
 
 def set_np_randomseed(worker_id):
-	np.random.seed(np.random.get_state()[1][0]+worker_id)
+	np.random.seed(np.random.get_state()[1][0])
 
 def get_freer_gpu(trials=10):
 	sleep(5)

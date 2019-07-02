@@ -10,13 +10,7 @@ from data_load import Loader, Loader_valid
 import os
 import sys
 
-def set_np_randomseed(worker_id):
-	np.random.seed(np.random.get_state()[1][0]+worker_id)
-
-def get_freer_gpu():
-	os.system('nvidia-smi -q -d Memory |grep -A4 GPU|grep Free >tmp')
-	memory_available = [int(x.split()[2]) for x in open('tmp', 'r').readlines()]
-	return torch.device('cuda:'+str(np.argmax(memory_available)))
+from utils.utils import set_np_randomseed, get_freer_gpu
 
 # Training settings
 parser = argparse.ArgumentParser(description='Speaker embbedings with combined loss')
