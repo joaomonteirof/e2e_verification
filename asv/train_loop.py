@@ -158,14 +158,14 @@ class TrainLoop(object):
 		utterances, utterances_1, utterances_2, utterances_3, utterances_4, y = batch
 
 		utterances = torch.cat([utterances, utterances_1, utterances_2, utterances_3, utterances_4], dim=0)
-		y = torch.cat(5*[y], dim=0)
+		y = torch.cat(5*[y], dim=0).squeeze()
 
 		ridx = np.random.randint(utterances.size(3)//4, utterances.size(3))
 		utterances = utterances[:,:,:,:ridx]
 
 		if self.cuda_mode:
 			utterances = utterances.to(self.device)
-			y = y.to(self.device).squeeze()
+			y = y.to(self.device)
 
 		embeddings = self.model.forward(utterances)
 		embeddings_norm = F.normalize(embeddings, p=2, dim=1)
@@ -207,10 +207,13 @@ class TrainLoop(object):
 		self.model.train()
 		self.optimizer.zero_grad()
 
-		utt, y = batch
+		utterances, utterances_1, utterances_2, utterances_3, utterances_4, y = batch
 
-		ridx = np.random.randint(utt.size(3)//2, utt.size(3))
-		utt = utt[:,:,:,:ridx]
+		utterances = torch.cat([utterances, utterances_1, utterances_2, utterances_3, utterances_4], dim=0)
+		y = torch.cat(5*[y], dim=0).squeeze()
+
+		ridx = np.random.randint(utterances.size(3)//4, utterances.size(3))
+		utterances = utterances[:,:,:,:ridx]
 
 		if self.cuda_mode:
 			utt, y = utt.cuda(self.device), y.cuda(self.device).squeeze()
@@ -235,14 +238,14 @@ class TrainLoop(object):
 			utterances, utterances_1, utterances_2, utterances_3, utterances_4, y = batch
 
 			utterances = torch.cat([utterances, utterances_1, utterances_2, utterances_3, utterances_4], dim=0)
-			y = torch.cat(5*[y], dim=0)
+			y = torch.cat(5*[y], dim=0).squeeze()
 
 			ridx = np.random.randint(utterances.size(3)//4, utterances.size(3))
 			utterances = utterances[:,:,:,:ridx]
 
 			if self.cuda_mode:
 				utterances = utterances.to(self.device)
-				y = y.to(self.device).squeeze()
+				y = y.to(self.device)
 
 			embeddings = self.model.forward(utterances)
 			embeddings_norm = F.normalize(embeddings, p=2, dim=1)
