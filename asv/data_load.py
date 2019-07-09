@@ -61,7 +61,7 @@ class Loader(Dataset):
 		for i, spk in enumerate(open_file):
 			spk_utt_list = list(open_file[spk])
 			self.spk2utt[spk] = spk_utt_list
-			self.spk2label = torch.LongTensor([i])
+			self.spk2label[spk] = torch.LongTensor([i])
 
 		open_file.close()
 
