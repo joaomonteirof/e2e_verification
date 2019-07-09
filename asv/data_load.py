@@ -54,23 +54,25 @@ class Loader(Dataset):
 
 		open_file = h5py.File(self.hdf5_name, 'r')
 
-		self.n_speakers = len(open_file)
-
 		self.spk2utt = {}
+		self.spk2label = {}
 		self.utt_list = []
 
 		for i, spk in enumerate(open_file):
 			spk_utt_list = list(open_file[spk])
 			self.spk2utt[spk] = spk_utt_list
+			self.spk2label = torch.LongTensor([i])
 
 		open_file.close()
+
+		self.n_speakers = len(self.spk2utt)
 
 	def update_lists(self):
 
 		self.utt_list = []
 
 		for i, spk in enumerate(self.spk2utt):
-			spk_utt_list = np.random.permutation(list(self.spk2utt[spk]))
+			spk_utt_list = np.random.permutation(self.spk2utt[spk])
 
 			idxs = strided_app(np.arange(len(spk_utt_list)),5,5)
 
@@ -78,7 +80,7 @@ class Loader(Dataset):
 				if len(idxs_list)==5:
 					self.utt_list.append([spk_utt_list[utt_idx] for utt_idx in idxs_list])
 					self.utt_list[-1].append(spk)
-					self.utt_list[-1].append(torch.LongTensor([i]))
+					self.utt_list[-1].append(self.spk2label[spk])
 
 class Loader_valid(Dataset):
 
