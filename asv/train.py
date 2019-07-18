@@ -9,7 +9,7 @@ import numpy as np
 from data_load import Loader, Loader_valid
 import os
 import sys
-
+from torch.utils.tensorboard import SummaryWriter
 from utils.utils import set_np_randomseed, get_freer_gpu
 
 # Training settings
@@ -24,6 +24,7 @@ parser.add_argument('--patience', type=int, default=10, metavar='S', help='Epoch
 parser.add_argument('--checkpoint-epoch', type=int, default=None, metavar='N', help='epoch to load for checkpointing. If None, training starts from scratch')
 parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
 parser.add_argument('--pretrained-path', type=str, default=None, metavar='Path', help='Path for pre trained model')
+parser.add_argument('--logdir', type=str, default=None, metavar='Path', help='Path for checkpointing')
 parser.add_argument('--train-hdf-file', type=str, default='./data/train.hdf', metavar='Path', help='Path to hdf data')
 parser.add_argument('--valid-hdf-file', type=str, default=None, metavar='Path', help='Path to hdf data')
 parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large'], default='resnet_lstm', help='Model arch according to input type')
@@ -47,6 +48,16 @@ args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 torch.manual_seed(args.seed)
 if args.cuda:
 	torch.cuda.manual_seed(args.seed)
+
+if args.cuda:
+	device = get_freer_gpu()
+else:
+	device = torch.device('cpu')
+
+if args.logdir:
+	writer = SummaryWriter(log_dir=args.logdir)
+else:
+	writer = None
 
 train_dataset = Loader(hdf5_name = args.train_hdf_file, max_nb_frames = args.n_frames)
 train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, worker_init_fn=set_np_randomseed)
@@ -79,17 +90,11 @@ if args.pretrained_path is not None:
 		print("Unexpected error:", sys.exc_info()[0])
 		raise
 
-if args.cuda:
-	device = get_freer_gpu()
-else:
-	device = None
-
-if args.cuda:
-	model = model.cuda(device)
+model = model.cuda(device)
 
 optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.l2)
 
-trainer = TrainLoop(model, optimizer, train_loader, valid_loader, patience=args.patience, verbose=args.verbose, device=device, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, pretrain=args.pretrain, cuda=args.cuda)
+trainer = TrainLoop(model, optimizer, train_loader, valid_loader, patience=args.patience, verbose=args.verbose, device=device, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, pretrain=args.pretrain, cuda=args.cuda, logger=writer)
 
 if args.verbose > 0:
 	print(' ')

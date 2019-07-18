@@ -12,7 +12,7 @@ from utils.utils import compute_eer
 
 class TrainLoop(object):
 
-	def __init__(self, model, optimizer, train_loader, valid_loader, patience, n_views=2, verbose=-1, device=0, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True):
+	def __init__(self, model, optimizer, train_loader, valid_loader, patience, n_views=2, verbose=-1, device=0, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True, logger=None):
 		if checkpoint_path is None:
 			# Save to current directory
 			self.checkpoint_path = os.getcwd()
@@ -35,6 +35,7 @@ class TrainLoop(object):
 		self.verbose = verbose
 		self.save_cp = save_cp
 		self.device = device
+		logger = self.logger
 		self.history = {'train_loss': [], 'train_loss_batch': [], 'ce_loss': [], 'ce_loss_batch': [], 'bin_loss': [], 'bin_loss_batch': []}
 
 		if self.valid_loader is not None:
@@ -70,6 +71,8 @@ class TrainLoop(object):
 					self.history['train_loss_batch'].append(ce)
 					ce_epoch+=ce
 					self.total_iters += 1
+					if self.logger:
+						self.logger.add_scalar('Cross entropy', ce)
 
 				self.history['train_loss'].append(ce_epoch/(t+1))
 
@@ -90,6 +93,11 @@ class TrainLoop(object):
 					ce_loss_epoch+=ce_loss
 					bin_loss_epoch+=bin_loss
 					self.total_iters += 1
+					if self.logger:
+						self.logger.add_scalar('Total train Loss', train_loss)
+						self.logger.add_scalar('Binary class. Loss', bin_loss)
+						self.logger.add_scalar('Cross enropy', ce_loss)
+
 
 				self.history['train_loss'].append(train_loss_epoch/(t+1))
 				self.history['ce_loss'].append(ce_loss_epoch/(t+1))
@@ -118,6 +126,14 @@ class TrainLoop(object):
 
 				self.history['e2e_eer'].append(compute_eer(labels, e2e_scores))
 				self.history['cos_eer'].append(compute_eer(labels, cos_scores))
+
+				if self.logger:
+					self.logger.add_scalar('E2E EER', self.history['e2e_eer'][-1])
+					self.logger.add_scalar('Best E2E EER', np.min(self.history['e2e_eer']))
+					self.logger.add_scalar('Cosine EER', self.history['cos_eer'][-1])
+					self.logger.add_scalar('Best Cosine EER', np.min(self.history['cos_eer']))
+					self.logger.add_pr_curve('E2E ROC', labels=labels, predictions=e2e_scores)
+					self.logger.add_pr_curve('Cosine ROC', labels=labels, predictions=cos_scores)
 
 				if self.verbose>0:
 					print(' ')
@@ -250,6 +266,9 @@ class TrainLoop(object):
 
 			embeddings = self.model.forward(utterances)
 			embeddings_norm = F.normalize(embeddings, p=2, dim=1)
+
+			if self.logger:
+				self.logger.add_embedding(mat=embeddings.detach().cpu().numpy(), metadata=list(y.detach().cpu().numpy()))
 
 			# Get all triplets now for bin classifier
 			triplets_idx = self.harvester.get_triplets(embeddings_norm.detach(), y)
