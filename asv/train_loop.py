@@ -134,8 +134,8 @@ class TrainLoop(object):
 					self.logger.add_scalar('Best E2E EER', np.min(self.history['e2e_eer']), self.cur_epoch)
 					self.logger.add_scalar('Cosine EER', self.history['cos_eer'][-1], self.cur_epoch)
 					self.logger.add_scalar('Best Cosine EER', np.min(self.history['cos_eer']), self.cur_epoch)
-					self.logger.add_pr_curve('E2E ROC', labels=labels, predictions=e2e_scores, self.cur_epoch)
-					self.logger.add_pr_curve('Cosine ROC', labels=labels, predictions=cos_scores, self.cur_epoch)
+					self.logger.add_pr_curve('E2E ROC', labels=labels, predictions=e2e_scores, global_step=self.cur_epoch)
+					self.logger.add_pr_curve('Cosine ROC', labels=labels, predictions=cos_scores, global_step=self.cur_epoch)
 					self.logger.add_embedding(mat=emb, metadata=list(y_), global_step=self.cur_epoch)
 
 				if self.verbose>0:
