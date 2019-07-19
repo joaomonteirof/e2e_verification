@@ -70,9 +70,9 @@ class TrainLoop(object):
 					ce = self.pretrain_step(batch)
 					self.history['train_loss_batch'].append(ce)
 					ce_epoch+=ce
-					self.total_iters += 1
 					if self.logger:
-						self.logger.add_scalar('Cross entropy', ce, self.cur_epoch*t+t)
+						self.logger.add_scalar('Cross entropy', ce, self.total_iters)
+					self.total_iters += 1
 
 				self.history['train_loss'].append(ce_epoch/(t+1))
 
@@ -92,12 +92,11 @@ class TrainLoop(object):
 					train_loss_epoch+=train_loss
 					ce_loss_epoch+=ce_loss
 					bin_loss_epoch+=bin_loss
-					self.total_iters += 1
 					if self.logger:
-						self.logger.add_scalar('Total train Loss', train_loss, self.cur_epoch*t+t)
-						self.logger.add_scalar('Binary class. Loss', bin_loss, self.cur_epoch*t+t)
-						self.logger.add_scalar('Cross enropy', ce_loss, self.cur_epoch*t+t)
-
+						self.logger.add_scalar('Total train Loss', train_loss, self.total_iters)
+						self.logger.add_scalar('Binary class. Loss', bin_loss, self.total_iters)
+						self.logger.add_scalar('Cross enropy', ce_loss, self.total_iters)
+					self.total_iters += 1
 
 				self.history['train_loss'].append(train_loss_epoch/(t+1))
 				self.history['ce_loss'].append(ce_loss_epoch/(t+1))
@@ -286,7 +285,7 @@ class TrainLoop(object):
 			cos_scores_p = torch.nn.functional.cosine_similarity(emb_a, emb_p)
 			cos_scores_n = torch.nn.functional.cosine_similarity(emb_a, emb_n)
 
-		return np.concatenate([e2e_scores_p.detach().cpu().numpy(), e2e_scores_n.detach().cpu().numpy()], 0), np.concatenate([cos_scores_p.detach().cpu().numpy(), cos_scores_n.detach().cpu().numpy()], 0), np.concatenate([np.ones(e2e_scores_p.size(0)), np.zeros(e2e_scores_n.size(0))], 0), embeddings.detach().cpu().numpy, y.detach().cpu().numpy()
+		return np.concatenate([e2e_scores_p.detach().cpu().numpy(), e2e_scores_n.detach().cpu().numpy()], 0), np.concatenate([cos_scores_p.detach().cpu().numpy(), cos_scores_n.detach().cpu().numpy()], 0), np.concatenate([np.ones(e2e_scores_p.size(0)), np.zeros(e2e_scores_n.size(0))], 0), embeddings.detach().cpu().numpy(), y.detach().cpu().numpy()
 
 	def checkpointing(self):
 
