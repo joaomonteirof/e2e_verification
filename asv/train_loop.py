@@ -72,7 +72,7 @@ class TrainLoop(object):
 					ce_epoch+=ce
 					self.total_iters += 1
 					if self.logger:
-						self.logger.add_scalar('Cross entropy', ce)
+						self.logger.add_scalar('Cross entropy', ce, self.cur_epoch*t+t)
 
 				self.history['train_loss'].append(ce_epoch/(t+1))
 
@@ -94,9 +94,9 @@ class TrainLoop(object):
 					bin_loss_epoch+=bin_loss
 					self.total_iters += 1
 					if self.logger:
-						self.logger.add_scalar('Total train Loss', train_loss)
-						self.logger.add_scalar('Binary class. Loss', bin_loss)
-						self.logger.add_scalar('Cross enropy', ce_loss)
+						self.logger.add_scalar('Total train Loss', train_loss, self.cur_epoch*t+t)
+						self.logger.add_scalar('Binary class. Loss', bin_loss, self.cur_epoch*t+t)
+						self.logger.add_scalar('Cross enropy', ce_loss, self.cur_epoch*t+t)
 
 
 				self.history['train_loss'].append(train_loss_epoch/(t+1))
@@ -112,28 +112,31 @@ class TrainLoop(object):
 
 			if self.valid_loader is not None:
 
-				e2e_scores, cos_scores, labels = None, None, None
+				e2e_scores, cos_scores, labels, emb, y_ = None, None, None, None, None
 
 				for t, batch in enumerate(self.valid_loader):
-					e2e_scores_batch, cos_scores_batch, labels_batch = self.valid(batch)
+					e2e_scores_batch, cos_scores_batch, labels_batch, emb_batch, y_batch = self.valid(batch)
 
 					try:
 						e2e_scores = np.concatenate([e2e_scores, e2e_scores_batch], 0)
 						cos_scores = np.concatenate([cos_scores, cos_scores_batch], 0)
 						labels = np.concatenate([labels, labels_batch], 0)
+						emb = np.concatenate([emb, emb_batch], 0)
+						y_ = np.concatenate([y_, y_batch], 0)
 					except:
-						e2e_scores, cos_scores, labels = e2e_scores_batch, cos_scores_batch, labels_batch
+						e2e_scores, cos_scores, labels, emb, y_ = e2e_scores_batch, cos_scores_batch, labels_batch, emb_batch, y_batch
 
 				self.history['e2e_eer'].append(compute_eer(labels, e2e_scores))
 				self.history['cos_eer'].append(compute_eer(labels, cos_scores))
 
 				if self.logger:
-					self.logger.add_scalar('E2E EER', self.history['e2e_eer'][-1])
-					self.logger.add_scalar('Best E2E EER', np.min(self.history['e2e_eer']))
-					self.logger.add_scalar('Cosine EER', self.history['cos_eer'][-1])
-					self.logger.add_scalar('Best Cosine EER', np.min(self.history['cos_eer']))
-					self.logger.add_pr_curve('E2E ROC', labels=labels, predictions=e2e_scores)
-					self.logger.add_pr_curve('Cosine ROC', labels=labels, predictions=cos_scores)
+					self.logger.add_scalar('E2E EER', self.history['e2e_eer'][-1], self.cur_epoch)
+					self.logger.add_scalar('Best E2E EER', np.min(self.history['e2e_eer']), self.cur_epoch)
+					self.logger.add_scalar('Cosine EER', self.history['cos_eer'][-1], self.cur_epoch)
+					self.logger.add_scalar('Best Cosine EER', np.min(self.history['cos_eer']), self.cur_epoch)
+					self.logger.add_pr_curve('E2E ROC', labels=labels, predictions=e2e_scores, self.cur_epoch)
+					self.logger.add_pr_curve('Cosine ROC', labels=labels, predictions=cos_scores, self.cur_epoch)
+					self.logger.add_embedding(mat=emb, metadata=list(y_), global_step=self.cur_epoch)
 
 				if self.verbose>0:
 					print(' ')
@@ -267,9 +270,6 @@ class TrainLoop(object):
 			embeddings = self.model.forward(utterances)
 			embeddings_norm = F.normalize(embeddings, p=2, dim=1)
 
-			if self.logger:
-				self.logger.add_embedding(mat=embeddings.detach().cpu().numpy(), metadata=list(y.detach().cpu().numpy()))
-
 			# Get all triplets now for bin classifier
 			triplets_idx = self.harvester.get_triplets(embeddings_norm.detach(), y)
 			triplets_idx = triplets_idx.to(self.device)
@@ -286,7 +286,7 @@ class TrainLoop(object):
 			cos_scores_p = torch.nn.functional.cosine_similarity(emb_a, emb_p)
 			cos_scores_n = torch.nn.functional.cosine_similarity(emb_a, emb_n)
 
-		return np.concatenate([e2e_scores_p.detach().cpu().numpy(), e2e_scores_n.detach().cpu().numpy()], 0), np.concatenate([cos_scores_p.detach().cpu().numpy(), cos_scores_n.detach().cpu().numpy()], 0), np.concatenate([np.ones(e2e_scores_p.size(0)), np.zeros(e2e_scores_n.size(0))], 0)
+		return np.concatenate([e2e_scores_p.detach().cpu().numpy(), e2e_scores_n.detach().cpu().numpy()], 0), np.concatenate([cos_scores_p.detach().cpu().numpy(), cos_scores_n.detach().cpu().numpy()], 0), np.concatenate([np.ones(e2e_scores_p.size(0)), np.zeros(e2e_scores_n.size(0))], 0), embeddings.detach().cpu().numpy, y.detach().cpu().numpy()
 
 	def checkpointing(self):
 
