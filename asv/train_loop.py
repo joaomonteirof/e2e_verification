@@ -71,7 +71,7 @@ class TrainLoop(object):
 					self.history['train_loss_batch'].append(ce)
 					ce_epoch+=ce
 					if self.logger:
-						self.logger.add_scalar('Cross entropy', ce, self.total_iters)
+						self.logger.add_scalar('Cross entropy', ce, self.total_iters-1)
 					self.total_iters += 1
 
 				self.history['train_loss'].append(ce_epoch/(t+1))
@@ -93,9 +93,9 @@ class TrainLoop(object):
 					ce_loss_epoch+=ce_loss
 					bin_loss_epoch+=bin_loss
 					if self.logger:
-						self.logger.add_scalar('Total train Loss', train_loss, self.total_iters)
-						self.logger.add_scalar('Binary class. Loss', bin_loss, self.total_iters)
-						self.logger.add_scalar('Cross enropy', ce_loss, self.total_iters)
+						self.logger.add_scalar('Total train Loss', train_loss, self.total_iters-1)
+						self.logger.add_scalar('Binary class. Loss', bin_loss, self.total_iters-1)
+						self.logger.add_scalar('Cross enropy', ce_loss, self.total_iters-1)
 					self.total_iters += 1
 
 				self.history['train_loss'].append(train_loss_epoch/(t+1))
@@ -129,13 +129,13 @@ class TrainLoop(object):
 				self.history['cos_eer'].append(compute_eer(labels, cos_scores))
 
 				if self.logger:
-					self.logger.add_scalar('E2E EER', self.history['e2e_eer'][-1], self.cur_epoch)
-					self.logger.add_scalar('Best E2E EER', np.min(self.history['e2e_eer']), self.cur_epoch)
-					self.logger.add_scalar('Cosine EER', self.history['cos_eer'][-1], self.cur_epoch)
-					self.logger.add_scalar('Best Cosine EER', np.min(self.history['cos_eer']), self.cur_epoch)
-					self.logger.add_pr_curve('E2E ROC', labels=labels, predictions=e2e_scores, global_step=self.cur_epoch)
-					self.logger.add_pr_curve('Cosine ROC', labels=labels, predictions=cos_scores, global_step=self.cur_epoch)
-					self.logger.add_embedding(mat=emb, metadata=list(y_), global_step=self.cur_epoch)
+					self.logger.add_scalar('E2E EER', self.history['e2e_eer'][-1], self.total_iters-1)
+					self.logger.add_scalar('Best E2E EER', np.min(self.history['e2e_eer']), self.total_iters-1)
+					self.logger.add_scalar('Cosine EER', self.history['cos_eer'][-1], self.total_iters-1)
+					self.logger.add_scalar('Best Cosine EER', np.min(self.history['cos_eer']), self.total_iters-1)
+					self.logger.add_pr_curve('E2E ROC', labels=labels, predictions=e2e_scores, global_step=self.total_iters-1)
+					self.logger.add_pr_curve('Cosine ROC', labels=labels, predictions=cos_scores, global_step=self.total_iters-1)
+					self.logger.add_embedding(mat=emb, metadata=list(y_), global_step=self.total_iters-1)
 
 				if self.verbose>0:
 					print(' ')
