@@ -9,7 +9,7 @@ import model as model_
 
 # Training settings
 parser = argparse.ArgumentParser(description='Test new architectures')
-parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large', 'all'], default='resnet_lstm', help='Model arch according to input type')
+parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large', 'TDNN', 'all'], default='resnet_lstm', help='Model arch according to input type')
 parser.add_argument('--ncoef', type=int, default=23, metavar='N', help='number of MFCCs (default: 23)')
 parser.add_argument('--latent-size', type=int, default=256, metavar='S', help='latent layer dimension (default: 256)')
 parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
@@ -68,6 +68,18 @@ if args.model == 'resnet_large' or  args.model == 'all':
 	batch = torch.rand(3, 1, args.ncoef, 200)
 	model = model_.ResNet_large(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=100, ncoef=args.ncoef)
 	print('resnet_large')
+	mu = model.forward(batch)
+	print(mu.size())
+	emb = torch.cat([mu,mu],1)
+	print(emb.size())
+	pred = model.forward_bin(emb)
+	print(pred.size())
+	scores_p = model.forward_bin(emb).squeeze()
+	print(scores_p.size())
+if args.model == 'TDNN' or  args.model == 'all':
+	batch = torch.rand(3, 1, args.ncoef, 200)
+	model = model_.TDNN(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=100, ncoef=args.ncoef)
+	print('TDNN')
 	mu = model.forward(batch)
 	print(mu.size())
 	emb = torch.cat([mu,mu],1)

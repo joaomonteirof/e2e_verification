@@ -587,3 +587,90 @@ class ResNet_large(nn.Module):
 			z = l(z)
 		
 		return z
+
+class StatisticalPooling(nn.Module):
+
+	def forward(self, x):
+		# x is 3-D with axis [B, feats, T]
+		mu = x.mean(dim=2, keepdim=True)
+		std = x.std(dim=2, keepdim=True)
+		return torch.cat((mu, std), dim=1)
+
+class TDNN(nn.Module):
+	# Architecture taken from https://github.com/santi-pdp/pase/blob/master/pase/models/tdnn.py
+	def __init__(self, n_z=256, nh=1, n_h=512, proj_size=0, ncoef=23, sm_type='none', dropout_prob=0.25, delta=False):
+		super(TDNN, self).__init__()
+		self.delta=delta
+		self.model = nn.Sequential( nn.Conv1d(3*ncoef if delta else ncoef, 512, 5, padding=2),
+			nn.BatchNorm1d(512),
+			nn.ReLU(inplace=True),
+			nn.Conv1d(512, 512, 3, dilation=2, padding=2),
+			nn.BatchNorm1d(512),
+			nn.ReLU(inplace=True),
+			nn.Conv1d(512, 512, 3, dilation=3, padding=3),
+			nn.BatchNorm1d(512),
+			nn.ReLU(inplace=True),
+			nn.Conv1d(512, 512, 1),
+			nn.BatchNorm1d(512),
+			nn.ReLU(inplace=True),
+			nn.Conv1d(512, 1500, 1),
+			nn.BatchNorm1d(1500),
+			nn.ReLU(inplace=True),
+			StatisticalPooling(),
+			nn.Conv1d(3000, 512, 1),
+			nn.BatchNorm1d(512),
+			nn.ReLU(inplace=True),
+			nn.Conv1d(512, 512, 1),
+			nn.BatchNorm1d(512),
+			nn.ReLU(inplace=True),
+			nn.Conv1d(512, n_z, 1) )
+
+		self.classifier = self.make_bin_layers(n_in=2*n_z, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
+
+		if proj_size>0 and sm_type!='none':
+			if sm_type=='softmax':
+				self.out_proj=Softmax(input_features=n_z, output_features=proj_size)
+			elif sm_type=='am_softmax':
+				self.out_proj=AMSoftmax(input_features=n_z, output_features=proj_size)
+			else:
+				raise NotImplementedError
+
+		# get output features at affine after stats pooling
+		# self.model = nn.Sequential(*list(self.model.children())[:-5])
+
+	def make_bin_layers(self, n_in, n_h_layers, h_size, dropout_p):
+
+		classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
+
+		for i in range(n_h_layers-1):
+			classifier.append(nn.Linear(h_size, h_size))
+			classifier.append(nn.LeakyReLU(0.1))
+
+		classifier.append(nn.Dropout(p=dropout_p))
+		classifier.append(nn.Linear(h_size, 1))
+		classifier.append(nn.Sigmoid())
+
+		return classifier
+
+	def forward(self, x, inner=False):
+		if self.delta:
+			x=x.view(x.size(0), x.size(1)*x.size(2), x.size(3))
+		return self.model(x.squeeze(1)).squeeze()
+
+	def forward_bin(self, z):
+
+		for l in self.classifier:
+			z = l(z)
+		
+		return z
+
+	def initialize_params(self):
+
+		for layer in self.modules():
+			if isinstance(layer, torch.nn.Conv2d) or isinstance(layer, torch.nn.Conv1d):
+				init.kaiming_normal_(layer.weight, a=0, mode='fan_out')
+			elif isinstance(layer, torch.nn.Linear):
+				init.kaiming_uniform_(layer.weight)
+			elif isinstance(layer, torch.nn.BatchNorm2d) or isinstance(layer, torch.nn.BatchNorm1d):
+				layer.weight.data.fill_(1)
+				layer.bias.data.zero_()

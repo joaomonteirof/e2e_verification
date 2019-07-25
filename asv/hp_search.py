@@ -36,7 +36,7 @@ parser.add_argument('--valid-batch-size', type=int, default=64, metavar='N', hel
 parser.add_argument('--epochs', type=int, default=200, metavar='N', help='number of epochs to train (default: 200)')
 parser.add_argument('--budget', type=int, default=30, metavar='N', help='Maximum training runs')
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
-parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large', 'all'], default='resnet_lstm', help='Model arch according to input type')
+parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large', 'TDNN', 'all'], default='resnet_lstm', help='Model arch according to input type')
 parser.add_argument('--softmax', choices=['softmax', 'am_softmax'], default='softmax', help='Softmax type')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
 parser.add_argument('--hp-workers', type=int, help='number of search workers', default=1)
@@ -68,6 +68,8 @@ def train(lr, l2, momentum, patience, latent_size, n_hidden, hidden_size, n_fram
 		model = model_.ResNet_small(n_z=int(latent_size), nh=int(n_hidden), n_h=int(hidden_size), proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)
 	elif args.model == 'resnet_large':
 		model = model_.ResNet_large(n_z=int(latent_size), nh=int(n_hidden), n_h=int(hidden_size), proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)
+	elif args.model == 'TDNN':
+		model = model_.TDNN(n_z=int(latent_size), nh=int(n_hidden), n_h=int(hidden_size), proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)
 
 	if cuda:
 		model=model.cuda(device)
@@ -89,7 +91,7 @@ n_hidden=instru.var.Array(1).asfloat().bounded(1, 6)
 hidden_size=instru.var.Array(1).asfloat().bounded(64, 512)
 n_frames=instru.var.Array(1).asfloat().bounded(600, 1000)
 dropout_prob=instru.var.Array(1).asfloat().bounded(0.01, 0.50)
-model=instru.var.OrderedDiscrete(['resnet_mfcc', 'resnet_lstm', 'resnet_stats', 'resnet_small']) if args.model=='all' else args.model
+model=instru.var.OrderedDiscrete(['resnet_mfcc', 'resnet_lstm', 'resnet_stats', 'resnet_small', 'TDNN']) if args.model=='all' else args.model
 ncoef=args.ncoef
 epochs=args.epochs
 batch_size=args.batch_size
