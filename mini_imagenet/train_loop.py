@@ -162,8 +162,8 @@ class TrainLoop(object):
 
 		x, y = batch
 
-		x = x.to(self.device)
-		y = y.to(self.device)
+		x = x.to(self.device, non_blocking=True)
+		y = y.to(self.device, non_blocking=True)
 
 		embeddings = self.model.forward(x)
 
@@ -173,7 +173,7 @@ class TrainLoop(object):
 
 		# Get all triplets now for bin classifier
 		triplets_idx = self.harvester.get_triplets(embeddings_norm.detach(), y)
-		triplets_idx = triplets_idx.to(self.device)
+		triplets_idx = triplets_idx.to(self.device, non_blocking=True)
 
 		emb_a = torch.index_select(embeddings, 0, triplets_idx[:, 0])
 		emb_p = torch.index_select(embeddings, 0, triplets_idx[:, 1])
@@ -184,7 +184,7 @@ class TrainLoop(object):
 		emb_ = torch.cat([emb_ap, emb_an],0)
 
 		y_ = torch.cat([torch.ones(emb_ap.size(0)), torch.zeros(emb_an.size(0))],0)
-		y_ = y_.to(self.device)
+		y_ = y_.to(self.device, non_blocking=True)
 
 		pred_bin = self.model.forward_bin(emb_).squeeze()
 
@@ -204,7 +204,7 @@ class TrainLoop(object):
 
 		x, y = batch
 
-		x, y = x.to(self.device), y.to(self.device).squeeze()
+		x, y = x.to(self.device, non_blocking=True), y.to(self.device, non_blocking=True).squeeze()
 
 		embeddings = self.model.forward(utt)
 		embeddings_norm = F.normalize(embeddings, p=2, dim=1)
@@ -224,8 +224,8 @@ class TrainLoop(object):
 
 			x, y = batch
 
-			x = x.to(self.device)
-			y = y.to(self.device)
+			x = x.to(self.device, non_blocking=True)
+			y = y.to(self.device, non_blocking=True)
 
 			embeddings = self.model.forward(x)
 
@@ -238,7 +238,7 @@ class TrainLoop(object):
 
 			# Get all triplets now for bin classifier
 			triplets_idx = self.harvester.get_triplets(embeddings_norm.detach(), y)
-			triplets_idx = triplets_idx.to(self.device)
+			triplets_idx = triplets_idx.to(self.device, non_blocking=True)
 
 			emb_a = torch.index_select(embeddings, 0, triplets_idx[:, 0])
 			emb_p = torch.index_select(embeddings, 0, triplets_idx[:, 1])

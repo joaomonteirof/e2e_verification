@@ -183,8 +183,8 @@ class TrainLoop(object):
 		utterances = utterances[:,:,:,:ridx]
 
 		if self.cuda_mode:
-			utterances = utterances.to(self.device)
-			y = y.to(self.device)
+			utterances = utterances.to(self.device, non_blocking=True)
+			y = y.to(self.device, non_blocking=True)
 
 		embeddings = self.model.forward(utterances)
 		embeddings_norm = F.normalize(embeddings, p=2, dim=1)
@@ -263,15 +263,15 @@ class TrainLoop(object):
 			utterances = utterances[:,:,:,:ridx]
 
 			if self.cuda_mode:
-				utterances = utterances.to(self.device)
-				y = y.to(self.device)
+				utterances = utterances.to(self.device, non_blocking=True)
+				y = y.to(self.device, non_blocking=True)
 
 			embeddings = self.model.forward(utterances)
 			embeddings_norm = F.normalize(embeddings, p=2, dim=1)
 
 			# Get all triplets now for bin classifier
 			triplets_idx = self.harvester.get_triplets(embeddings_norm.detach(), y)
-			triplets_idx = triplets_idx.to(self.device)
+			triplets_idx = triplets_idx.to(self.device, non_blocking=True)
 
 			emb_a = torch.index_select(embeddings, 0, triplets_idx[:, 0])
 			emb_p = torch.index_select(embeddings, 0, triplets_idx[:, 1])

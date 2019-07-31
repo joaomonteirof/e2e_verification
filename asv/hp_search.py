@@ -53,10 +53,10 @@ def train(lr, l2, momentum, patience, latent_size, n_hidden, hidden_size, n_fram
 		device=get_freer_gpu()
 
 	train_dataset=Loader(hdf5_name=train_hdf_file, max_nb_frames=int(n_frames))
-	train_loader=torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=n_workers, worker_init_fn=set_np_randomseed)
+	train_loader=torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=n_workers, worker_init_fn=set_np_randomseed, pin_memory=True)
 
 	valid_dataset = Loader(hdf5_name = valid_hdf_file, max_nb_frames = int(n_frames))
-	valid_loader=torch.utils.data.DataLoader(valid_dataset, batch_size=valid_batch_size, shuffle=False, num_workers=n_workers, worker_init_fn=set_np_randomseed)
+	valid_loader=torch.utils.data.DataLoader(valid_dataset, batch_size=valid_batch_size, shuffle=False, num_workers=n_workers, worker_init_fn=set_np_randomseed, pin_memory=True)
 
 	if args.model == 'resnet_stats':
 		model = model_.ResNet_stats(n_z=int(latent_size), nh=int(n_hidden), n_h=int(hidden_size), proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)

@@ -30,8 +30,8 @@ parser = argparse.ArgumentParser(description='Cifar10 Classification')
 parser.add_argument('--batch-size', type=int, default=24, metavar='N', help='input batch size for training (default: 24)')
 parser.add_argument('--valid-batch-size', type=int, default=16, metavar='N', help='input batch size for testing (default: 16)')
 parser.add_argument('--epochs', type=int, default=200, metavar='N', help='number of epochs to train (default: 200)')
-parser.add_argument('--data-path', type=str, default='./data/cifar10_train_data.hdf', metavar='Path', help='Path to data')
-parser.add_argument('--valid-data-path', type=str, default='./data/cifar10_test_data.hdf', metavar='Path', help='Path to data')
+parser.add_argument('--data-path', type=str, default='./data_train', metavar='Path', help='Path to data')
+parser.add_argument('--valid-data-path', type=str, default='./data_val', metavar='Path', help='Path to data')
 parser.add_argument('--n-workers', type=int, default=4, metavar='N', help='Workers for data loading. Default is 4')
 parser.add_argument('--budget', type=int, default=100, metavar='N', help='Maximum training runs')
 parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
@@ -49,11 +49,11 @@ def train(lr, l2, momentum, patience, swap, model, n_hidden, hidden_size, dropou
 
 	#trainset = Loader(data_path)
 	trainset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
-	train_loader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=False, num_workers=n_workers, worker_init_fn=set_np_randomseed)
+	train_loader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=False, num_workers=n_workers, worker_init_fn=set_np_randomseed, pin_memory=True)
 
 	#validset = Loader(valid_data_path)
 	validset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
-	valid_loader = torch.utils.data.DataLoader(validset, batch_size=valid_batch_size, shuffle=False, num_workers=n_workers)
+	valid_loader = torch.utils.data.DataLoader(validset, batch_size=valid_batch_size, shuffle=False, num_workers=n_workers, pin_memory=True)
 
 	if model == 'vgg':
 		model_ = vgg.VGG('VGG16', nh=int(n_hidden), n_h=int(hidden_size), dropout_prob=dropout_prob, sm_type=softmax)
@@ -65,6 +65,7 @@ def train(lr, l2, momentum, patience, swap, model, n_hidden, hidden_size, dropou
 	if args.cuda:
 		device = get_freer_gpu()
 		model_ = model_.cuda(device)
+		torch.backends.cudnn.benchmark=True
 
 	optimizer = optim.SGD(model_.parameters(), lr=lr, weight_decay=l2, momentum=momentum)
 

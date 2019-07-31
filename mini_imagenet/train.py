@@ -40,8 +40,8 @@ parser.add_argument('--patience', type=int, default=10, metavar='S', help='Epoch
 parser.add_argument('--momentum', type=float, default=0.9, metavar='lambda', help='Momentum (default: 0.9)')
 parser.add_argument('--checkpoint-epoch', type=int, default=None, metavar='N', help='epoch to load for checkpointing. If None, training starts from scratch')
 parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
-parser.add_argument('--data-path', type=str, default='./data/', metavar='Path', help='Path to data')
-parser.add_argument('--valid-data-path', type=str, default='./data/', metavar='Path', help='Path to data')
+parser.add_argument('--data-path', type=str, default='./data_train', metavar='Path', help='Path to data')
+parser.add_argument('--valid-data-path', type=str, default='./data_val', metavar='Path', help='Path to data')
 parser.add_argument('--seed', type=int, default=42, metavar='S', help='random seed (default: 42)')
 parser.add_argument('--n-workers', type=int, default=4, metavar='N', help='Workers for data loading. Default is 4')
 parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
@@ -64,11 +64,11 @@ transform_test = transforms.Compose([transforms.ToTensor(), transforms.Normalize
 
 #trainset = Loader(args.data_path)
 trainset = datasets.ImageFolder(args.data_path, transform=transform_train)
-train_loader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=args.n_workers, worker_init_fn=set_np_randomseed)
+train_loader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=args.n_workers, worker_init_fn=set_np_randomseed, pin_memory=True)
 
 #validset = Loader(args.valid_data_path)
 validset = datasets.ImageFolder(args.valid_data_path, transform=transform_test)
-valid_loader = torch.utils.data.DataLoader(validset, batch_size=args.valid_batch_size, shuffle=True, num_workers=args.n_workers)
+valid_loader = torch.utils.data.DataLoader(validset, batch_size=args.valid_batch_size, shuffle=True, num_workers=args.n_workers, pin_memory=True)
 
 if args.model == 'vgg':
 	model = vgg.VGG('VGG16', nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax)
