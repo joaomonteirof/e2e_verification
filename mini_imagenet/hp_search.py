@@ -99,7 +99,7 @@ def train(lr, l2, momentum, patience, swap, model, n_hidden, hidden_size, dropou
 			print('Softmax Mode is: {}'.format(softmax))
 			print(' ')
 
-			return cost[0]
+			return np.min(cost)
 		except:
 			pass
 
