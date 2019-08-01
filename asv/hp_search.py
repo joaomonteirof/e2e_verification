@@ -82,15 +82,15 @@ def train(lr, l2, momentum, patience, latent_size, n_hidden, hidden_size, n_fram
 
 	return trainer.train(n_epochs=epochs)
 
-lr=instru.var.Array(1).asfloat().bounded(1, 4).exponentiated(base=10, coeff=-1)
-l2=instru.var.Array(1).asfloat().bounded(1, 5).exponentiated(base=10, coeff=-1)
-momentum=instru.var.Array(1).asfloat().bounded(0.10, 0.95)
-patience=instru.var.Array(1).asfloat().bounded(1, 100)
-latent_size=instru.var.Array(1).asfloat().bounded(64, 512)
-n_hidden=instru.var.Array(1).asfloat().bounded(1, 6)
-hidden_size=instru.var.Array(1).asfloat().bounded(64, 512)
-n_frames=instru.var.Array(1).asfloat().bounded(600, 1000)
-dropout_prob=instru.var.Array(1).asfloat().bounded(0.01, 0.50)
+lr=instru.var.OrderedDiscrete([0.1, 0.01, 0.001, 0.0001, 0.00001])
+l2=instru.var.OrderedDiscrete([0.001, 0.0005, 0.0001, 0.00005, 0.00001])
+momentum=instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.7, 0.9])
+patience=instru.var.OrderedDiscrete([2, 5, 8, 10])
+latent_size=instru.var.OrderedDiscrete([64, 128, 256, 512])
+n_hidden=instru.var.OrderedDiscrete([1, 2, 3, 4, 5])
+hidden_size=instru.var.OrderedDiscrete([64, 128, 256, 512])
+n_frames=instru.var.OrderedDiscrete([300, 400, 500, 600, 800])
+dropout_prob=instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.7])
 model=instru.var.OrderedDiscrete(['resnet_mfcc', 'resnet_lstm', 'resnet_stats', 'resnet_small', 'TDNN']) if args.model=='all' else args.model
 ncoef=args.ncoef
 epochs=args.epochs
