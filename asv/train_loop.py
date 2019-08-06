@@ -5,14 +5,14 @@ import numpy as np
 
 import os
 from tqdm import tqdm
-
+from utils.losses import LabelSmoothingLoss
 from utils.harvester import AllTripletSelector
-
+from utils.warmup_scheduler import GradualWarmupScheduler
 from utils.utils import compute_eer
 
 class TrainLoop(object):
 
-	def __init__(self, model, optimizer, train_loader, valid_loader, patience, n_views=2, verbose=-1, device=0, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True, logger=None):
+	def __init__(self, model, optimizer, train_loader, valid_loader, patience, label_smoothing, warmup_its, verbose=-1, device=0, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True, logger=None):
 		if checkpoint_path is None:
 			# Save to current directory
 			self.checkpoint_path = os.getcwd()
@@ -30,7 +30,6 @@ class TrainLoop(object):
 		self.valid_loader = valid_loader
 		self.total_iters = 0
 		self.cur_epoch = 0
-		self.n_views = n_views
 		self.harvester = AllTripletSelector()
 		self.verbose = verbose
 		self.save_cp = save_cp
@@ -38,15 +37,24 @@ class TrainLoop(object):
 		self.logger = logger
 		self.history = {'train_loss': [], 'train_loss_batch': [], 'ce_loss': [], 'ce_loss_batch': [], 'bin_loss': [], 'bin_loss_batch': []}
 
+		if label_smoothing>0.0:
+			self.ce_criterion = LabelSmoothingLoss(label_smoothing, lbl_set_size=train_loader.dataset.n_speakers)
+		else:
+			self.ce_criterion = torch.nn.CrossEntropyLoss()
+
+		its_per_epoch = len(train_loader.dataset)//(train_loader.batch_size) + 1 if len(train_loader.dataset)%(train_loader.batch_size)>0 else len(train_loader.dataset)//(train_loader.batch_size)
+
 		if self.valid_loader is not None:
 			self.history['e2e_eer'] = []
 			self.history['cos_eer'] = []
-			self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, factor=0.5, patience=patience, verbose=True if self.verbose>0 else False, threshold=1e-4, min_lr=1e-7)
+			self.after_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, factor=0.5, patience=patience*(1+its_per_epoch), verbose=True if self.verbose>0 else False, threshold=1e-4, min_lr=1e-7)
 		else:
-			self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[20, 100, 200, 300, 400], gamma=0.1)
+			self.after_scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[20, 100, 200, 300, 400]*(1+its_per_epoch), gamma=0.1)
 
 		if checkpoint_epoch is not None:
 			self.load_checkpoint(self.save_epoch_fmt.format(checkpoint_epoch))
+
+		self.scheduler = GradualWarmupScheduler(self.optimizer, total_epoch=warmup_its, multiplier=1.01, after_scheduler=self.after_scheduler)
 
 	def train(self, n_epochs=1, save_every=1):
 
@@ -71,7 +79,13 @@ class TrainLoop(object):
 					self.history['train_loss_batch'].append(ce)
 					ce_epoch+=ce
 					if self.logger:
-						self.logger.add_scalar('Train/Cross entropy', ce, self.total_iters-1)
+						self.logger.add_scalar('Train/Cross entropy', ce, self.total_iters)
+						self.logger.add_scalar('Info/LR', self.optimizer.param_groups[0]['lr'], self.total_iters)
+
+					if self.valid_loader is not None:
+						self.scheduler.step(epoch=self.total_iters, metrics=np.min([self.history['e2e_eer'][-1], self.history['cos_eer'][-1]]) if self.cur_epoch>0 else np.inf)
+					else:
+						self.scheduler.step(epoch=self.total_iters)
 					self.total_iters += 1
 
 				self.history['train_loss'].append(ce_epoch/(t+1))
@@ -93,9 +107,14 @@ class TrainLoop(object):
 					ce_loss_epoch+=ce_loss
 					bin_loss_epoch+=bin_loss
 					if self.logger:
-						self.logger.add_scalar('Train/Total train Loss', train_loss, self.total_iters-1)
-						self.logger.add_scalar('Train/Binary class. Loss', bin_loss, self.total_iters-1)
-						self.logger.add_scalar('Train/Cross enropy', ce_loss, self.total_iters-1)
+						self.logger.add_scalar('Train/Total train Loss', train_loss, self.total_iters)
+						self.logger.add_scalar('Train/Binary class. Loss', bin_loss, self.total_iters)
+						self.logger.add_scalar('Train/Cross enropy', ce_loss, self.total_iters)
+						self.logger.add_scalar('Info/LR', self.optimizer.param_groups[0]['lr'], self.total_iters)
+					if self.valid_loader is not None:
+						self.scheduler.step(epoch=self.total_iters, metrics=np.min([self.history['e2e_eer'][-1], self.history['cos_eer'][-1]]) if self.cur_epoch>0 else np.inf)
+					else:
+						self.scheduler.step(epoch=self.total_iters)
 					self.total_iters += 1
 
 				self.history['train_loss'].append(train_loss_epoch/(t+1))
@@ -135,17 +154,19 @@ class TrainLoop(object):
 					self.logger.add_scalar('Valid/Best Cosine EER', np.min(self.history['cos_eer']), self.total_iters-1)
 					self.logger.add_pr_curve('E2E ROC', labels=labels, predictions=e2e_scores, global_step=self.total_iters-1)
 					self.logger.add_pr_curve('Cosine ROC', labels=labels, predictions=cos_scores, global_step=self.total_iters-1)
+
+					if emb.shape[0]>20000:
+						idxs = np.random.choice(np.arange(emb.shape[0]), size=20000, replace=False)
+
+					emb, y_ = emb[idxs, :], y_[idxs]
+
 					self.logger.add_embedding(mat=emb, metadata=list(y_), global_step=self.total_iters-1)
+					self.logger.add_histogram('Valid/Embeddings', values=emb, global_step=self.total_iters-1)
 
 				if self.verbose>0:
 					print(' ')
 					print('Current e2e EER, best e2e EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['e2e_eer'][-1], np.min(self.history['e2e_eer']), 1+np.argmin(self.history['e2e_eer'])))
 					print('Current cos EER, best cos EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['cos_eer'][-1], np.min(self.history['cos_eer']), 1+np.argmin(self.history['cos_eer'])))
-
-				self.scheduler.step(np.min([self.history['e2e_eer'][-1], self.history['cos_eer'][-1]]))
-
-			else:
-				self.scheduler.step()
 
 			if self.verbose>0:
 				print('Current LR: {}'.format(self.optimizer.param_groups[0]['lr']))
@@ -186,13 +207,13 @@ class TrainLoop(object):
 			utterances = utterances.to(self.device, non_blocking=True)
 			y = y.to(self.device, non_blocking=True)
 
-		embeddings = self.model.forward(utterances)
-		embeddings_norm = F.normalize(embeddings, p=2, dim=1)
+		out, embeddings = self.model.forward(utterances)
+		out_norm = F.normalize(out, p=2, dim=1)
 
-		ce_loss = F.cross_entropy(self.model.out_proj(embeddings_norm, y), y)
+		ce_loss = self.ce_criterion(self.model.out_proj(out_norm, y), y)
 
 		# Get all triplets now for bin classifier
-		triplets_idx = self.harvester.get_triplets(embeddings_norm.detach(), y)
+		triplets_idx = self.harvester.get_triplets(out_norm.detach(), y)
 
 		if self.cuda_mode:
 			triplets_idx = triplets_idx.cuda(self.device)
@@ -220,7 +241,6 @@ class TrainLoop(object):
 
 		return loss.item(), ce_loss.item(), loss_bin.item()
 
-
 	def pretrain_step(self, batch):
 
 		self.model.train()
@@ -237,11 +257,10 @@ class TrainLoop(object):
 		if self.cuda_mode:
 			utt, y = utt.cuda(self.device), y.cuda(self.device).squeeze()
 
-		embeddings = self.model.forward(utt)
+		out, embeddings = self.model.forward(utt)
+		out_norm = F.normalize(out, p=2, dim=1)
 
-		embeddings_norm = F.normalize(embeddings, p=2, dim=1)
-
-		loss = F.cross_entropy(self.model.out_proj(embeddings_norm, y), y)
+		loss = F.self.ce_criterion(self.model.out_proj(out_norm, y), y)
 
 		loss.backward()
 		self.optimizer.step()
@@ -266,11 +285,11 @@ class TrainLoop(object):
 				utterances = utterances.to(self.device, non_blocking=True)
 				y = y.to(self.device, non_blocking=True)
 
-			embeddings = self.model.forward(utterances)
-			embeddings_norm = F.normalize(embeddings, p=2, dim=1)
+			out, embeddings = self.model.forward(utterances)
+			out_norm = F.normalize(out, p=2, dim=1)
 
 			# Get all triplets now for bin classifier
-			triplets_idx = self.harvester.get_triplets(embeddings_norm.detach(), y)
+			triplets_idx = self.harvester.get_triplets(out_norm.detach(), y)
 			triplets_idx = triplets_idx.to(self.device, non_blocking=True)
 
 			emb_a = torch.index_select(embeddings, 0, triplets_idx[:, 0])
@@ -294,7 +313,7 @@ class TrainLoop(object):
 			print('Checkpointing...')
 		ckpt = {'model_state': self.model.state_dict(),
 		'optimizer_state': self.optimizer.state_dict(),
-		'scheduler_state': self.scheduler.state_dict(),
+		'scheduler_state': self.after_scheduler.state_dict(),
 		'history': self.history,
 		'total_iters': self.total_iters,
 		'cur_epoch': self.cur_epoch}
@@ -313,7 +332,7 @@ class TrainLoop(object):
 			# Load optimizer state
 			self.optimizer.load_state_dict(ckpt['optimizer_state'])
 			# Load scheduler state
-			self.scheduler.load_state_dict(ckpt['scheduler_state'])
+			self.after_scheduler.load_state_dict(ckpt['scheduler_state'])
 			# Load history
 			self.history = ckpt['history']
 			self.total_iters = ckpt['total_iters']

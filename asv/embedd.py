@@ -36,6 +36,7 @@ if __name__ == '__main__':
 	parser.add_argument('--latent-size', type=int, default=200, metavar='S', help='latent layer dimension (default: 200)')
 	parser.add_argument('--ncoef', type=int, default=23, metavar='N', help='number of MFCCs (default: 23)')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
+	parser.add_argument('--inner', action='store_true', default=True, help='Inner layer as embedding')
 	args = parser.parse_args()
 	args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
@@ -95,13 +96,15 @@ if __name__ == '__main__':
 						feats = feats.cuda(device)
 						model = model.cuda(device)
 
-					emb = model.forward(feats)
+					emb_2 = model.forward(feats)
 
 				except:
 					feats = feats.cpu()
 					model = model.cpu()
 
-					emb = model.forward(feats)
+					emb_2 = model.forward(feats)
+
+				emb = emb_2[1] if args.inner else emb_2[0]
 
 				embeddings[utt] = emb.detach().cpu().numpy().squeeze()
 

@@ -150,7 +150,7 @@ class ResNet_stats(nn.Module):
 
 		self.fc_mu = nn.Linear(512, n_z)
 
-		self.classifier = self.make_bin_layers(n_in=2*n_z, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
+		self.classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
 
 		self.initialize_params()
 
@@ -208,7 +208,7 @@ class ResNet_stats(nn.Module):
 		fc = F.relu(self.lbn(self.fc(x)))
 		mu = self.fc_mu(fc)
 
-		return mu
+		return mu, fc
 
 	def forward_bin(self, z):
 
@@ -236,7 +236,7 @@ class ResNet_mfcc(nn.Module):
 
 		self.fc_mu = nn.Linear(512, n_z)
 
-		self.classifier = self.make_bin_layers(n_in=2*n_z, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
+		self.classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
 
 		self.initialize_params()
 
@@ -297,7 +297,7 @@ class ResNet_mfcc(nn.Module):
 		fc = F.relu(self.lbn(self.fc(stats)))
 
 		mu = self.fc_mu(fc)
-		return mu
+		return mu, fc
 
 	def forward_bin(self, z):
 
@@ -327,7 +327,7 @@ class ResNet_lstm(nn.Module):
 
 		self.fc_mu = nn.Linear(512, n_z)
 
-		self.classifier = self.make_bin_layers(n_in=2*n_z, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
+		self.classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
 
 		self.initialize_params()
 
@@ -400,7 +400,7 @@ class ResNet_lstm(nn.Module):
 
 		fc = F.relu(self.lbn(self.fc(x)))
 		emb = self.fc_mu(fc)
-		return emb
+		return emb, fc
 
 	def forward_bin(self, z):
 
@@ -428,7 +428,7 @@ class ResNet_small(nn.Module):
 
 		self.fc_mu = nn.Linear(512, n_z)
 
-		self.classifier = self.make_bin_layers(n_in=2*n_z, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
+		self.classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
 
 		self.initialize_params()
 
@@ -490,7 +490,7 @@ class ResNet_small(nn.Module):
 		fc = F.relu(self.lbn(self.fc(stats)))
 
 		mu = self.fc_mu(fc)
-		return mu
+		return mu, fc
 
 	def forward_bin(self, z):
 
@@ -518,7 +518,7 @@ class ResNet_large(nn.Module):
 
 		self.fc_mu = nn.Linear(512, n_z)
 
-		self.classifier = self.make_bin_layers(n_in=2*n_z, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
+		self.classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
 
 		self.initialize_params()
 
@@ -579,7 +579,7 @@ class ResNet_large(nn.Module):
 		fc = F.relu(self.lbn(self.fc(stats)))
 
 		mu = self.fc_mu(fc)
-		return mu
+		return mu, fc
 
 	def forward_bin(self, z):
 
@@ -615,17 +615,20 @@ class TDNN(nn.Module):
 			nn.ReLU(inplace=True),
 			nn.Conv1d(512, 1500, 1),
 			nn.BatchNorm1d(1500),
-			nn.ReLU(inplace=True),
-			StatisticalPooling(),
-			nn.Conv1d(3000, 512, 1),
+			nn.ReLU(inplace=True))
+
+		self.pooling = StatisticalPooling()
+
+		self.post_pooling_1 = nn.Sequential(nn.Conv1d(3000, 512, 1),
 			nn.BatchNorm1d(512),
-			nn.ReLU(inplace=True),
-			nn.Conv1d(512, 512, 1),
+			nn.ReLU(inplace=True) )
+
+		self.post_pooling_2 = nn.Sequential(nn.Conv1d(512, 512, 1),
 			nn.BatchNorm1d(512),
 			nn.ReLU(inplace=True),
 			nn.Conv1d(512, n_z, 1) )
 
-		self.classifier = self.make_bin_layers(n_in=2*n_z, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
+		self.classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
 
 		if proj_size>0 and sm_type!='none':
 			if sm_type=='softmax':
@@ -652,10 +655,16 @@ class TDNN(nn.Module):
 
 		return classifier
 
-	def forward(self, x, inner=False):
+	def forward(self, x):
 		if self.delta:
 			x=x.view(x.size(0), x.size(1)*x.size(2), x.size(3))
-		return self.model(x.squeeze(1)).squeeze()
+
+		x = self.model(x.squeeze(1))
+		x = self.pooling(x)
+		fc = self.post_pooling_1(x)
+		x = self.post_pooling_2(fc)
+
+		return x.squeeze(-1), fc.squeeze(-1)
 
 	def forward_bin(self, z):
 

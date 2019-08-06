@@ -41,6 +41,7 @@ if __name__ == '__main__':
 	parser.add_argument('--max-nscores', type=int, default=200, metavar='S', help='Max. number of test scores to consider (default: 200)')
 	parser.add_argument('--remove-outliers', action='store_true', default=False, help='Enables outliers removal')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
+	parser.add_argument('--inner', action='store_true', default=True, help='Inner layer as embedding')
 	args = parser.parse_args()
 	args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
@@ -156,10 +157,10 @@ if __name__ == '__main__':
 				if args.cuda:
 					test_utt_data = test_utt_data.cuda(device)
 
-				if unlab_emb is None:
-					emb_test = model.forward(test_utt_data).detach()
-				else:
-					emb_test = model.forward(test_utt_data).detach() - unlab_emb
+				emb_test = model.forward(test_utt_data)[1].detach() if args.inner else model.forward(test_utt_data)[0].detach()
+
+				if unlab_emb is not None:
+					emb_test -= unlab_emb
 
 				mem_embeddings_test[test_utt] = emb_test
 
@@ -183,7 +184,7 @@ if __name__ == '__main__':
 					if args.cuda:
 						enroll_utt_data = enroll_utt_data.to(device)
 
-					emb_enroll = model.forward(enroll_utt_data).detach()
+					emb_enroll = model.forward[1](enroll_utt_data).detach() if args.inner else model.forward[0](enroll_utt_data).detach()
 
 					if unlab_emb is not None:
 						emb_enroll -= unlab_emb

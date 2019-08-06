@@ -37,6 +37,7 @@ if __name__ == '__main__':
 	parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
 	parser.add_argument('--out-path', type=str, default='./', metavar='Path', help='Path for saving computed scores')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
+	parser.add_argument('--inner', action='store_true', default=True, help='Inner layer as embedding')
 	args = parser.parse_args()
 	args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
@@ -115,7 +116,7 @@ if __name__ == '__main__':
 				if args.cuda:
 					enroll_utt_data = enroll_utt_data.cuda(device)
 
-				emb_enroll = model.forward(enroll_utt_data).detach()
+				emb_enroll = model.forward(enroll_utt_data)[1].detach() if args.inner else model.forward(enroll_utt_data)[0].detach()
 				mem_embeddings[enroll_utt] = emb_enroll
 
 
@@ -132,7 +133,7 @@ if __name__ == '__main__':
 					enroll_utt_data = enroll_utt_data.cuda(device)
 					test_utt_data = test_utt_data.cuda(device)
 
-				emb_test = model.forward(test_utt_data).detach()
+				emb_test = model.forward(test_utt_data)[1].detach() if args.inner else model.forward(test_utt_data)[0].detach()
 				mem_embeddings[test_utt] = emb_test
 
 			e2e_scores.append( model.forward_bin(torch.cat([emb_enroll, emb_test],1)).squeeze().item() )
