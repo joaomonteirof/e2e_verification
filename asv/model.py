@@ -19,12 +19,8 @@ class SelfAttention(nn.Module):
 		batch_size = inputs.size(0)
 		weights = torch.bmm(inputs, self.att_weights.permute(1, 0).unsqueeze(0).repeat(batch_size, 1, 1))
 
-		if inputs.size(0)==1:
-			attentions = F.softmax(torch.tanh(weights), dim=1)
-			weighted = torch.mul(inputs, attentions.expand_as(inputs))
-		else:
-			attentions = F.softmax(torch.tanh(weights.squeeze()),dim=1)
-			weighted = torch.mul(inputs, attentions.unsqueeze(2).expand_as(inputs))
+		attentions = F.softmax(torch.tanh(weights.squeeze(2)),dim=1)
+		weighted = torch.mul(inputs, attentions.unsqueeze(2).expand_as(inputs))
 
 		noise = 1e-5*torch.randn(weighted.size())
 
