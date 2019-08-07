@@ -160,6 +160,7 @@ class TrainLoop(object):
 					self.logger.add_scalar('Valid/Best Fus EER', np.min(self.history['fus_eer']), self.total_iters-1)
 					self.logger.add_pr_curve('E2E ROC', labels=labels, predictions=e2e_scores, global_step=self.total_iters-1)
 					self.logger.add_pr_curve('Cosine ROC', labels=labels, predictions=cos_scores, global_step=self.total_iters-1)
+					self.logger.add_pr_curve('Fus ROC', labels=labels, predictions=fus_scores, global_step=self.total_iters-1)
 
 					if emb.shape[0]>20000:
 						idxs = np.random.choice(np.arange(emb.shape[0]), size=20000, replace=False)
@@ -173,6 +174,7 @@ class TrainLoop(object):
 					print(' ')
 					print('Current e2e EER, best e2e EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['e2e_eer'][-1], np.min(self.history['e2e_eer']), 1+np.argmin(self.history['e2e_eer'])))
 					print('Current cos EER, best cos EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['cos_eer'][-1], np.min(self.history['cos_eer']), 1+np.argmin(self.history['cos_eer'])))
+					print('Current fus EER, best fus EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['fus_eer'][-1], np.min(self.history['fus_eer']), 1+np.argmin(self.history['fus_eer'])))
 
 			if self.verbose>0:
 				print('Current LR: {}'.format(self.optimizer.param_groups[0]['lr']))
@@ -191,6 +193,7 @@ class TrainLoop(object):
 			if self.verbose>0:
 				print('Best e2e eer and corresponding epoch: {:0.4f}, {}'.format(np.min(self.history['e2e_eer']), 1+np.argmin(self.history['e2e_eer'])))
 				print('Best cos eer and corresponding epoch: {:0.4f}, {}'.format(np.min(self.history['cos_eer']), 1+np.argmin(self.history['cos_eer'])))
+				print('Best fus eer and corresponding epoch: {:0.4f}, {}'.format(np.min(self.history['fus_eer']), 1+np.argmin(self.history['fus_eer'])))
 
 			return [np.min(self.history['e2e_eer']), np.min(self.history['cos_eer'])]
 		else:
