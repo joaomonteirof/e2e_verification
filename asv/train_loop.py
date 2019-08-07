@@ -47,6 +47,7 @@ class TrainLoop(object):
 		if self.valid_loader is not None:
 			self.history['e2e_eer'] = []
 			self.history['cos_eer'] = []
+			self.history['fus_eer'] = []
 			self.after_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, factor=0.5, patience=patience*(1+its_per_epoch), verbose=True if self.verbose>0 else False, threshold=1e-4, min_lr=1e-7)
 		else:
 			self.after_scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[20, 100, 200, 300, 400]*(1+its_per_epoch), gamma=0.1)
@@ -144,14 +145,19 @@ class TrainLoop(object):
 					except:
 						e2e_scores, cos_scores, labels, emb, y_ = e2e_scores_batch, cos_scores_batch, labels_batch, emb_batch, y_batch
 
+				fus_scores = (e2e_scores + 0.5*(cos_scores+1.))*0.5
+
 				self.history['e2e_eer'].append(compute_eer(labels, e2e_scores))
 				self.history['cos_eer'].append(compute_eer(labels, cos_scores))
+				self.history['fus_eer'].append(compute_eer(labels, fus_scores))
 
 				if self.logger:
 					self.logger.add_scalar('Valid/E2E EER', self.history['e2e_eer'][-1], self.total_iters-1)
 					self.logger.add_scalar('Valid/Best E2E EER', np.min(self.history['e2e_eer']), self.total_iters-1)
 					self.logger.add_scalar('Valid/Cosine EER', self.history['cos_eer'][-1], self.total_iters-1)
 					self.logger.add_scalar('Valid/Best Cosine EER', np.min(self.history['cos_eer']), self.total_iters-1)
+					self.logger.add_scalar('Valid/Fus EER', self.history['fus_eer'][-1], self.total_iters-1)
+					self.logger.add_scalar('Valid/Best Fus EER', np.min(self.history['fus_eer']), self.total_iters-1)
 					self.logger.add_pr_curve('E2E ROC', labels=labels, predictions=e2e_scores, global_step=self.total_iters-1)
 					self.logger.add_pr_curve('Cosine ROC', labels=labels, predictions=cos_scores, global_step=self.total_iters-1)
 
