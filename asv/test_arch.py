@@ -29,7 +29,7 @@ if args.model == 'resnet_stats' or  args.model == 'all':
 	scores_p = model.forward_bin(emb).squeeze()
 	print(scores_p.size())
 if args.model == 'resnet_mfcc' or  args.model == 'all':
-	batch = torch.rand(1, 1, args.ncoef, 200)
+	batch = torch.rand(3, 1, args.ncoef, 200)
 	model = model_.ResNet_mfcc(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=100, ncoef=args.ncoef)
 	print('resnet_mfcc')
 	mu, emb = model.forward(batch)
