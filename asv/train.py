@@ -57,7 +57,7 @@ else:
 	device = torch.device('cpu')
 
 if args.logdir:
-	writer = SummaryWriter(log_dir=args.logdir, comment=args.model)
+	writer = SummaryWriter(log_dir=args.logdir, comment=args.model, purge_step=True)
 else:
 	writer = None
 
@@ -124,6 +124,6 @@ if args.verbose > 0:
 	print(' ')
 
 if writer:
-	writer.add_graph(model=model, input_to_model=torch.rand(2, 1, args.ncoef, 200).to(device), operator_export_type='RAW')
+	writer.add_graph(model=model, input_to_model=torch.rand(2, 1, args.ncoef, 200).to(device))
 
 trainer.train(n_epochs=args.epochs, save_every=args.save_every)
