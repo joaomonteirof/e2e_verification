@@ -94,7 +94,7 @@ if args.pretrained_path is not None:
 		print("Unexpected error:", sys.exc_info()[0])
 		raise
 
-model = model.cuda(device)
+model = model.to(device)
 
 optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.l2)
 
