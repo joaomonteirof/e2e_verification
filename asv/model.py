@@ -585,18 +585,18 @@ class TDNN(nn.Module):
 		self.model = nn.Sequential( nn.Conv1d(3*ncoef if delta else ncoef, 512, 5, padding=2),
 			nn.BatchNorm1d(512),
 			nn.ReLU(inplace=True),
-			nn.Conv1d(512, 512, 3, dilation=2, padding=2),
+			nn.Conv1d(512, 512, 5, padding=2),
 			nn.BatchNorm1d(512),
 			nn.ReLU(inplace=True),
-			nn.Conv1d(512, 512, 3, dilation=3, padding=3),
+			nn.Conv1d(512, 512, 5, padding=3),
 			nn.BatchNorm1d(512),
 			nn.ReLU(inplace=True),
-			nn.Conv1d(512, 512, 1),
+			nn.Conv1d(512, 512, 7),
 			nn.BatchNorm1d(512),
 			nn.ReLU(inplace=True),
 			nn.Conv1d(512, 1500, 1),
 			nn.BatchNorm1d(1500),
-			nn.ReLU(inplace=True))
+			nn.ReLU(inplace=True) )
 
 		self.pooling = StatisticalPooling()
 
