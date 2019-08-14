@@ -55,7 +55,7 @@ class TrainLoop(object):
 		if checkpoint_epoch is not None:
 			self.load_checkpoint(self.save_epoch_fmt.format(checkpoint_epoch))
 
-		self.scheduler = GradualWarmupScheduler(self.optimizer, total_epoch=warmup_its, multiplier=1.01, after_scheduler=self.after_scheduler)
+		self.scheduler = GradualWarmupScheduler(self.optimizer, total_epoch=warmup_its, after_scheduler=self.after_scheduler)
 
 	def train(self, n_epochs=1, save_every=1):
 
