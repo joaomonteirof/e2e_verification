@@ -15,10 +15,9 @@ class GradualWarmupScheduler(_LRScheduler):
 		after_scheduler: after target_epoch, use this scheduler(eg. ReduceLROnPlateau)
 	"""
 
-	def __init__(self, optimizer, total_epoch, multiplier=1, after_scheduler=None):
-		self.multiplier = multiplier
-		if self.multiplier <= 1.:
-			raise ValueError('multiplier should be greater than 1.')
+	def __init__(self, optimizer, total_epoch, init_lr=1e-7, after_scheduler=None):
+		self.init_lr = init_lr
+		assert init_lr>0, 'Initial LR should be greater than 0.'
 		self.total_epoch = total_epoch
 		self.after_scheduler = after_scheduler
 		self.finished = False
@@ -28,19 +27,18 @@ class GradualWarmupScheduler(_LRScheduler):
 		if self.last_epoch > self.total_epoch:
 			if self.after_scheduler:
 				if not self.finished:
-					self.after_scheduler.base_lrs = [base_lr * self.multiplier for base_lr in self.base_lrs]
 					self.finished = True
 				return self.after_scheduler.get_lr()
-			return [base_lr * self.multiplier for base_lr in self.base_lrs]
+			return self.base_lrs
 
-		return [base_lr * ((self.multiplier - 1.) * self.last_epoch / self.total_epoch + 1.) for base_lr in self.base_lrs]
+		return [(((base_lr - self.init_lr)/self.total_epoch) * self.last_epoch + self.init_lr) for base_lr in self.base_lrs]
 
 	def step_ReduceLROnPlateau(self, metrics, epoch=None):
 		if epoch is None:
 			epoch = self.last_epoch + 1
 		self.last_epoch = epoch if epoch != 0 else 1  # ReduceLROnPlateau is called at the end of epoch, whereas others are called at beginning
 		if self.last_epoch <= self.total_epoch:
-			warmup_lr = [base_lr * ((self.multiplier - 1.) * self.last_epoch / self.total_epoch + 1.) for base_lr in self.base_lrs]
+			warmup_lr = [(((base_lr - self.init_lr)/self.total_epoch) * self.last_epoch + self.init_lr) for base_lr in self.base_lrs]
 			for param_group, lr in zip(self.optimizer.param_groups, warmup_lr):
 				param_group['lr'] = lr
 		else:
@@ -51,7 +49,7 @@ class GradualWarmupScheduler(_LRScheduler):
 
 	def step(self, epoch=None, metrics=None):
 		if type(self.after_scheduler) != ReduceLROnPlateau:
-			if self.finished and self.after_scheduler:
+			if (self.finished and self.after_scheduler) or self.total_epoch==0:
 				if epoch is None:
 					self.after_scheduler.step(None)
 				else:
