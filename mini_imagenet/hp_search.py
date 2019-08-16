@@ -47,13 +47,16 @@ def train(lr, l2, momentum, patience, swap, model, n_hidden, hidden_size, dropou
 	transform_train = transforms.Compose([transforms.RandomCrop(32, padding=4), transforms.RandomHorizontalFlip(), transforms.ToTensor(), transforms.Normalize([x / 255 for x in [125.3, 123.0, 113.9]], [x / 255 for x in [63.0, 62.1, 66.7]])])
 	transform_test = transforms.Compose([transforms.ToTensor(), transforms.Normalize([x / 255 for x in [125.3, 123.0, 113.9]], [x / 255 for x in [63.0, 62.1, 66.7]])])
 
-	#trainset = Loader(data_path)
-	trainset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
-	train_loader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=False, num_workers=n_workers, worker_init_fn=set_np_randomseed, pin_memory=True)
+	transform_train = transforms.Compose([transforms.RandomCrop(84, padding=4), transforms.RandomHorizontalFlip(), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+	transform_test = transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
 
-	#validset = Loader(valid_data_path)
-	validset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
-	valid_loader = torch.utils.data.DataLoader(validset, batch_size=valid_batch_size, shuffle=False, num_workers=n_workers, pin_memory=True)
+	#trainset = Loader(args.data_path)
+	trainset = datasets.ImageFolder(args.data_path, transform=transform_train)
+	train_loader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=args.n_workers, worker_init_fn=set_np_randomseed, pin_memory=True)
+
+	#validset = Loader(args.valid_data_path)
+	validset = datasets.ImageFolder(args.valid_data_path, transform=transform_test)
+	valid_loader = torch.utils.data.DataLoader(validset, batch_size=args.valid_batch_size, shuffle=True, num_workers=args.n_workers, pin_memory=True)
 
 	if model == 'vgg':
 		model_ = vgg.VGG('VGG16', nh=int(n_hidden), n_h=int(hidden_size), dropout_prob=dropout_prob, sm_type=softmax)
