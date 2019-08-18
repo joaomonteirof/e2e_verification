@@ -26,7 +26,7 @@ def get_cp_name(dir_):
 	return fname.split('/')[-1]
 
 # Training settings
-parser = argparse.ArgumentParser(description='Cifar10 Classification')
+parser = argparse.ArgumentParser(description='Mini Imagenet Verification')
 parser.add_argument('--batch-size', type=int, default=24, metavar='N', help='input batch size for training (default: 24)')
 parser.add_argument('--valid-batch-size', type=int, default=16, metavar='N', help='input batch size for testing (default: 16)')
 parser.add_argument('--epochs', type=int, default=200, metavar='N', help='number of epochs to train (default: 200)')
@@ -87,7 +87,6 @@ def train(lr, l2, momentum, patience, swap, model, n_hidden, hidden_size, dropou
 			print(' ')
 			print('Best e2e EER in file ' + cp_name + ' was: {}'.format(cost[0]))
 			print('Best cos EER in file ' + cp_name + ' was: {}'.format(cost[1]))
-			print('Best Error Rate in file ' + cp_name + ' was: {}'.format(cost[2]))
 			print(' ')
 			print('With hyperparameters:')
 			print('Selected model: {}'.format(model))
