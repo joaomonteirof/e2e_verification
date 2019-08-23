@@ -236,7 +236,7 @@ class TrainLoop(object):
 		emb_an = torch.cat([emb_a, emb_n],1)
 		emb_ = torch.cat([emb_ap, emb_an],0)
 
-		y_ = torch.cat([torch.rand(emb_ap.size(0))*self.label_smoothing+(1.0-self.disc_label_smoothing), torch.rand(emb_an.size(0))*self.disc_label_smoothing],0) if isinstance(self.ce_criterion, LabelSmoothingLoss) else torch.cat([torch.ones(emb_ap.size(0)), torch.zeros(emb_an.size(0))],0)
+		y_ = torch.cat([torch.rand(emb_ap.size(0))*self.disc_label_smoothing+(1.0-self.disc_label_smoothing), torch.rand(emb_an.size(0))*self.disc_label_smoothing],0) if isinstance(self.ce_criterion, LabelSmoothingLoss) else torch.cat([torch.ones(emb_ap.size(0)), torch.zeros(emb_an.size(0))],0)
 
 		if self.cuda_mode:
 			y_ = y_.cuda(self.device)
