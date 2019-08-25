@@ -170,6 +170,10 @@ class TrainLoop(object):
 
 					self.logger.add_embedding(mat=emb, metadata=list(y_), global_step=self.total_iters-1)
 					self.logger.add_histogram('Valid/Embeddings', values=emb, global_step=self.total_iters-1)
+					self.logger.add_histogram('Valid/COS_Scores', values=cos_scores, global_step=self.total_iters-1)
+					self.logger.add_histogram('Valid/E2E_Scores', values=e2e_scores, global_step=self.total_iters-1)
+					self.logger.add_histogram('Valid/FUS_Scores', values=fus_scores, global_step=self.total_iters-1)
+					self.logger.add_histogram('Valid/Labels', values=labels, global_step=self.total_iters-1)
 
 				if self.verbose>0:
 					print(' ')
