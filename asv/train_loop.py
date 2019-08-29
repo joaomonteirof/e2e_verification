@@ -230,7 +230,7 @@ class TrainLoop(object):
 		triplets_idx = self.harvester.get_triplets(out_norm.detach(), y)
 
 		if self.cuda_mode:
-			triplets_idx = triplets_idx.cuda(self.device)
+			triplets_idx = triplets_idx.to(self.device)
 
 		emb_a = torch.index_select(embeddings, 0, triplets_idx[:, 0])
 		emb_p = torch.index_select(embeddings, 0, triplets_idx[:, 1])
@@ -243,7 +243,7 @@ class TrainLoop(object):
 		y_ = torch.cat([torch.rand(emb_ap.size(0))*self.disc_label_smoothing+(1.0-self.disc_label_smoothing), torch.rand(emb_an.size(0))*self.disc_label_smoothing],0) if isinstance(self.ce_criterion, LabelSmoothingLoss) else torch.cat([torch.ones(emb_ap.size(0)), torch.zeros(emb_an.size(0))],0)
 
 		if self.cuda_mode:
-			y_ = y_.cuda(self.device)
+			y_ = y_.to(self.device)
 
 		pred_bin = self.model.forward_bin(emb_).squeeze()
 
@@ -269,7 +269,7 @@ class TrainLoop(object):
 		utterances = utterances[:,:,:,:ridx].contiguous()
 
 		if self.cuda_mode:
-			utt, y = utt.cuda(self.device), y.cuda(self.device).squeeze()
+			utt, y = utt.to(self.device), y.to(self.device).squeeze()
 
 		out, embeddings = self.model.forward(utt)
 		out_norm = F.normalize(out, p=2, dim=1)
@@ -352,7 +352,7 @@ class TrainLoop(object):
 			self.total_iters = ckpt['total_iters']
 			self.cur_epoch = ckpt['cur_epoch']
 			if self.cuda_mode:
-				self.model = self.model.cuda(self.device)
+				self.model = self.model.to(self.device)
 
 		else:
 			print('No checkpoint found at: {}'.format(ckpt))

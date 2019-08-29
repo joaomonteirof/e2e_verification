@@ -110,10 +110,6 @@ if args.verbose > 0:
 	print('Embeddings size: {}'.format(args.latent_size))
 	print('Number of hidden layers: {}'.format(args.n_hidden))
 	print('Size of hidden layers: {}'.format(args.hidden_size))
-	print('Number of train speakers: {}'.format(train_dataset.n_speakers))
-	print('Number of train examples: {}'.format(len(train_dataset.utt_list)))
-	print('Number of valid speakers: {}'.format(valid_dataset.n_speakers))
-	print('Number of valid examples: {}'.format(len(valid_dataset.utt_list)))
 	print('Batch size: {}'.format(args.batch_size))
 	print('Valid batch size: {}'.format(args.valid_batch_size))
 	print('LR: {}'.format(args.lr))
@@ -122,6 +118,12 @@ if args.verbose > 0:
 	print('Patience: {}'.format(args.patience))
 	print('Warmup iterations: {}'.format(args.warmup))
 	print('Label smoothing: {}'.format(args.smoothing))
+	print('Max length: {}'.format(args.n_frames))
+	print('Number of train speakers: {}'.format(train_dataset.n_speakers))
+	print('Number of train examples: {}'.format(len(train_dataset.utt_list)))
+	if self.valid_hdf_file:
+		print('Number of valid speakers: {}'.format(valid_dataset.n_speakers))
+		print('Number of valid examples: {}'.format(len(valid_dataset.utt_list)))
 	print(' ')
 
 if writer:
