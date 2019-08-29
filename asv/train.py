@@ -121,7 +121,7 @@ if args.verbose > 0:
 	print('Max length: {}'.format(args.n_frames))
 	print('Number of train speakers: {}'.format(train_dataset.n_speakers))
 	print('Number of train examples: {}'.format(len(train_dataset.utt_list)))
-	if self.valid_hdf_file:
+	if args.valid_hdf_file:
 		print('Number of valid speakers: {}'.format(valid_dataset.n_speakers))
 		print('Number of valid examples: {}'.format(len(valid_dataset.utt_list)))
 	print(' ')
