@@ -579,10 +579,9 @@ class StatisticalPooling(nn.Module):
 
 class TDNN(nn.Module):
 	# Architecture taken from https://github.com/santi-pdp/pase/blob/master/pase/models/tdnn.py
-	def __init__(self, n_z=256, nh=1, n_h=512, proj_size=0, ncoef=23, sm_type='none', dropout_prob=0.25, delta=False):
+	def __init__(self, n_z=256, nh=1, n_h=512, proj_size=0, ncoef=23, sm_type='none', dropout_prob=0.25):
 		super(TDNN, self).__init__()
-		self.delta=delta
-		self.model = nn.Sequential( nn.Conv1d(3*ncoef if delta else ncoef, 512, 5, padding=2),
+		self.model = nn.Sequential( nn.Conv1d(ncoef, 512, 5, padding=2),
 			nn.BatchNorm1d(512),
 			nn.ReLU(inplace=True),
 			nn.Conv1d(512, 512, 5, padding=2),
@@ -637,9 +636,6 @@ class TDNN(nn.Module):
 		return classifier
 
 	def forward(self, x):
-		if self.delta:
-			x=x.view(x.size(0), x.size(1)*x.size(2), x.size(3))
-
 		x = self.model(x.squeeze(1))
 		x = self.pooling(x)
 		fc = self.post_pooling_1(x)
