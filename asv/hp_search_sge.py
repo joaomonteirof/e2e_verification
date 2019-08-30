@@ -71,12 +71,12 @@ parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path',
 args=parser.parse_args()
 args.cuda=True if not args.no_cuda else False
 
-def train(lr, l2, momentum, patience, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, submission_file, tmp_dir, cp_path, softmax):
+def train(lr, b1, b2, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, submission_file, tmp_dir, cp_path, softmax):
 
 	file_name = get_file_name(tmp_dir)
 	np.random.seed()
 
-	command = 'qsub' + ' ' + submission_file + ' ' + str(lr) + ' ' + str(l2) + ' ' + str(momentum) + ' ' + str(int(patience)) + ' ' + str(int(latent_size)) + ' ' + str(int(n_hidden)) + ' ' + str(int(hidden_size)) + ' ' + str(int(n_frames)) + ' ' + str(model) + ' ' + str(ncoef) + ' ' + str(dropout_prob) + ' ' + str(epochs) + ' ' + str(batch_size) + ' ' + str(valid_batch_size) + ' ' + str(n_workers) + ' ' + str(cuda) + ' ' + str(train_hdf_file) + ' ' + str(valid_hdf_file) + ' ' + str(file_name) + ' ' + str(cp_path) + ' ' + str(file_name.split('/')[-1]+'t') + ' ' + str(softmax)
+	command = 'qsub' + ' ' + submission_file + ' ' + str(lr) + ' ' + str(l2) + ' ' + str(b1) + ' ' + str(b2) + ' ' + str(int(warmup)) + ' ' + str(int(latent_size)) + ' ' + str(int(n_hidden)) + ' ' + str(int(hidden_size)) + ' ' + str(int(n_frames)) + ' ' + str(model) + ' ' + str(ncoef) + ' ' + str(dropout_prob) + ' ' + str(epochs) + ' ' + str(batch_size) + ' ' + str(valid_batch_size) + ' ' + str(n_workers) + ' ' + str(cuda) + ' ' + str(train_hdf_file) + ' ' + str(valid_hdf_file) + ' ' + str(file_name) + ' ' + str(cp_path) + ' ' + str(file_name.split('/')[-1]+'t') + ' ' + str(softmax)
 
 	for j in range(10):
 
@@ -108,9 +108,9 @@ def train(lr, l2, momentum, patience, latent_size, n_hidden, hidden_size, n_fram
 			print('Size of hidden layers: {}'.format(int(hidden_size)))
 			print('Dropout rate: {}'.format(dropout_prob))
 			print('LR: {}'.format(lr))
-			print('momentum: {}'.format(momentum))
+			print('B1 and B2: {}, {}'.format(b1, b2))
 			print('l2: {}'.format(l2))
-			print('Patience: {}'.format(int(patience)))
+			print('Warmup: {}'.format(int(warmup)))
 			print('Max. number of frames: {}'.format(int(n_frames)))
 			print(' ')
 
@@ -120,8 +120,9 @@ def train(lr, l2, momentum, patience, latent_size, n_hidden, hidden_size, n_fram
 
 lr=instru.var.OrderedDiscrete([0.1, 0.01, 0.001, 0.0001, 0.00001])
 l2=instru.var.OrderedDiscrete([0.001, 0.0005, 0.0001, 0.00005, 0.00001])
-momentum=instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.7, 0.9])
-patience=instru.var.OrderedDiscrete([2, 5, 8, 10])
+b1=instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.7, 0.85, 0.99])
+b2=instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.7, 0.85, 0.99])
+warmup=instru.var.OrderedDiscrete([1, 500, 2000, 4000])
 latent_size=instru.var.OrderedDiscrete([64, 128, 256, 512])
 n_hidden=instru.var.OrderedDiscrete([1, 2, 3, 4, 5])
 hidden_size=instru.var.OrderedDiscrete([64, 128, 256, 512])
@@ -145,7 +146,7 @@ tmp_dir = os.getcwd() + '/' + args.temp_folder + '/'
 if not os.path.isdir(tmp_dir):
 	os.mkdir(tmp_dir)
 
-instrum=instru.Instrumentation(lr, l2, momentum, patience, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, sub_file, tmp_dir, checkpoint_path, softmax)
+instrum=instru.Instrumentation(lr, b1, b2, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, submission_file, tmp_dir, cp_path, softmax)
 
 hp_optimizer=optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget, num_workers=args.hp_workers)
 

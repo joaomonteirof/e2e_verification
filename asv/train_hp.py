@@ -12,6 +12,7 @@ import sys
 import pickle
 from time import sleep
 from utils.utils import *
+from utils.optimizer import TransformerOptimizer
 
 # Training settings
 parser = argparse.ArgumentParser(description='Train for hp search')
@@ -19,9 +20,9 @@ parser.add_argument('--batch-size', type=int, default=64, metavar='N', help='inp
 parser.add_argument('--valid-batch-size', type=int, default=64, metavar='N', help='input batch size for training (default: 64)')
 parser.add_argument('--epochs', type=int, default=500, metavar='N', help='number of epochs to train (default: 500)')
 parser.add_argument('--lr', type=float, default=0.001, metavar='LR', help='learning rate (default: 0.001)')
-parser.add_argument('--momentum', type=float, default=0.9, metavar='m', help='Momentum paprameter (default: 0.9)')
+parser.add_argument('--b1', type=float, default=0.9, metavar='m', help='Momentum paprameter (default: 0.9)')
+parser.add_argument('--b2', type=float, default=0.98, metavar='m', help='Momentum paprameter (default: 0.9)')
 parser.add_argument('--l2', type=float, default=1e-5, metavar='L2', help='Weight decay coefficient (default: 0.00001)')
-parser.add_argument('--patience', type=int, default=10, metavar='S', help='Epochs to wait before decreasing LR by a factor of 0.5 (default: 10)')
 parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large', 'TDNN'], default='resnet_lstm', help='Model arch according to input type')
 parser.add_argument('--softmax', choices=['softmax', 'am_softmax'], default='softmax', help='Softmax type')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
@@ -32,7 +33,7 @@ parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximu
 parser.add_argument('--dropout-prob', type=float, default=0.25, metavar='p', help='Dropout probability (default: 0.25)')
 parser.add_argument('--n-frames', type=int, default=800, metavar='N', help='maximum number of frames per utterance (default: 800)')
 parser.add_argument('--warmup', type=int, default=500, metavar='N', help='Iterations until reach lr (default: 500)')
-parser.add_argument('--smoothing', type=float, default=0.2, metavar='l', help='Label smoothing (default: 0.2)')
+parser.add_argument('--warmup', type=int, default=4000, metavar='N', help='Iterations until reach lr (default: 4000)')
 parser.add_argument('--train-hdf-file', type=str, default='./data/train.hdf', metavar='Path', help='Path to hdf data')
 parser.add_argument('--valid-hdf-file', type=str, default=None, metavar='Path', help='Path to hdf data')
 parser.add_argument('--cuda', type=str, default=None)
@@ -69,9 +70,9 @@ else:
 if args.cuda:
 	model = model.cuda(device)
 
-optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.l2)
+optimizer = TransformerOptimizer(optim.Adam(model.parameters(), betas=(args.b1, args.b2), weight_decay=args.l2), lr=args.lr, warmup_steps=args.warmup)
 
-trainer = TrainLoop(model, optimizer, train_loader, valid_loader, patience=args.patience, label_smoothing=args.smoothing, warmup_its=args.warmup, verbose=-1, device=device, cp_name=args.cp_name, save_cp=True, checkpoint_path=args.checkpoint_path, pretrain=False, cuda=args.cuda)
+trainer = TrainLoop(model, optimizer, train_loader, valid_loader, label_smoothing=args.smoothing, verbose=-1, device=device, cp_name=args.cp_name, save_cp=True, checkpoint_path=args.checkpoint_path, pretrain=False, cuda=args.cuda)
 
 print(' ')
 print('Cuda Mode: {}'.format(args.cuda))
@@ -85,9 +86,8 @@ print('Size of hidden layers: {}'.format(args.hidden_size))
 print('Batch size: {}'.format(args.batch_size))
 print('Valid batch size: {}'.format(args.valid_batch_size))
 print('LR: {}'.format(args.lr))
-print('momentum: {}'.format(args.momentum))
+print('B1 and B2: {}, {}'.format(args.b1, args.b2))
 print('l2: {}'.format(args.l2))
-print('Patience: {}'.format(args.patience))
 print('Warmup iterations: {}'.format(args.warmup))
 print('Label smoothing: {}'.format(args.smoothing))
 print('Max length: {}'.format(args.n_frames))

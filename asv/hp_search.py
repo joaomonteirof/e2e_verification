@@ -11,7 +11,7 @@ import numpy as np
 from data_load import Loader
 import os
 import sys
-
+from utils.optimizer import TransformerOptimizer
 from utils.utils import *
 
 def get_file_name(dir_):
@@ -47,45 +47,46 @@ parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path',
 args=parser.parse_args()
 args.cuda=True if not args.no_cuda and torch.cuda.is_available() else False
 
-def train(lr, l2, momentum, patience, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, cp_path, softmax):
+def train(lr, l2, b1, b2, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, cp_path, softmax):
 
 	if cuda:
 		device=get_freer_gpu()
 
-	train_dataset=Loader(hdf5_name=train_hdf_file, max_nb_frames=int(n_frames))
+	train_dataset=Loader(hdf5_name=train_hdf_file, max_nb_frames=n_frames)
 	train_loader=torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=n_workers, worker_init_fn=set_np_randomseed)
 
-	valid_dataset = Loader(hdf5_name = valid_hdf_file, max_nb_frames = int(n_frames))
+	valid_dataset = Loader(hdf5_name = valid_hdf_file, max_nb_frames = int(n_frames)
 	valid_loader=torch.utils.data.DataLoader(valid_dataset, batch_size=valid_batch_size, shuffle=False, num_workers=n_workers, worker_init_fn=set_np_randomseed)
 
 	if args.model == 'resnet_stats':
-		model = model_.ResNet_stats(n_z=int(latent_size), nh=int(n_hidden), n_h=int(hidden_size), proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)
+		model = model_.ResNet_stats(n_z=latent_size, nh=n_hidden, n_h=hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)
 	elif args.model == 'resnet_mfcc':
-		model = model_.ResNet_mfcc(n_z=int(latent_size), nh=int(n_hidden), n_h=int(hidden_size), proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)
+		model = model_.ResNet_mfcc(n_z=latent_size, nh=n_hidden, n_h=hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)
 	if args.model == 'resnet_lstm':
-		model = model_.ResNet_lstm(n_z=int(latent_size), nh=int(n_hidden), n_h=int(hidden_size), proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)
+		model = model_.ResNet_lstm(n_z=latent_size, nh=n_hidden, n_h=hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)
 	elif args.model == 'resnet_small':
-		model = model_.ResNet_small(n_z=int(latent_size), nh=int(n_hidden), n_h=int(hidden_size), proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)
+		model = model_.ResNet_small(n_z=latent_size, nh=n_hidden, n_h=hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)
 	elif args.model == 'resnet_large':
-		model = model_.ResNet_large(n_z=int(latent_size), nh=int(n_hidden), n_h=int(hidden_size), proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)
+		model = model_.ResNet_large(n_z=latent_size, nh=n_hidden, n_h=hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)
 	elif args.model == 'TDNN':
-		model = model_.TDNN(n_z=int(latent_size), nh=int(n_hidden), n_h=int(hidden_size), proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)
+		model = model_.TDNN(n_z=latent_size, nh=n_hidden, n_h=hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)
 
 	if cuda:
 		model=model.cuda(device)
 	else:
 		device=None
 
-	optimizer=optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=l2)
+	optimizer=TransformerOptimizer(optim.Adam(model.parameters(), betas=(b1, b2), weight_decay=l2), lr=lr, warmup_steps=warmup)
 
-	trainer=TrainLoop(model, optimizer, train_loader, valid_loader, patience=int(patience), verbose=-1, device=device, cp_name=get_file_name(cp_path), save_cp=False, checkpoint_path=cp_path, pretrain=False, cuda=cuda)
+	trainer=TrainLoop(model, optimizer, train_loader, valid_loader, verbose=-1, device=device, cp_name=get_file_name(cp_path), save_cp=False, checkpoint_path=cp_path, pretrain=False, cuda=cuda)
 
 	return trainer.train(n_epochs=epochs)
 
 lr=instru.var.OrderedDiscrete([0.1, 0.01, 0.001, 0.0001, 0.00001])
 l2=instru.var.OrderedDiscrete([0.001, 0.0005, 0.0001, 0.00005, 0.00001])
-momentum=instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.7, 0.9])
-patience=instru.var.OrderedDiscrete([2, 5, 8, 10])
+b1=instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.7, 0.85, 0.99])
+b2=instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.7, 0.85, 0.99])
+warmup=instru.var.OrderedDiscrete([1, 500, 2000, 4000])
 latent_size=instru.var.OrderedDiscrete([64, 128, 256, 512])
 n_hidden=instru.var.OrderedDiscrete([1, 2, 3, 4, 5])
 hidden_size=instru.var.OrderedDiscrete([64, 128, 256, 512])
@@ -104,7 +105,7 @@ valid_hdf_file=args.valid_hdf_file
 checkpoint_path=args.checkpoint_path
 softmax=instru.var.OrderedDiscrete(['softmax', 'am_softmax'])
 
-instrum=instru.Instrumentation(lr, l2, momentum, patience, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, data_info_path, valid_hdf_file, checkpoint_path, softmax)
+instrum=instru.Instrumentation(lr, l2, b1, b2, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, cp_path, softmax)
 
 hp_optimizer=optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget, num_workers=args.hp_workers)
 

@@ -11,6 +11,7 @@ import os
 import sys
 from torch.utils.tensorboard import SummaryWriter
 from utils.utils import set_np_randomseed, get_freer_gpu
+from utils.optimizer import TransformerOptimizer
 
 # Training settings
 parser = argparse.ArgumentParser(description='Speaker embbedings with combined loss')
@@ -18,9 +19,9 @@ parser.add_argument('--batch-size', type=int, default=64, metavar='N', help='inp
 parser.add_argument('--valid-batch-size', type=int, default=64, metavar='N', help='input batch size for training (default: 64)')
 parser.add_argument('--epochs', type=int, default=500, metavar='N', help='number of epochs to train (default: 500)')
 parser.add_argument('--lr', type=float, default=0.001, metavar='LR', help='learning rate (default: 0.001)')
-parser.add_argument('--momentum', type=float, default=0.9, metavar='m', help='Momentum paprameter (default: 0.9)')
+parser.add_argument('--b1', type=float, default=0.9, metavar='m', help='Momentum paprameter (default: 0.9)')
+parser.add_argument('--b2', type=float, default=0.98, metavar='m', help='Momentum paprameter (default: 0.9)')
 parser.add_argument('--l2', type=float, default=1e-5, metavar='L2', help='Weight decay coefficient (default: 0.00001)')
-parser.add_argument('--patience', type=int, default=10, metavar='S', help='Epochs to wait before decreasing LR by a factor of 0.5 (default: 10)')
 parser.add_argument('--checkpoint-epoch', type=int, default=None, metavar='N', help='epoch to load for checkpointing. If None, training starts from scratch')
 parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
 parser.add_argument('--pretrained-path', type=str, default=None, metavar='Path', help='Path for pre trained model')
@@ -38,7 +39,7 @@ parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='l
 parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
 parser.add_argument('--dropout-prob', type=float, default=0.25, metavar='p', help='Dropout probability (default: 0.25)')
 parser.add_argument('--n-frames', type=int, default=1000, metavar='N', help='maximum number of frames per utterance (default: 1000)')
-parser.add_argument('--warmup', type=int, default=500, metavar='N', help='Iterations until reach lr (default: 500)')
+parser.add_argument('--warmup', type=int, default=4000, metavar='N', help='Iterations until reach lr (default: 4000)')
 parser.add_argument('--smoothing', type=float, default=0.2, metavar='l', help='Label smoothing (default: 0.2)')
 parser.add_argument('--pretrain', action='store_true', default=False, help='Adds softmax layer for speaker identification and train exclusively with CE minimization')
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
@@ -96,9 +97,9 @@ if args.pretrained_path is not None:
 
 model = model.to(device)
 
-optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.l2)
+optimizer = TransformerOptimizer(optim.Adam(model.parameters(), betas=(args.b1, args.b2), weight_decay=args.l2), lr=args.lr, warmup_steps=args.warmup)
 
-trainer = TrainLoop(model, optimizer, train_loader, valid_loader, patience=args.patience, label_smoothing=args.smoothing, warmup_its=args.warmup, verbose=args.verbose, device=device, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, pretrain=args.pretrain, cuda=args.cuda, logger=writer)
+trainer = TrainLoop(model, optimizer, train_loader, valid_loader, label_smoothing=args.smoothing, verbose=args.verbose, device=device, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, pretrain=args.pretrain, cuda=args.cuda, logger=writer)
 
 if args.verbose > 0:
 	print(' ')
@@ -113,9 +114,8 @@ if args.verbose > 0:
 	print('Batch size: {}'.format(args.batch_size))
 	print('Valid batch size: {}'.format(args.valid_batch_size))
 	print('LR: {}'.format(args.lr))
-	print('momentum: {}'.format(args.momentum))
+	print('B1 and B2: {}, {}'.format(args.b1, args.b2))
 	print('l2: {}'.format(args.l2))
-	print('Patience: {}'.format(args.patience))
 	print('Warmup iterations: {}'.format(args.warmup))
 	print('Label smoothing: {}'.format(args.smoothing))
 	print('Max length: {}'.format(args.n_frames))
