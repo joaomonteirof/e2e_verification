@@ -77,7 +77,6 @@ trainer = TrainLoop(model, optimizer, train_loader, valid_loader, label_smoothin
 print(' ')
 print('Cuda Mode: {}'.format(args.cuda))
 print('Device: {}'.format(device))
-print('Pretrain Mode: {}'.format(args.pretrain))
 print('Selected model: {}'.format(args.model))
 print('Softmax Mode is: {}'.format(args.softmax))
 print('Embeddings size: {}'.format(args.latent_size))
