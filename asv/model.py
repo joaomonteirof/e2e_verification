@@ -25,7 +25,7 @@ class SelfAttention(nn.Module):
 		noise = 1e-5*torch.randn(weighted.size())
 
 		if inputs.is_cuda:
-			noise = noise.cuda(inputs.get_device())
+			noise = noise.to(inputs.get_device())
 
 		avg_repr, std_repr = weighted.sum(1), (weighted+noise).std(1)
 
@@ -376,8 +376,8 @@ class ResNet_lstm(nn.Module):
 		c0 = torch.zeros(2*2, batch_size, 256)
 
 		if x.is_cuda:
-			h0 = h0.cuda(x.get_device())
-			c0 = c0.cuda(x.get_device())
+			h0 = h0.to(x.get_device())
+			c0 = c0.to(x.get_device())
 
 		out_seq, (h_, c_) = self.lstm(x, (h0, c0))
 
