@@ -47,7 +47,7 @@ parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path',
 args=parser.parse_args()
 args.cuda=True if not args.no_cuda and torch.cuda.is_available() else False
 
-def train(lr, l2, b1, b2, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, cp_path, softmax):
+def train(lr, l2, b1, b2, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, cp_path, softmax):
 
 	if cuda:
 		device=get_freer_gpu()
@@ -78,7 +78,7 @@ def train(lr, l2, b1, b2, warmup, latent_size, n_hidden, hidden_size, n_frames, 
 
 	optimizer=TransformerOptimizer(optim.Adam(model.parameters(), betas=(b1, b2), weight_decay=l2), lr=lr, warmup_steps=warmup)
 
-	trainer=TrainLoop(model, optimizer, train_loader, valid_loader, verbose=-1, device=device, cp_name=get_file_name(cp_path), save_cp=False, checkpoint_path=cp_path, pretrain=False, cuda=cuda)
+	trainer=TrainLoop(model, optimizer, train_loader, valid_loader, label_smoothing=smoothing, verbose=-1, device=device, cp_name=get_file_name(cp_path), save_cp=False, checkpoint_path=cp_path, pretrain=False, cuda=cuda)
 
 	return trainer.train(n_epochs=epochs)
 
@@ -86,6 +86,7 @@ lr=instru.var.OrderedDiscrete([0.1, 0.01, 0.001, 0.0001, 0.00001])
 l2=instru.var.OrderedDiscrete([0.001, 0.0005, 0.0001, 0.00005, 0.00001])
 b1=instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.7, 0.85, 0.99])
 b2=instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.7, 0.85, 0.99])
+smoothing=instru.var.OrderedDiscrete([0.0, 0.05, 0.1, 0.2, 0.25, 0.3])
 warmup=instru.var.OrderedDiscrete([1, 500, 2000, 4000])
 latent_size=instru.var.OrderedDiscrete([64, 128, 256, 512])
 n_hidden=instru.var.OrderedDiscrete([1, 2, 3, 4, 5])
@@ -105,7 +106,7 @@ valid_hdf_file=args.valid_hdf_file
 checkpoint_path=args.checkpoint_path
 softmax=instru.var.OrderedDiscrete(['softmax', 'am_softmax'])
 
-instrum=instru.Instrumentation(lr, l2, b1, b2, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, cp_path, softmax)
+instrum=instru.Instrumentation(lr, l2, b1, b2, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, cp_path, softmax)
 
 hp_optimizer=optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget, num_workers=args.hp_workers)
 

@@ -126,7 +126,4 @@ if args.verbose > 0:
 		print('Number of valid examples: {}'.format(len(valid_dataset.utt_list)))
 	print(' ')
 
-if writer:
-	writer.add_graph(model=model, input_to_model=torch.rand(2, 1, args.ncoef, 200).to(device), operator_export_type='RAW')
-
 trainer.train(n_epochs=args.epochs, save_every=args.save_every)
