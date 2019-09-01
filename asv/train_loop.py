@@ -203,8 +203,8 @@ class TrainLoop(object):
 		utterances = utterances[:,:,:,:ridx].contiguous()
 
 		if self.cuda_mode:
-			utterances = utterances.to(self.device)
-			y = y.to(self.device)
+			utterances = utterances.to(self.device, non_blocking=True)
+			y = y.to(self.device, non_blocking=True)
 
 		out, embeddings = self.model.forward(utterances)
 		out_norm = F.normalize(out, p=2, dim=1)
@@ -215,7 +215,7 @@ class TrainLoop(object):
 		triplets_idx = self.harvester.get_triplets(out_norm.detach(), y)
 
 		if self.cuda_mode:
-			triplets_idx = triplets_idx.to(self.device)
+			triplets_idx = triplets_idx.to(self.device, non_blocking=True)
 
 		emb_a = torch.index_select(embeddings, 0, triplets_idx[:, 0])
 		emb_p = torch.index_select(embeddings, 0, triplets_idx[:, 1])
@@ -227,8 +227,11 @@ class TrainLoop(object):
 
 		y_ = torch.cat([torch.rand(emb_ap.size(0))*self.disc_label_smoothing+(1.0-self.disc_label_smoothing), torch.rand(emb_an.size(0))*self.disc_label_smoothing],0) if isinstance(self.ce_criterion, LabelSmoothingLoss) else torch.cat([torch.ones(emb_ap.size(0)), torch.zeros(emb_an.size(0))],0)
 
+		if isinstance(self.ce_criterion, LabelSmoothingLoss):
+			y_ = torch.clamp(y_, min=0.0, max=1.0)
+
 		if self.cuda_mode:
-			y_ = y_.to(self.device)
+			y_ = y_.to(self.device, non_blocking=True)
 
 		pred_bin = self.model.forward_bin(emb_).squeeze()
 
