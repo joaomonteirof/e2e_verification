@@ -217,25 +217,31 @@ class TrainLoop(object):
 		if self.cuda_mode:
 			triplets_idx = triplets_idx.to(self.device, non_blocking=True)
 
-		emb_a = torch.index_select(embeddings, 0, triplets_idx[:, 0])
-		emb_p = torch.index_select(embeddings, 0, triplets_idx[:, 1])
-		emb_n = torch.index_select(embeddings, 0, triplets_idx[:, 2])
+		try:
 
-		emb_ap = torch.cat([emb_a, emb_p],1)
-		emb_an = torch.cat([emb_a, emb_n],1)
-		emb_ = torch.cat([emb_ap, emb_an],0)
+			emb_a = torch.index_select(embeddings, 0, triplets_idx[:, 0])
+			emb_p = torch.index_select(embeddings, 0, triplets_idx[:, 1])
+			emb_n = torch.index_select(embeddings, 0, triplets_idx[:, 2])
 
-		y_ = torch.cat([torch.rand(emb_ap.size(0))*self.disc_label_smoothing+(1.0-self.disc_label_smoothing), torch.rand(emb_an.size(0))*self.disc_label_smoothing],0) if isinstance(self.ce_criterion, LabelSmoothingLoss) else torch.cat([torch.ones(emb_ap.size(0)), torch.zeros(emb_an.size(0))],0)
+			emb_ap = torch.cat([emb_a, emb_p],1)
+			emb_an = torch.cat([emb_a, emb_n],1)
+			emb_ = torch.cat([emb_ap, emb_an],0)
 
-		if isinstance(self.ce_criterion, LabelSmoothingLoss):
-			y_ = torch.clamp(y_, min=0.0, max=1.0)
+			y_ = torch.cat([torch.rand(emb_ap.size(0))*self.disc_label_smoothing+(1.0-self.disc_label_smoothing), torch.rand(emb_an.size(0))*self.disc_label_smoothing],0) if isinstance(self.ce_criterion, LabelSmoothingLoss) else torch.cat([torch.ones(emb_ap.size(0)), torch.zeros(emb_an.size(0))],0)
 
-		if self.cuda_mode:
-			y_ = y_.to(self.device, non_blocking=True)
+			if isinstance(self.ce_criterion, LabelSmoothingLoss):
+				y_ = torch.clamp(y_, min=0.0, max=1.0)
 
-		pred_bin = self.model.forward_bin(emb_).squeeze()
+			if self.cuda_mode:
+				y_ = y_.to(self.device, non_blocking=True)
 
-		loss_bin = torch.nn.BCELoss()(pred_bin, y_)
+			pred_bin = self.model.forward_bin(emb_).squeeze()
+
+			loss_bin = torch.nn.BCELoss()(pred_bin, y_)
+
+		except IndexError:
+
+			loss_bin = torch.ones(1).to(self.device, non_blocking=True)
 
 		loss = ce_loss + loss_bin
 		loss.backward()
