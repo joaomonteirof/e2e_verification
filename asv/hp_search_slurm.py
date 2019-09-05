@@ -93,7 +93,7 @@ def train(lr, l2, b1, b2, smoothing, warmup, latent_size, n_hidden, hidden_size,
 			print('Size of hidden layers: {}'.format(int(hidden_size)))
 			print('Dropout rate: {}'.format(dropout_prob))
 			print('LR: {}'.format(lr))
-			print('momentum: {}'.format(momentum))
+			print('B1 and B2: {}, {}'.format(b1, b2))
 			print('l2: {}'.format(l2))
 			print('Warmup iterations: {}'.format(warmup))
 			print('Label smoothing: {}'.format(smoothing))
