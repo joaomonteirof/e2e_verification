@@ -150,8 +150,7 @@ class TrainLoop(object):
 
 					if emb.shape[0]>20000:
 						idxs = np.random.choice(np.arange(emb.shape[0]), size=20000, replace=False)
-
-					emb, y_ = emb[idxs, :], y_[idxs]
+						emb, y_ = emb[idxs, :], y_[idxs]
 
 					self.logger.add_embedding(mat=emb, metadata=list(y_), global_step=self.total_iters-1)
 					self.logger.add_histogram('Valid/Embeddings', values=emb, global_step=self.total_iters-1)
