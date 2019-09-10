@@ -53,6 +53,7 @@ parser.add_argument('--ncoef', type=int, default=23, metavar='N', help='number o
 parser.add_argument('--temp-folder', type=str, default='temp', metavar='Path', help='Temp folder for pickle files')
 parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
 parser.add_argument('--logdir', type=str, default=None, metavar='Path', help='Path for checkpointing')
+parser.add_argument('--logdir', type=str, default=None, metavar='Path', help='Path for checkpointing')
 args=parser.parse_args()
 
 args.cuda=True if not args.no_cuda else False

@@ -53,9 +53,11 @@ def train(lr, l2, b1, b2, smoothing, warmup, latent_size, n_hidden, hidden_size,
 	if cuda:
 		device=get_freer_gpu()
 
+	cp_name = get_file_name(cp_path)
+
 	if args.logdir:
 		from torch.utils.tensorboard import SummaryWriter
-		writer = SummaryWriter(log_dir=args.logdir+cpname, comment=args.model, purge_step=True)
+		writer = SummaryWriter(log_dir=logdir+cp_name, comment=args.model, purge_step=True)
 	else:
 		writer = None
 
@@ -85,7 +87,7 @@ def train(lr, l2, b1, b2, smoothing, warmup, latent_size, n_hidden, hidden_size,
 
 	optimizer=TransformerOptimizer(optim.Adam(model.parameters(), betas=(b1, b2), weight_decay=l2), lr=lr, warmup_steps=warmup)
 
-	trainer=TrainLoop(model, optimizer, train_loader, valid_loader, label_smoothing=smoothing, verbose=-1, device=device, cp_name=get_file_name(cp_path), save_cp=False, checkpoint_path=cp_path, pretrain=False, cuda=cuda, logger=writer)
+	trainer=TrainLoop(model, optimizer, train_loader, valid_loader, label_smoothing=smoothing, verbose=-1, device=device, cp_name=cp_name, save_cp=False, checkpoint_path=cp_path, pretrain=False, cuda=cuda, logger=writer)
 
 	return trainer.train(n_epochs=epochs)
 
@@ -112,8 +114,9 @@ data_info_path=args.data_info_path
 valid_hdf_file=args.valid_hdf_file
 checkpoint_path=args.checkpoint_path
 softmax=instru.var.OrderedDiscrete(['softmax', 'am_softmax'])
+logdir=args.logdir
 
-instrum=instru.Instrumentation(lr, l2, b1, b2, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, cp_path, softmax)
+instrum=instru.Instrumentation(lr, l2, b1, b2, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, cp_path, softmax, logdir)
 
 hp_optimizer=optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget, num_workers=args.hp_workers)
 
