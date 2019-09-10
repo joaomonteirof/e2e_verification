@@ -129,7 +129,7 @@ valid_hdf_file=args.valid_hdf_file
 sub_file=args.sub_file
 checkpoint_path=args.checkpoint_path
 softmax=instru.var.OrderedDiscrete(['softmax', 'am_softmax'])
-logdir=args.log_dir
+logdir=args.logdir
 
 tmp_dir = os.getcwd() + '/' + args.temp_folder + '/'
 
