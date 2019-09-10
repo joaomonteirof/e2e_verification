@@ -68,15 +68,16 @@ parser.add_argument('--save-every', type=int, default=1, metavar='N', help='how 
 parser.add_argument('--ncoef', type=int, default=23, metavar='N', help='number of MFCCs (default: 23)')
 parser.add_argument('--temp-folder', type=str, default='temp', metavar='Path', help='Temp folder for pickle files')
 parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
+parser.add_argument('--logdir', type=str, default=None, metavar='Path', help='Path for checkpointing')
 args=parser.parse_args()
 args.cuda=True if not args.no_cuda else False
 
-def train(lr, l2, b1, b2, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, submission_file, tmp_dir, cp_path, softmax):
+def train(lr, l2, b1, b2, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, submission_file, tmp_dir, cp_path, softmax, logdir):
 
 	file_name = get_file_name(tmp_dir)
 	np.random.seed()
 
-	command = 'qsub' + ' ' + submission_file + ' ' + str(lr) + ' ' + str(l2) + ' ' + str(b1) + ' ' + str(b2) + ' ' + str(smoothing) + ' ' + str(int(warmup)) + ' ' + str(int(latent_size)) + ' ' + str(int(n_hidden)) + ' ' + str(int(hidden_size)) + ' ' + str(int(n_frames)) + ' ' + str(model) + ' ' + str(ncoef) + ' ' + str(dropout_prob) + ' ' + str(epochs) + ' ' + str(batch_size) + ' ' + str(valid_batch_size) + ' ' + str(n_workers) + ' ' + str(cuda) + ' ' + str(train_hdf_file) + ' ' + str(valid_hdf_file) + ' ' + str(file_name) + ' ' + str(cp_path) + ' ' + str(file_name.split('/')[-1]+'t') + ' ' + str(softmax)
+	command = 'qsub' + ' ' + submission_file + ' ' + str(lr) + ' ' + str(l2) + ' ' + str(b1) + ' ' + str(b2) + ' ' + str(smoothing) + ' ' + str(int(warmup)) + ' ' + str(int(latent_size)) + ' ' + str(int(n_hidden)) + ' ' + str(int(hidden_size)) + ' ' + str(int(n_frames)) + ' ' + str(model) + ' ' + str(ncoef) + ' ' + str(dropout_prob) + ' ' + str(epochs) + ' ' + str(batch_size) + ' ' + str(valid_batch_size) + ' ' + str(n_workers) + ' ' + str(cuda) + ' ' + str(train_hdf_file) + ' ' + str(valid_hdf_file) + ' ' + str(file_name) + ' ' + str(cp_path) + ' ' + str(file_name.split('/')[-1]+'t') + ' ' + str(softmax) + ' ' + str(logdir)
 
 	for j in range(10):
 
@@ -142,13 +143,14 @@ valid_hdf_file=args.valid_hdf_file
 sub_file=args.sub_file
 checkpoint_path=args.checkpoint_path
 softmax=instru.var.OrderedDiscrete(['softmax', 'am_softmax'])
+logdir=args.log_dir
 
 tmp_dir = os.getcwd() + '/' + args.temp_folder + '/'
 
 if not os.path.isdir(tmp_dir):
 	os.mkdir(tmp_dir)
 
-instrum=instru.Instrumentation(lr, l2, b1, b2, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, sub_file, tmp_dir, checkpoint_path, softmax)
+instrum=instru.Instrumentation(lr, l2, b1, b2, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, sub_file, tmp_dir, checkpoint_path, softmax, logdir)
 
 hp_optimizer=optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget, num_workers=args.hp_workers)
 

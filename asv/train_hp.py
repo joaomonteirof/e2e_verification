@@ -39,9 +39,17 @@ parser.add_argument('--valid-hdf-file', type=str, default=None, metavar='Path', 
 parser.add_argument('--cuda', type=str, default=None)
 parser.add_argument('--out-file', type=str, default='./eer.p')
 parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
+parser.add_argument('--logdir', type=str, default=None, metavar='Path', help='Path for checkpointing')
 parser.add_argument('--cp-name', type=str, default=None)
 args = parser.parse_args()
 args.cuda = True if args.cuda=='True' and torch.cuda.is_available() else False
+args.logdir = None if args.logdir=='None' else args.logdir
+
+if args.logdir:
+	from torch.utils.tensorboard import SummaryWriter
+	writer = SummaryWriter(log_dir=args.logdir+cpname, comment=args.model, purge_step=True)
+else:
+	writer = None
 
 train_dataset = Loader(hdf5_name = args.train_hdf_file, max_nb_frames = args.n_frames)
 train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, worker_init_fn=set_np_randomseed)
@@ -72,7 +80,7 @@ if args.cuda:
 
 optimizer = TransformerOptimizer(optim.Adam(model.parameters(), betas=(args.b1, args.b2), weight_decay=args.l2), lr=args.lr, warmup_steps=args.warmup)
 
-trainer = TrainLoop(model, optimizer, train_loader, valid_loader, label_smoothing=args.smoothing, verbose=-1, device=device, cp_name=args.cp_name, save_cp=True, checkpoint_path=args.checkpoint_path, pretrain=False, cuda=args.cuda)
+trainer = TrainLoop(model, optimizer, train_loader, valid_loader, label_smoothing=args.smoothing, verbose=-1, device=device, cp_name=args.cp_name, save_cp=True, checkpoint_path=args.checkpoint_path, pretrain=False, cuda=args.cuda, logger=writer)
 
 print(' ')
 print('Cuda Mode: {}'.format(args.cuda))

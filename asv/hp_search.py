@@ -44,13 +44,20 @@ parser.add_argument('--seed', type=int, default=1, metavar='S', help='random see
 parser.add_argument('--save-every', type=int, default=1, metavar='N', help='how many epochs to wait before logging training status. Default is 1')
 parser.add_argument('--ncoef', type=int, default=23, metavar='N', help='number of MFCCs (default: 23)')
 parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
+parser.add_argument('--logdir', type=str, default=None, metavar='Path', help='Path for checkpointing')
 args=parser.parse_args()
 args.cuda=True if not args.no_cuda and torch.cuda.is_available() else False
 
-def train(lr, l2, b1, b2, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, cp_path, softmax):
+def train(lr, l2, b1, b2, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, cp_path, softmax, logdir):
 
 	if cuda:
 		device=get_freer_gpu()
+
+	if args.logdir:
+		from torch.utils.tensorboard import SummaryWriter
+		writer = SummaryWriter(log_dir=args.logdir+cpname, comment=args.model, purge_step=True)
+	else:
+		writer = None
 
 	train_dataset=Loader(hdf5_name=train_hdf_file, max_nb_frames=n_frames)
 	train_loader=torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=n_workers, worker_init_fn=set_np_randomseed)
@@ -78,7 +85,7 @@ def train(lr, l2, b1, b2, smoothing, warmup, latent_size, n_hidden, hidden_size,
 
 	optimizer=TransformerOptimizer(optim.Adam(model.parameters(), betas=(b1, b2), weight_decay=l2), lr=lr, warmup_steps=warmup)
 
-	trainer=TrainLoop(model, optimizer, train_loader, valid_loader, label_smoothing=smoothing, verbose=-1, device=device, cp_name=get_file_name(cp_path), save_cp=False, checkpoint_path=cp_path, pretrain=False, cuda=cuda)
+	trainer=TrainLoop(model, optimizer, train_loader, valid_loader, label_smoothing=smoothing, verbose=-1, device=device, cp_name=get_file_name(cp_path), save_cp=False, checkpoint_path=cp_path, pretrain=False, cuda=cuda, logger=writer)
 
 	return trainer.train(n_epochs=epochs)
 
