@@ -77,7 +77,7 @@ else:
 if args.cuda:
 	model = model.cuda(device)
 
-optimizer = TransformerOptimizer(optim.SGD(model.parameters(), momentum=args.momentum, weight_decay=args.l2), lr=args.lr, warmup_steps=args.warmup)
+optimizer = TransformerOptimizer(optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.l2, nesterov=True), lr=args.lr, warmup_steps=args.warmup)
 
 trainer = TrainLoop(model, optimizer, train_loader, valid_loader, label_smoothing=args.smoothing, verbose=-1, device=device, cp_name=args.cp_name, save_cp=True, checkpoint_path=args.checkpoint_path, pretrain=False, cuda=args.cuda, logger=writer)
 

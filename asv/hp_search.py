@@ -85,7 +85,7 @@ def train(lr, l2, momentum, smoothing, warmup, latent_size, n_hidden, hidden_siz
 	else:
 		device=None
 
-	optimizer=TransformerOptimizer(optim.SGD(model.parameters(), momentum=momentum, weight_decay=l2), lr=lr, warmup_steps=warmup)
+	optimizer=TransformerOptimizer(optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=l2, nesterov=True), lr=lr, warmup_steps=warmup)
 
 	trainer=TrainLoop(model, optimizer, train_loader, valid_loader, label_smoothing=smoothing, verbose=-1, device=device, cp_name=cp_name, save_cp=False, checkpoint_path=cp_path, pretrain=False, cuda=cuda, logger=writer)
 

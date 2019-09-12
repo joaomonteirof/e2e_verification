@@ -96,7 +96,7 @@ if args.pretrained_path is not None:
 
 model = model.to(device)
 
-optimizer = TransformerOptimizer(optim.SGD(model.parameters(), momentum=args.momentum, weight_decay=args.l2), lr=args.lr, warmup_steps=args.warmup)
+optimizer = TransformerOptimizer(optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.l2, nesterov=True), lr=args.lr, warmup_steps=args.warmup)
 
 trainer = TrainLoop(model, optimizer, train_loader, valid_loader, label_smoothing=args.smoothing, verbose=args.verbose, device=device, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, pretrain=args.pretrain, cuda=args.cuda, logger=writer)
 
