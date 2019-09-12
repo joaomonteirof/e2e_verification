@@ -48,7 +48,7 @@ parser.add_argument('--logdir', type=str, default=None, metavar='Path', help='Pa
 args=parser.parse_args()
 args.cuda=True if not args.no_cuda and torch.cuda.is_available() else False
 
-def train(lr, l2, b1, b2, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, cp_path, softmax, logdir):
+def train(lr, l2, momentum, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, cp_path, softmax, logdir):
 
 	if cuda:
 		device=get_freer_gpu()
@@ -85,7 +85,7 @@ def train(lr, l2, b1, b2, smoothing, warmup, latent_size, n_hidden, hidden_size,
 	else:
 		device=None
 
-	optimizer=TransformerOptimizer(optim.Adam(model.parameters(), betas=(b1, b2), weight_decay=l2), lr=lr, warmup_steps=warmup)
+	optimizer=TransformerOptimizer(optim.SGD(model.parameters(), momentum=momentum, weight_decay=l2), lr=lr, warmup_steps=warmup)
 
 	trainer=TrainLoop(model, optimizer, train_loader, valid_loader, label_smoothing=smoothing, verbose=-1, device=device, cp_name=cp_name, save_cp=False, checkpoint_path=cp_path, pretrain=False, cuda=cuda, logger=writer)
 
@@ -93,8 +93,7 @@ def train(lr, l2, b1, b2, smoothing, warmup, latent_size, n_hidden, hidden_size,
 
 lr=instru.var.OrderedDiscrete([0.1, 0.01, 0.001, 0.0001, 0.00001])
 l2=instru.var.OrderedDiscrete([0.001, 0.0005, 0.0001, 0.00005, 0.00001])
-b1=instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.7, 0.85, 0.99])
-b2=instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.7, 0.85, 0.99])
+momentum=instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.7, 0.85, 0.95])
 smoothing=instru.var.OrderedDiscrete([0.0, 0.05, 0.1, 0.2, 0.25, 0.3])
 warmup=instru.var.OrderedDiscrete([1, 500, 2000, 4000])
 latent_size=instru.var.OrderedDiscrete([64, 128, 256, 512])
@@ -116,7 +115,7 @@ checkpoint_path=args.checkpoint_path
 softmax=instru.var.OrderedDiscrete(['softmax', 'am_softmax'])
 logdir=args.logdir
 
-instrum=instru.Instrumentation(lr, l2, b1, b2, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, cp_path, softmax, logdir)
+instrum=instru.Instrumentation(lr, l2, momentum, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, cp_path, softmax, logdir)
 
 hp_optimizer=optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget, num_workers=args.hp_workers)
 

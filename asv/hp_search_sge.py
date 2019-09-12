@@ -72,12 +72,12 @@ parser.add_argument('--logdir', type=str, default=None, metavar='Path', help='Pa
 args=parser.parse_args()
 args.cuda=True if not args.no_cuda else False
 
-def train(lr, l2, b1, b2, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, submission_file, tmp_dir, cp_path, softmax, logdir):
+def train(lr, l2, momentum, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, submission_file, tmp_dir, cp_path, softmax, logdir):
 
 	file_name = get_file_name(tmp_dir)
 	np.random.seed()
 
-	command = 'qsub' + ' ' + submission_file + ' ' + str(lr) + ' ' + str(l2) + ' ' + str(b1) + ' ' + str(b2) + ' ' + str(smoothing) + ' ' + str(int(warmup)) + ' ' + str(int(latent_size)) + ' ' + str(int(n_hidden)) + ' ' + str(int(hidden_size)) + ' ' + str(int(n_frames)) + ' ' + str(model) + ' ' + str(ncoef) + ' ' + str(dropout_prob) + ' ' + str(epochs) + ' ' + str(batch_size) + ' ' + str(valid_batch_size) + ' ' + str(n_workers) + ' ' + str(cuda) + ' ' + str(train_hdf_file) + ' ' + str(valid_hdf_file) + ' ' + str(file_name) + ' ' + str(cp_path) + ' ' + str(file_name.split('/')[-1]+'t') + ' ' + str(softmax) + ' ' + str(logdir)
+	command = 'qsub' + ' ' + submission_file + ' ' + str(lr) + ' ' + str(l2) + ' ' + str(momentum) + ' ' + str(smoothing) + ' ' + str(int(warmup)) + ' ' + str(int(latent_size)) + ' ' + str(int(n_hidden)) + ' ' + str(int(hidden_size)) + ' ' + str(int(n_frames)) + ' ' + str(model) + ' ' + str(ncoef) + ' ' + str(dropout_prob) + ' ' + str(epochs) + ' ' + str(batch_size) + ' ' + str(valid_batch_size) + ' ' + str(n_workers) + ' ' + str(cuda) + ' ' + str(train_hdf_file) + ' ' + str(valid_hdf_file) + ' ' + str(file_name) + ' ' + str(cp_path) + ' ' + str(file_name.split('/')[-1]+'t') + ' ' + str(softmax) + ' ' + str(logdir)
 
 	for j in range(10):
 
@@ -109,7 +109,7 @@ def train(lr, l2, b1, b2, smoothing, warmup, latent_size, n_hidden, hidden_size,
 			print('Size of hidden layers: {}'.format(int(hidden_size)))
 			print('Dropout rate: {}'.format(dropout_prob))
 			print('LR: {}'.format(lr))
-			print('B1 and B2: {}, {}'.format(b1, b2))
+			print('Momentum: {}'.format(momentum))
 			print('l2: {}'.format(l2))
 			print('Warmup iterations: {}'.format(warmup))
 			print('Label smoothing: {}'.format(smoothing))

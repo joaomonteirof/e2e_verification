@@ -20,8 +20,7 @@ parser.add_argument('--batch-size', type=int, default=64, metavar='N', help='inp
 parser.add_argument('--valid-batch-size', type=int, default=64, metavar='N', help='input batch size for training (default: 64)')
 parser.add_argument('--epochs', type=int, default=500, metavar='N', help='number of epochs to train (default: 500)')
 parser.add_argument('--lr', type=float, default=0.001, metavar='LR', help='learning rate (default: 0.001)')
-parser.add_argument('--b1', type=float, default=0.9, metavar='m', help='Momentum paprameter (default: 0.9)')
-parser.add_argument('--b2', type=float, default=0.98, metavar='m', help='Momentum paprameter (default: 0.9)')
+parser.add_argument('--momentum', type=float, default=0.9, metavar='m', help='Momentum paprameter (default: 0.9)')
 parser.add_argument('--l2', type=float, default=1e-5, metavar='L2', help='Weight decay coefficient (default: 0.00001)')
 parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large', 'TDNN'], default='resnet_lstm', help='Model arch according to input type')
 parser.add_argument('--softmax', choices=['softmax', 'am_softmax'], default='softmax', help='Softmax type')
@@ -78,7 +77,7 @@ else:
 if args.cuda:
 	model = model.cuda(device)
 
-optimizer = TransformerOptimizer(optim.Adam(model.parameters(), betas=(args.b1, args.b2), weight_decay=args.l2), lr=args.lr, warmup_steps=args.warmup)
+optimizer = TransformerOptimizer(optim.SGD(model.parameters(), momentum=args.momentum, weight_decay=args.l2), lr=args.lr, warmup_steps=args.warmup)
 
 trainer = TrainLoop(model, optimizer, train_loader, valid_loader, label_smoothing=args.smoothing, verbose=-1, device=device, cp_name=args.cp_name, save_cp=True, checkpoint_path=args.checkpoint_path, pretrain=False, cuda=args.cuda, logger=writer)
 
@@ -93,7 +92,7 @@ print('Size of hidden layers: {}'.format(args.hidden_size))
 print('Batch size: {}'.format(args.batch_size))
 print('Valid batch size: {}'.format(args.valid_batch_size))
 print('LR: {}'.format(args.lr))
-print('B1 and B2: {}, {}'.format(args.b1, args.b2))
+print('Momentum: {}'.format(args.momentum))
 print('l2: {}'.format(args.l2))
 print('Warmup iterations: {}'.format(args.warmup))
 print('Label smoothing: {}'.format(args.smoothing))
