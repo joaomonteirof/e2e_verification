@@ -95,8 +95,10 @@ if __name__ == '__main__':
 
 	cos_scores = []
 	e2e_scores = []
+	fus_scores = []
 	out_e2e = []
 	out_cos = []
+	out_fus = []
 	mem_embeddings = {}
 
 	model.eval()
@@ -137,10 +139,12 @@ if __name__ == '__main__':
 				mem_embeddings[test_utt] = emb_test
 
 			e2e_scores.append( model.forward_bin(torch.cat([emb_enroll, emb_test],1)).squeeze().item() )
-			cos_scores.append( torch.nn.functional.cosine_similarity(emb_enroll, emb_test).mean().item() )
+			cos_scores.append( 0.5*(torch.nn.functional.cosine_similarity(emb_enroll, emb_test).mean().item()+1.) )
+			fus_scores.append( (e2e_scores[-1]+cos_scores[-1])*0.5 )
 
 			out_e2e.append([enroll_utt, test_utt, e2e_scores[-1]])
 			out_cos.append([enroll_utt, test_utt, cos_scores[-1]])
+			out_fus.append([enroll_utt, test_utt, cos_scores[-1]])
 
 	print('\nScoring done')
 
@@ -154,9 +158,14 @@ if __name__ == '__main__':
 			item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
 			f.write("%s" % item)
 
+	with open(args.out_path+'fus_scores.out', 'w') as f:
+		for el in out_fus:
+			item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
+			f.write("%s" % item)
+
 	e2e_scores = np.asarray(e2e_scores)
 	cos_scores = np.asarray(cos_scores)
-	all_scores = (e2e_scores + 0.5*(cos_scores+1.))*0.5
+	fus_scores = np.asarray(fus_scores)
 	labels = np.asarray(labels)
 
 	eer, auc, avg_precision, acc, threshold = compute_metrics(labels, e2e_scores)
@@ -167,6 +176,6 @@ if __name__ == '__main__':
 	print('\nCOS eval:')
 	print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
 
-	eer, auc, avg_precision, acc, threshold = compute_metrics(labels, all_scores)
+	eer, auc, avg_precision, acc, threshold = compute_metrics(labels, fus_scores)
 	print('\nCOS eval:')
 	print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))

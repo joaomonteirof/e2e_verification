@@ -133,8 +133,10 @@ if __name__ == '__main__':
 
 	cos_scores = []
 	e2e_scores = []
+	fus_scores = []
 	out_e2e = []
 	out_cos = []
+	fus_cos = []
 	mem_embeddings_enroll = {}
 	mem_embeddings_test = {}
 
@@ -192,14 +194,16 @@ if __name__ == '__main__':
 					mem_embeddings_enroll[enroll_utt] = emb_enroll
 
 				e2e_scores_utt.append( model.forward_bin(torch.cat([emb_enroll, emb_test],1)).squeeze().item() )
-				cos_scores_utt.append( torch.nn.functional.cosine_similarity(emb_enroll, emb_test).mean().item() )
+				cos_scores_utt.append( 0.5*(torch.nn.functional.cosine_similarity(emb_enroll, emb_test).mean().item()+1.) )
 
 
-			e2e_scores.append( np.mean(get_non_outliers(e2e_scores_utt) if args.remove_outliers else e2e_scores_utt) )
-			cos_scores.append( np.mean(get_non_outliers(cos_scores_utt) if args.remove_outliers else cos_scores_utt) )
+			e2e_scores.append( np.max(get_non_outliers(e2e_scores_utt) if args.remove_outliers else e2e_scores_utt) )
+			cos_scores.append( np.max(get_non_outliers(cos_scores_utt) if args.remove_outliers else cos_scores_utt) )
+			fus_scores.append( (e2e_scores[-1]+cos_scores[-1])*0.5 )
 
 			out_e2e.append([enroll_utt, test_utt, e2e_scores[-1]])
 			out_cos.append([enroll_utt, test_utt, cos_scores[-1]])
+			out_fus.append([enroll_utt, test_utt, fus_scores[-1]])
 
 	print('\nScoring done')
 
@@ -213,9 +217,14 @@ if __name__ == '__main__':
 			item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
 			f.write("%s" % item)
 
+	with open(args.out_path+'fus_scores_spk.out', 'w') as f:
+		for el in out_fus:
+			item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
+			f.write("%s" % item)
+
 	e2e_scores = np.asarray(e2e_scores)
 	cos_scores = np.asarray(cos_scores)
-	all_scores = (e2e_scores + 0.5*(cos_scores+1.))*0.5
+	fus_scores = np.asarray(fus_scores)
 	labels = np.asarray(labels)
 
 	eer, auc, avg_precision, acc, threshold = compute_metrics(labels, e2e_scores)
@@ -226,6 +235,6 @@ if __name__ == '__main__':
 	print('\nCOS eval:')
 	print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
 
-	eer, auc, avg_precision, acc, threshold = compute_metrics(labels, all_scores)
-	print('\nCOS eval:')
+	eer, auc, avg_precision, acc, threshold = compute_metrics(labels, fus_scores)
+	print('\nFUS eval:')
 	print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
