@@ -36,6 +36,7 @@ if __name__ == '__main__':
 	parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
 	parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
 	parser.add_argument('--out-path', type=str, default='./', metavar='Path', help='Path for saving computed scores')
+	parser.add_argument('--out-prefix', type=str, default=None, metavar='Path', help='Prefix to be added to score files')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 	parser.add_argument('--inner', action='store_true', default=True, help='Inner layer as embedding')
 	args = parser.parse_args()
@@ -148,17 +149,17 @@ if __name__ == '__main__':
 
 	print('\nScoring done')
 
-	with open(args.out_path+'e2e_scores.out', 'w') as f:
+	with open(args.out_path+args.out_prefix+'e2e_scores.out' if args.out_prefix is not None else args.out_path+'e2e_scores.out', 'w') as f:
 		for el in out_e2e:
 			item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
 			f.write("%s" % item)
 
-	with open(args.out_path+'cos_scores.out', 'w') as f:
+	with open(args.out_path+args.out_prefix+'cos_scores.out' if args.out_prefix is not None else args.out_path+'cos_scores.out', 'w') as f:
 		for el in out_cos:
 			item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
 			f.write("%s" % item)
 
-	with open(args.out_path+'fus_scores.out', 'w') as f:
+	with open(args.out_path+args.out_prefix+'fus_scores.out' if args.out_prefix is not None else args.out_path+'fus_scores.out', 'w') as f:
 		for el in out_fus:
 			item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
 			f.write("%s" % item)

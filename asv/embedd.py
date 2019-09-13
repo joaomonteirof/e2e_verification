@@ -4,6 +4,7 @@ import glob
 import torch
 import os
 import sys
+import pathlib
 from kaldi_io import read_mat_scp, open_or_fd, write_vec_flt
 import model as model_
 import scipy.io as sio
@@ -30,18 +31,24 @@ if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser(description='Compute embeddings')
 	parser.add_argument('--path-to-data', type=str, default='./data/', metavar='Path', help='Path to input data')
+	parser.add_argument('--path-to-more-data', type=str, default=None, metavar='Path', help='Path to input data')
+	parser.add_argument('--utt2spk', type=str, default=None, metavar='Path', help='Optional path for utt2spk')
+	parser.add_argument('--more-utt2spk', type=str, default=None, metavar='Path', help='Optional path for utt2spk')
 	parser.add_argument('--cp-path', type=str, default=None, metavar='Path', help='Path for file containing model')
 	parser.add_argument('--out-path', type=str, default='./', metavar='Path', help='Path to output hdf file')
 	parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large', 'TDNN'], default='resnet_mfcc', help='Model arch according to input type')
 	parser.add_argument('--latent-size', type=int, default=200, metavar='S', help='latent layer dimension (default: 200)')
 	parser.add_argument('--ncoef', type=int, default=23, metavar='N', help='number of MFCCs (default: 23)')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
+	parser.add_argument('--eps', type=float, default=0.0, metavar='eps', help='Add noise to embeddings')
 	parser.add_argument('--inner', action='store_true', default=True, help='Inner layer as embedding')
 	args = parser.parse_args()
 	args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
 	if args.cp_path is None:
 		raise ValueError('There is no checkpoint/model path. Use arg --cp-path to indicate the path!')
+
+	pathlib.Path(args.out_path).mkdir(parents=True, exist_ok=True)
 
 	print('Cuda Mode is: {}'.format(args.cuda))
 
@@ -75,6 +82,26 @@ if __name__ == '__main__':
 		print('Nothing found at {}.'.format(args.path_to_data))
 		exit(1)
 
+	if args.path_to_more_data:
+		more_scp_list = glob.glob(args.path_to_more_data + '*.scp')
+
+		if len(more_scp_list)<1:
+			print('Nothing found at {}.'.format(args.path_to_more_data))
+			exit(1)
+		else:
+			scp_list = scp_list + more_scp_list
+
+	if args.utt2spk:
+		utt2spk = read_utt2spk(args.utt2spk)
+		if args.more_utt2spk:
+			utt2spk.update(read_utt2spk(args.more_utt2spk))
+
+	scp_list = glob.glob(args.path_to_data + '*.scp')
+
+	if len(scp_list)<1:
+		print('Nothing found at {}.'.format(args.path_to_data))
+		exit(1)
+
 	print('Start of data embeddings computation')
 
 	embeddings = {}
@@ -87,7 +114,10 @@ if __name__ == '__main__':
 
 			for i, utt in enumerate(data):
 
-				print('Computing embedding for utterance '+ utt)
+				if args.utt2spk:
+					if not utt in utt2spk:
+						print('Skipping utterance '+ utt)
+						continue
 
 				feats = prep_feats(data[utt])
 
@@ -107,6 +137,9 @@ if __name__ == '__main__':
 				emb = emb_2[1] if args.inner else emb_2[0]
 
 				embeddings[utt] = emb.detach().cpu().numpy().squeeze()
+
+				if args.eps>0.0:
+					embeddings[utt] += args.eps*np.random.randn(embeddings[utt].shape[0])
 
 	print('Storing embeddings in output file')
 
