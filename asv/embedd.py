@@ -39,6 +39,8 @@ if __name__ == '__main__':
 	parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large', 'TDNN'], default='resnet_mfcc', help='Model arch according to input type')
 	parser.add_argument('--latent-size', type=int, default=200, metavar='S', help='latent layer dimension (default: 200)')
 	parser.add_argument('--ncoef', type=int, default=23, metavar='N', help='number of MFCCs (default: 23)')
+	parser.add_argument('--latent-size', type=int, default=256, metavar='S', help='latent layer dimension (default: 256)')
+	parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 	parser.add_argument('--eps', type=float, default=0.0, metavar='eps', help='Add noise to embeddings')
 	parser.add_argument('--inner', action='store_true', default=True, help='Inner layer as embedding')
@@ -56,17 +58,17 @@ if __name__ == '__main__':
 		device = get_freer_gpu()
 
 	if args.model == 'resnet_mfcc':
-		model = model_.ResNet_mfcc(n_z=args.latent_size, proj_size=None, ncoef=args.ncoef)
+		model = model_.ResNet_mfcc(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=None, ncoef=args.ncoef)
 	elif args.model == 'resnet_lstm':
-		model = model_.ResNet_lstm(n_z=args.latent_size, proj_size=None, ncoef=args.ncoef)
+		model = model_.ResNet_lstm(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=None, ncoef=args.ncoef)
 	elif args.model == 'resnet_stats':
-		model = model_.ResNet_stats(n_z=args.latent_size, proj_size=None, ncoef=args.ncoef)
+		model = model_.ResNet_stats(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=None, ncoef=args.ncoef)
 	elif args.model == 'inception_mfcc':
-		model = model_.inception_v3(n_z=args.latent_size, proj_size=None, ncoef=args.ncoef)
+		model = model_.inception_v3(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=None, ncoef=args.ncoef)
 	elif args.model == 'resnet_large':
-		model = model_.ResNet_large_lstm(n_z=args.latent_size, proj_size=None, ncoef=args.ncoef)
+		model = model_.ResNet_large_lstm(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=None, ncoef=args.ncoef)
 	elif args.model == 'TDNN':
-		model = model_.TDNN(n_z=args.latent_size, proj_size=None, ncoef=args.ncoef)
+		model = model_.TDNN(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=None, ncoef=args.ncoef)
 
 	ckpt = torch.load(args.cp_path, map_location = lambda storage, loc: storage)
 	model.load_state_dict(ckpt['model_state'], strict=False)
