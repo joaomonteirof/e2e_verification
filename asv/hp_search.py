@@ -91,16 +91,16 @@ def train(lr, l2, momentum, smoothing, warmup, latent_size, n_hidden, hidden_siz
 
 	return trainer.train(n_epochs=epochs)
 
-lr=instru.var.OrderedDiscrete([0.1, 0.01, 0.001, 0.0001, 0.00001])
-l2=instru.var.OrderedDiscrete([0.001, 0.0005, 0.0001, 0.00005, 0.00001])
-momentum=instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.7, 0.85, 0.95])
-smoothing=instru.var.OrderedDiscrete([0.0, 0.05, 0.1, 0.2, 0.25, 0.3])
-warmup=instru.var.OrderedDiscrete([1, 500, 2000, 4000])
-latent_size=instru.var.OrderedDiscrete([64, 128, 256, 512])
-n_hidden=instru.var.OrderedDiscrete([1, 2, 3, 4, 5])
+lr=instru.var.OrderedDiscrete([0.5, 0.1, 0.01, 0.001])
+l2=instru.var.OrderedDiscrete([0.001, 0.0005, 0.0001, 0.00005])
+momentum=instru.var.OrderedDiscrete([0.7, 0.85, 0.95])
+smoothing=instru.var.OrderedDiscrete([0.0, 0.1, 0.25])
+warmup=instru.var.OrderedDiscrete([1, 500, 2000])
+latent_size=instru.var.OrderedDiscrete([128, 256, 512])
+n_hidden=instru.var.OrderedDiscrete([1, 2, 3, 4])
 hidden_size=instru.var.OrderedDiscrete([64, 128, 256, 512])
 n_frames=instru.var.OrderedDiscrete([300, 400, 500, 600, 800])
-dropout_prob=instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.7])
+dropout_prob=instru.var.OrderedDiscrete([0.1, 0.2, 0.3])
 model=instru.var.OrderedDiscrete(['resnet_mfcc', 'resnet_lstm', 'resnet_stats', 'resnet_small', 'TDNN']) if args.model=='all' else args.model
 ncoef=args.ncoef
 epochs=args.epochs
@@ -109,8 +109,8 @@ valid_batch_size=args.valid_batch_size
 n_workers=args.workers
 cuda=args.cuda
 train_hdf_file=args.train_hdf_file
-data_info_path=args.data_info_path
 valid_hdf_file=args.valid_hdf_file
+sub_file=args.sub_file
 checkpoint_path=args.checkpoint_path
 softmax=instru.var.OrderedDiscrete(['softmax', 'am_softmax'])
 logdir=args.logdir
