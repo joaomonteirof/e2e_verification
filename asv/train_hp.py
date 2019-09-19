@@ -82,6 +82,7 @@ optimizer = TransformerOptimizer(optim.SGD(model.parameters(), lr=args.lr, momen
 trainer = TrainLoop(model, optimizer, train_loader, valid_loader, label_smoothing=args.smoothing, verbose=-1, device=device, cp_name=args.cp_name, save_cp=True, checkpoint_path=args.checkpoint_path, pretrain=False, cuda=args.cuda, logger=writer)
 
 print(' ')
+print('CP name: {}'.format(args.cp_name))
 print('Cuda Mode: {}'.format(args.cuda))
 print('Device: {}'.format(device))
 print('Selected model: {}'.format(args.model))
