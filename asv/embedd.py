@@ -58,17 +58,17 @@ if __name__ == '__main__':
 		device = get_freer_gpu()
 
 	if args.model == 'resnet_mfcc':
-		model = model_.ResNet_mfcc(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=None, ncoef=args.ncoef)
+		model = model_.ResNet_mfcc(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=2, ncoef=args.ncoef)
 	elif args.model == 'resnet_lstm':
-		model = model_.ResNet_lstm(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=None, ncoef=args.ncoef)
+		model = model_.ResNet_lstm(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=2, ncoef=args.ncoef)
 	elif args.model == 'resnet_stats':
-		model = model_.ResNet_stats(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=None, ncoef=args.ncoef)
+		model = model_.ResNet_stats(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=2, ncoef=args.ncoef)
 	elif args.model == 'inception_mfcc':
-		model = model_.inception_v3(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=None, ncoef=args.ncoef)
+		model = model_.inception_v3(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=2, ncoef=args.ncoef)
 	elif args.model == 'resnet_large':
-		model = model_.ResNet_large_lstm(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=None, ncoef=args.ncoef)
+		model = model_.ResNet_large_lstm(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=2, ncoef=args.ncoef)
 	elif args.model == 'TDNN':
-		model = model_.TDNN(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=None, ncoef=args.ncoef)
+		model = model_.TDNN(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=2, ncoef=args.ncoef)
 
 	ckpt = torch.load(args.cp_path, map_location = lambda storage, loc: storage)
 	model.load_state_dict(ckpt['model_state'], strict=False)
