@@ -178,5 +178,5 @@ if __name__ == '__main__':
 	print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
 
 	eer, auc, avg_precision, acc, threshold = compute_metrics(labels, fus_scores)
-	print('\nCOS eval:')
+	print('\nFUS eval:')
 	print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
