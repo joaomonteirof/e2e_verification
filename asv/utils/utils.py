@@ -141,3 +141,15 @@ def read_spk2utt(path):
 		spk2utt_dict[spk_utts[0]] = spk_utts[1:]
 
 	return spk2utt_dict
+
+def read_utt2spk(path):
+	with open(path, 'r') as file:
+		pairs = file.readlines()
+
+	utt2spk_dict = {}
+
+	for pair in pairs:
+		utt, spk = pair.split(' ')
+		utt2spk_dict[utt] = spk.replace('\n','')
+
+	return utt2spk_dict
