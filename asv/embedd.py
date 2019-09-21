@@ -40,6 +40,7 @@ if __name__ == '__main__':
 	parser.add_argument('--ncoef', type=int, default=23, metavar='N', help='number of MFCCs (default: 23)')
 	parser.add_argument('--latent-size', type=int, default=256, metavar='S', help='latent layer dimension (default: 256)')
 	parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
+	parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 	parser.add_argument('--eps', type=float, default=0.0, metavar='eps', help='Add noise to embeddings')
 	parser.add_argument('--inner', action='store_true', default=True, help='Inner layer as embedding')
