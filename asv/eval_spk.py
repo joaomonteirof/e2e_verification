@@ -187,7 +187,7 @@ if __name__ == '__main__':
 					if args.cuda:
 						enroll_utt_data = enroll_utt_data.to(device)
 
-					emb_enroll = model.forward[1](enroll_utt_data).detach() if args.inner else model.forward[0](enroll_utt_data).detach()
+					emb_enroll = model.forward(enroll_utt_data)[1].detach() if args.inner else model.forward(enroll_utt_data)[0].detach()
 
 					if unlab_emb is not None:
 						emb_enroll -= unlab_emb
