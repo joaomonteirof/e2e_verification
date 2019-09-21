@@ -137,7 +137,7 @@ if __name__ == '__main__':
 	fus_scores = []
 	out_e2e = []
 	out_cos = []
-	fus_cos = []
+	out_fus = []
 	mem_embeddings_enroll = {}
 	mem_embeddings_test = {}
 
