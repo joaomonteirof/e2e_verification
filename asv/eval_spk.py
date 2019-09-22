@@ -138,7 +138,7 @@ if __name__ == '__main__':
 	out_e2e = []
 	out_cos = []
 	out_fus = []
-	mem_embeddings_enroll = {}
+	mem_embeddings_enroll_spk = {}
 	mem_embeddings_test = {}
 
 	with torch.no_grad():
@@ -170,17 +170,17 @@ if __name__ == '__main__':
 
 			## Get enroll embedding and e2e scoring
 
-			enroll_utts = list(np.random.choice(spk2utt[speakers_enroll[i]], min(len(spk2utt[speakers_enroll[i]]), args.max_nscores), replace=False))
+			try:
 
-			for enroll_utt in enroll_utts:
+				emb_spk_enroll = mem_embeddings_enroll_spk[speakers_enroll[i]]
 
-				e2e_scores_utt = []
-				cos_scores_utt = []
+			except KeyError:
 
-				try:
-					emb_enroll = mem_embeddings_enroll[enroll_utt]
+				enroll_utts = list(np.random.choice(spk2utt[speakers_enroll[i]], min(len(spk2utt[speakers_enroll[i]]), args.max_nscores), replace=False))
 
-				except KeyError:
+				for enroll_utt in enroll_utts:
+
+					spk_enroll = []
 
 					enroll_utt_data = prep_feats(enroll_data[enroll_utt])
 
@@ -192,14 +192,14 @@ if __name__ == '__main__':
 					if unlab_emb is not None:
 						emb_enroll -= unlab_emb
 
-					mem_embeddings_enroll[enroll_utt] = emb_enroll
+					spk_enroll.append(emb_enroll)
 
-				e2e_scores_utt.append( model.forward_bin(torch.cat([emb_enroll, emb_test],1)).squeeze().item() )
-				cos_scores_utt.append( 0.5*(torch.nn.functional.cosine_similarity(emb_enroll, emb_test).mean().item()+1.) )
+				emb_spk_enroll = torch.mean(spk_enroll, dim=0, keepdim=True)
 
+				mem_embeddings_enroll_spk[speakers_enroll[i]] = emb_spk_enroll
 
-			e2e_scores.append( np.max(get_non_outliers(e2e_scores_utt) if args.remove_outliers else e2e_scores_utt) )
-			cos_scores.append( np.max(get_non_outliers(cos_scores_utt) if args.remove_outliers else cos_scores_utt) )
+			e2e_scores.append( model.forward_bin(torch.cat([emb_spk_enroll, emb_test],1)).squeeze().item() )
+			cos_scores.append( 0.5*(torch.nn.functional.cosine_similarity(emb_spk_enroll, emb_test).mean().item()+1.) )
 			fus_scores.append( (e2e_scores[-1]+cos_scores[-1])*0.5 )
 
 			out_e2e.append([enroll_utt, test_utt, e2e_scores[-1]])
