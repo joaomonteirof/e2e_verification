@@ -122,7 +122,7 @@ if __name__ == '__main__':
 				unlab_emb.append(model.forward(unlab_utt_data).detach().unsqueeze(0))
 
 
-		unlab_emb=torch.cat(unlab_emb, 0).mean(0).unsqueeze(0)
+		unlab_emb=torch.cat(unlab_emb, 0).mean(0, keepdim=True)
 
 
 	spk2utt = read_spk2utt(args.spk2utt)
@@ -193,7 +193,7 @@ if __name__ == '__main__':
 
 					spk_enroll.append(emb_enroll)
 
-				emb_spk_enroll = torch.mean(spk_enroll, dim=0, keepdim=True)
+				emb_spk_enroll = torch.cat(spk_enroll, 0).mean(0, keepdim=True)
 
 				mem_embeddings_enroll_spk[speakers_enroll[i]] = emb_spk_enroll
 
