@@ -170,7 +170,7 @@ if __name__ == '__main__':
 
 			## Get enroll embedding and e2e scoring
 
-			enroll_utts = list(np.random.choice(spk2utt[speakers_enroll[i]], min(len(spk2utt[speakers_enroll[i]]), args.max_nscores)))
+			enroll_utts = list(np.random.choice(spk2utt[speakers_enroll[i]], min(len(spk2utt[speakers_enroll[i]]), args.max_nscores), replace=False))
 
 			for enroll_utt in enroll_utts:
 
