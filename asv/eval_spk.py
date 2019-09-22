@@ -40,7 +40,6 @@ if __name__ == '__main__':
 	parser.add_argument('--out-path', type=str, default='./', metavar='Path', help='Path for saving computed scores')
 	parser.add_argument('--out-prefix', type=str, default=None, metavar='Path', help='Prefix to be added to score files')
 	parser.add_argument('--max-nscores', type=int, default=200, metavar='S', help='Max. number of test scores to consider (default: 200)')
-	parser.add_argument('--remove-outliers', action='store_true', default=False, help='Enables outliers removal')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 	parser.add_argument('--inner', action='store_true', default=True, help='Inner layer as embedding')
 	args = parser.parse_args()
