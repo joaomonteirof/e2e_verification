@@ -147,7 +147,7 @@ if __name__ == '__main__':
 
 	print('Storing embeddings in output file')
 
-	out_name = args.path_to_data.split('/')[-2]
+	out_name = args.path_to_data.split('/')[-2] if not args.utt2spk else args.utt2spk.split('/')[-2]
 	file_name = args.out_path+out_name+'.ark'
 
 	if os.path.isfile(file_name):
