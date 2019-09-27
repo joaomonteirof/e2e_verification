@@ -120,16 +120,16 @@ def train(lr, l2, momentum, smoothing, warmup, latent_size, n_hidden, hidden_siz
 
 	return 0.5
 
-lr=instru.var.OrderedDiscrete([0.5, 0.1, 0.01, 0.001])
-l2=instru.var.OrderedDiscrete([0.001, 0.0005, 0.0001, 0.00005])
+lr=instru.var.OrderedDiscrete([1.0, 0.5, 0.1, 0.01])
+l2=instru.var.OrderedDiscrete([0.001, 0.0001, 0.00001])
 momentum=instru.var.OrderedDiscrete([0.7, 0.85, 0.95])
-smoothing=instru.var.OrderedDiscrete([0.0, 0.1, 0.25])
+smoothing=instru.var.OrderedDiscrete([0.0, 0.1, 0.2])
 warmup=instru.var.OrderedDiscrete([1, 500, 2000])
 latent_size=instru.var.OrderedDiscrete([128, 256, 512])
 n_hidden=instru.var.OrderedDiscrete([1, 2, 3, 4])
 hidden_size=instru.var.OrderedDiscrete([64, 128, 256, 512])
-n_frames=instru.var.OrderedDiscrete([300, 400, 500, 600, 800])
-dropout_prob=instru.var.OrderedDiscrete([0.1, 0.2, 0.3])
+n_frames=instru.var.OrderedDiscrete([300, 500, 800])
+dropout_prob=instru.var.OrderedDiscrete([0.01, 0.1, 0.2])
 model=instru.var.OrderedDiscrete(['resnet_mfcc', 'resnet_lstm', 'resnet_stats', 'resnet_small', 'TDNN']) if args.model=='all' else args.model
 ncoef=args.ncoef
 epochs=args.epochs
