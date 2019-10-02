@@ -57,7 +57,7 @@ else:
 	device = torch.device('cpu')
 
 if args.logdir:
-	writer = SummaryWriter(log_dir=args.logdir, comment=args.model, purge_step=True)
+	writer = SummaryWriter(log_dir=args.logdir, comment=args.model, purge_step=True if args.checkpoint_epoch is None else False)
 else:
 	writer = None
 
