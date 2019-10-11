@@ -106,7 +106,7 @@ def train(lr, l2, momentum, smoothing, warmup, latent_size, n_hidden, hidden_siz
 
 	return 0.5
 
-lr=instru.var.OrderedDiscrete([1.0, 0.5, 0.1, 0.01])
+lr=instru.var.OrderedDiscrete([2.0, 1.5, 1.0, 0.5, 0.1])
 l2=instru.var.OrderedDiscrete([0.001, 0.0001, 0.00001])
 momentum=instru.var.OrderedDiscrete([0.7, 0.85, 0.95])
 smoothing=instru.var.OrderedDiscrete([0.0, 0.1, 0.2])
