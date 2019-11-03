@@ -128,9 +128,13 @@ class PreActBottleneck(nn.Module):
 		return out
 
 class ResNet_stats(nn.Module):
-	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,6,3], block=PreActBottleneck, proj_size=100, ncoef=23, dropout_prob=0.25, sm_type='softmax'):
+	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,6,3], block=PreActBottleneck, proj_size=100, ncoef=23, dropout_prob=0.25, sm_type='softmax', ndiscriminators=1, r_proj_size=0):
 		self.in_planes = 32
 		super(ResNet_stats, self).__init__()
+
+		self.ndiscriminators = ndiscriminators
+		self.r_proj_size = r_proj_size
+		self.classifier = nn.ModuleList()
 	
 		self.conv1 = nn.Conv2d(1, 32, kernel_size=(ncoef,3), stride=(1,1), padding=(0,1), bias=False)
 		
@@ -144,9 +148,13 @@ class ResNet_stats(nn.Module):
 
 		self.fc_mu = nn.Linear(512, n_z)
 
-		self.classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
-
 		self.initialize_params()
+
+		if ndiscriminators>1:
+			for i in range(self.ndiscriminators):
+				self.classifier.append(self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob))
+		else:
+			self.classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
 
 		if sm_type=='softmax':
 			self.out_proj=Softmax(input_features=n_z, output_features=proj_size)
@@ -176,7 +184,17 @@ class ResNet_stats(nn.Module):
 
 	def make_bin_layers(self, n_in, n_h_layers, h_size, dropout_p):
 
-		classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
+		if self.r_proj_size>0:
+			projection = nn.Linear(n_in, self.r_proj_size, bias=False)
+			with torch.no_grad():
+				projection.weight.div_(torch.norm(projection.weight, keepdim=True))
+
+			projection.weight.requires_grad = False
+
+			classifier = nn.ModuleList([projection, nn.Linear(self.r_proj_size, h_size), nn.LeakyReLU(0.1)])
+
+		else:
+			classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
 
 		for i in range(n_h_layers-1):
 			classifier.append(nn.Linear(h_size, h_size))
@@ -205,15 +223,30 @@ class ResNet_stats(nn.Module):
 
 	def forward_bin(self, z):
 
-		for l in self.classifier:
-			z = l(z)
+		if self.ndiscriminators>1:
+			out = 0.0
+			for disc in self.classifier:
+				z_ = z
+				for l in disc:
+					z_ = l(z_)
+				out += z_
+
+			z = out/self.ndiscriminators
+
+		else:
+			for l in self.classifier:
+				z = l(z)
 		
 		return z
 
 class ResNet_mfcc(nn.Module):
-	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,6,3], block=PreActBottleneck, proj_size=100, ncoef=23, dropout_prob=0.25, sm_type='softmax'):
+	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,6,3], block=PreActBottleneck, proj_size=100, ncoef=23, dropout_prob=0.25, sm_type='softmax', ndiscriminators=1, r_proj_size=0):
 		self.in_planes = 32
 		super(ResNet_mfcc, self).__init__()
+
+		self.ndiscriminators = ndiscriminators
+		self.r_proj_size = r_proj_size
+		self.classifier = nn.ModuleList()
 
 		self.conv1 = nn.Conv2d(1, 32, kernel_size=(ncoef,3), stride=(1,1), padding=(0,1), bias=False)
 		
@@ -227,9 +260,13 @@ class ResNet_mfcc(nn.Module):
 
 		self.fc_mu = nn.Linear(512, n_z)
 
-		self.classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
-
 		self.initialize_params()
+
+		if ndiscriminators>1:
+			for i in range(self.ndiscriminators):
+				self.classifier.append(self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob))
+		else:
+			self.classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
 
 		self.attention = SelfAttention(block.expansion*512)
 
@@ -261,7 +298,17 @@ class ResNet_mfcc(nn.Module):
 
 	def make_bin_layers(self, n_in, n_h_layers, h_size, dropout_p):
 
-		classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
+		if self.r_proj_size>0:
+			projection = nn.Linear(n_in, self.r_proj_size, bias=False)
+			with torch.no_grad():
+				projection.weight.div_(torch.norm(projection.weight, keepdim=True))
+
+			projection.weight.requires_grad = False
+
+			classifier = nn.ModuleList([projection, nn.Linear(self.r_proj_size, h_size), nn.LeakyReLU(0.1)])
+
+		else:
+			classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
 
 		for i in range(n_h_layers-1):
 			classifier.append(nn.Linear(h_size, h_size))
@@ -291,15 +338,30 @@ class ResNet_mfcc(nn.Module):
 
 	def forward_bin(self, z):
 
-		for l in self.classifier:
-			z = l(z)
+		if self.ndiscriminators>1:
+			out = 0.0
+			for disc in self.classifier:
+				z_ = z
+				for l in disc:
+					z_ = l(z_)
+				out += z_
+
+			z = out/self.ndiscriminators
+
+		else:
+			for l in self.classifier:
+				z = l(z)
 		
 		return z
 
 class ResNet_lstm(nn.Module):
-	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,6,3], block=PreActBottleneck, proj_size=100, ncoef=23, dropout_prob=0.25, sm_type='softmax'):
+	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,6,3], block=PreActBottleneck, proj_size=100, ncoef=23, dropout_prob=0.25, sm_type='softmax', ndiscriminators=1, r_proj_size=0):
 		self.in_planes = 32
 		super(ResNet_lstm, self).__init__()
+
+		self.ndiscriminators = ndiscriminators
+		self.r_proj_size = r_proj_size
+		self.classifier = nn.ModuleList()
 	
 		self.conv1 = nn.Conv2d(1, 32, kernel_size=(ncoef,3), stride=(1,1), padding=(0,1), bias=False)
 		
@@ -315,9 +377,13 @@ class ResNet_lstm(nn.Module):
 
 		self.fc_mu = nn.Linear(512, n_z)
 
-		self.classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
-
 		self.initialize_params()
+
+		if ndiscriminators>1:
+			for i in range(self.ndiscriminators):
+				self.classifier.append(self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob))
+		else:
+			self.classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
 
 		self.attention = SelfAttention(512)
 
@@ -349,7 +415,17 @@ class ResNet_lstm(nn.Module):
 
 	def make_bin_layers(self, n_in, n_h_layers, h_size, dropout_p):
 
-		classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
+		if self.r_proj_size>0:
+			projection = nn.Linear(n_in, self.r_proj_size, bias=False)
+			with torch.no_grad():
+				projection.weight.div_(torch.norm(projection.weight, keepdim=True))
+
+			projection.weight.requires_grad = False
+
+			classifier = nn.ModuleList([projection, nn.Linear(self.r_proj_size, h_size), nn.LeakyReLU(0.1)])
+
+		else:
+			classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
 
 		for i in range(n_h_layers-1):
 			classifier.append(nn.Linear(h_size, h_size))
@@ -391,15 +467,30 @@ class ResNet_lstm(nn.Module):
 
 	def forward_bin(self, z):
 
-		for l in self.classifier:
-			z = l(z)
+		if self.ndiscriminators>1:
+			out = 0.0
+			for disc in self.classifier:
+				z_ = z
+				for l in disc:
+					z_ = l(z_)
+				out += z_
+
+			z = out/self.ndiscriminators
+
+		else:
+			for l in self.classifier:
+				z = l(z)
 		
 		return z
 
 class ResNet_small(nn.Module):
-	def __init__(self, n_z=256, nh=1, n_h=512, layers=[2,2,2,2], block=PreActBlock, proj_size=0, ncoef=23, dropout_prob=0.25, sm_type='none'):
+	def __init__(self, n_z=256, nh=1, n_h=512, layers=[2,2,2,2], block=PreActBlock, proj_size=0, ncoef=23, dropout_prob=0.25, sm_type='none', ndiscriminators=1, r_proj_size=0):
 		self.in_planes = 32
 		super(ResNet_small, self).__init__()
+
+		self.ndiscriminators = ndiscriminators
+		self.r_proj_size = r_proj_size
+		self.classifier = nn.ModuleList()
 
 		self.conv1 = nn.Conv2d(1, 32, kernel_size=(ncoef,3), stride=(1,1), padding=(0,1), bias=False)
 		
@@ -413,9 +504,13 @@ class ResNet_small(nn.Module):
 
 		self.fc_mu = nn.Linear(512, n_z)
 
-		self.classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
-
 		self.initialize_params()
+
+		if ndiscriminators>1:
+			for i in range(self.ndiscriminators):
+				self.classifier.append(self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob))
+		else:
+			self.classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
 
 		self.attention = SelfAttention(block.expansion*512)
 
@@ -448,7 +543,17 @@ class ResNet_small(nn.Module):
 
 	def make_bin_layers(self, n_in, n_h_layers, h_size, dropout_p):
 
-		classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
+		if self.r_proj_size>0:
+			projection = nn.Linear(n_in, self.r_proj_size, bias=False)
+			with torch.no_grad():
+				projection.weight.div_(torch.norm(projection.weight, keepdim=True))
+
+			projection.weight.requires_grad = False
+
+			classifier = nn.ModuleList([projection, nn.Linear(self.r_proj_size, h_size), nn.LeakyReLU(0.1)])
+
+		else:
+			classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
 
 		for i in range(n_h_layers-1):
 			classifier.append(nn.Linear(h_size, h_size))
@@ -478,15 +583,30 @@ class ResNet_small(nn.Module):
 
 	def forward_bin(self, z):
 
-		for l in self.classifier:
-			z = l(z)
+		if self.ndiscriminators>1:
+			out = 0.0
+			for disc in self.classifier:
+				z_ = z
+				for l in disc:
+					z_ = l(z_)
+				out += z_
+
+			z = out/self.ndiscriminators
+
+		else:
+			for l in self.classifier:
+				z = l(z)
 		
 		return z
 
 class ResNet_large(nn.Module):
-	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,23,3], block=PreActBottleneck, proj_size=100, ncoef=23, dropout_prob=0.25, sm_type='softmax'):
+	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,23,3], block=PreActBottleneck, proj_size=100, ncoef=23, dropout_prob=0.25, sm_type='softmax', ndiscriminators=1, r_proj_size=0):
 		self.in_planes = 32
 		super(ResNet_large, self).__init__()
+
+		self.ndiscriminators = ndiscriminators
+		self.r_proj_size = r_proj_size
+		self.classifier = nn.ModuleList()
 
 		self.conv1 = nn.Conv2d(1, 32, kernel_size=(ncoef,3), stride=(1,1), padding=(0,1), bias=False)
 		
@@ -500,9 +620,13 @@ class ResNet_large(nn.Module):
 
 		self.fc_mu = nn.Linear(512, n_z)
 
-		self.classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
-
 		self.initialize_params()
+
+		if ndiscriminators>1:
+			for i in range(self.ndiscriminators):
+				self.classifier.append(self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob))
+		else:
+			self.classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
 
 		self.attention = SelfAttention(block.expansion*512)
 
@@ -534,7 +658,17 @@ class ResNet_large(nn.Module):
 
 	def make_bin_layers(self, n_in, n_h_layers, h_size, dropout_p):
 
-		classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
+		if self.r_proj_size>0:
+			projection = nn.Linear(n_in, self.r_proj_size, bias=False)
+			with torch.no_grad():
+				projection.weight.div_(torch.norm(projection.weight, keepdim=True))
+
+			projection.weight.requires_grad = False
+
+			classifier = nn.ModuleList([projection, nn.Linear(self.r_proj_size, h_size), nn.LeakyReLU(0.1)])
+
+		else:
+			classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
 
 		for i in range(n_h_layers-1):
 			classifier.append(nn.Linear(h_size, h_size))
@@ -564,8 +698,19 @@ class ResNet_large(nn.Module):
 
 	def forward_bin(self, z):
 
-		for l in self.classifier:
-			z = l(z)
+		if self.ndiscriminators>1:
+			out = 0.0
+			for disc in self.classifier:
+				z_ = z
+				for l in disc:
+					z_ = l(z_)
+				out += z_
+
+			z = out/self.ndiscriminators
+
+		else:
+			for l in self.classifier:
+				z = l(z)
 		
 		return z
 
@@ -581,8 +726,13 @@ class StatisticalPooling(nn.Module):
 
 class TDNN(nn.Module):
 	# Architecture taken from https://github.com/santi-pdp/pase/blob/master/pase/models/tdnn.py
-	def __init__(self, n_z=256, nh=1, n_h=512, proj_size=0, ncoef=23, sm_type='none', dropout_prob=0.25):
+	def __init__(self, n_z=256, nh=1, n_h=512, proj_size=0, ncoef=23, sm_type='none', dropout_prob=0.25, ndiscriminators=1, r_proj_size=0):
 		super(TDNN, self).__init__()
+
+		self.ndiscriminators = ndiscriminators
+		self.r_proj_size = r_proj_size
+		self.classifier = nn.ModuleList()
+
 		self.model = nn.Sequential( nn.Conv1d(ncoef, 512, 5, padding=2),
 			nn.BatchNorm1d(512),
 			nn.ReLU(inplace=True),
@@ -610,7 +760,11 @@ class TDNN(nn.Module):
 			nn.ReLU(inplace=True),
 			nn.Conv1d(512, n_z, 1) )
 
-		self.classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
+		if ndiscriminators>1:
+			for i in range(self.ndiscriminators):
+				self.classifier.append(self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob))
+		else:
+			self.classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
 
 		if proj_size>0 and sm_type!='none':
 			if sm_type=='softmax':
@@ -625,7 +779,17 @@ class TDNN(nn.Module):
 
 	def make_bin_layers(self, n_in, n_h_layers, h_size, dropout_p):
 
-		classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
+		if self.r_proj_size>0:
+			projection = nn.Linear(n_in, self.r_proj_size, bias=False)
+			with torch.no_grad():
+				projection.weight.div_(torch.norm(projection.weight, keepdim=True))
+
+			projection.weight.requires_grad = False
+
+			classifier = nn.ModuleList([projection, nn.Linear(self.r_proj_size, h_size), nn.LeakyReLU(0.1)])
+
+		else:
+			classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
 
 		for i in range(n_h_layers-1):
 			classifier.append(nn.Linear(h_size, h_size))
@@ -647,8 +811,19 @@ class TDNN(nn.Module):
 
 	def forward_bin(self, z):
 
-		for l in self.classifier:
-			z = l(z)
+		if self.ndiscriminators>1:
+			out = 0.0
+			for disc in self.classifier:
+				z_ = z
+				for l in disc:
+					z_ = l(z_)
+				out += z_
+
+			z = out/self.ndiscriminators
+
+		else:
+			for l in self.classifier:
+				z = l(z)
 		
 		return z
 

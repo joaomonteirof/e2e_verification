@@ -23,6 +23,8 @@ parser.add_argument('--lr', type=float, default=0.001, metavar='LR', help='learn
 parser.add_argument('--momentum', type=float, default=0.9, metavar='m', help='Momentum paprameter (default: 0.9)')
 parser.add_argument('--l2', type=float, default=1e-5, metavar='L2', help='Weight decay coefficient (default: 0.00001)')
 parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large', 'TDNN'], default='resnet_lstm', help='Model arch according to input type')
+parser.add_argument('--ndiscriminators', type=int, default=1, metavar='N', help='number of discriminators (default: 1)')
+parser.add_argument('--rproj-size', type=int, default=-1, metavar='S', help='Random projection size - active if greater than 1')
 parser.add_argument('--softmax', choices=['softmax', 'am_softmax'], default='softmax', help='Softmax type')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
 parser.add_argument('--ncoef', type=int, default=23, metavar='N', help='number of MFCCs (default: 23)')
@@ -57,17 +59,17 @@ valid_dataset = Loader_valid(hdf5_name = args.valid_hdf_file, max_nb_frames = ar
 valid_loader = torch.utils.data.DataLoader(valid_dataset, batch_size=args.valid_batch_size, shuffle=True, num_workers=args.workers, worker_init_fn=set_np_randomseed)
 
 if args.model == 'resnet_stats':
-	model = model_.ResNet_stats(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=train_dataset.n_speakers, ncoef=args.ncoef, dropout_prob=args.dropout_prob, sm_type=args.softmax)
+	model = model_.ResNet_stats(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=train_dataset.n_speakers, ncoef=args.ncoef, dropout_prob=args.dropout_prob, sm_type=args.softmax, ndiscriminators=args.ndiscriminators, r_proj_size=args.rproj_size)
 elif args.model == 'resnet_mfcc':
-	model = model_.ResNet_mfcc(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=train_dataset.n_speakers, ncoef=args.ncoef, dropout_prob=args.dropout_prob, sm_type=args.softmax)
+	model = model_.ResNet_mfcc(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=train_dataset.n_speakers, ncoef=args.ncoef, dropout_prob=args.dropout_prob, sm_type=args.softmax, ndiscriminators=args.ndiscriminators, r_proj_size=args.rproj_size)
 if args.model == 'resnet_lstm':
-	model = model_.ResNet_lstm(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=train_dataset.n_speakers, ncoef=args.ncoef, dropout_prob=args.dropout_prob, sm_type=args.softmax)
+	model = model_.ResNet_lstm(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=train_dataset.n_speakers, ncoef=args.ncoef, dropout_prob=args.dropout_prob, sm_type=args.softmax, ndiscriminators=args.ndiscriminators, r_proj_size=args.rproj_size)
 elif args.model == 'resnet_small':
-	model = model_.ResNet_small(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=train_dataset.n_speakers, ncoef=args.ncoef, dropout_prob=args.dropout_prob, sm_type=args.softmax)
+	model = model_.ResNet_small(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=train_dataset.n_speakers, ncoef=args.ncoef, dropout_prob=args.dropout_prob, sm_type=args.softmax, ndiscriminators=args.ndiscriminators, r_proj_size=args.rproj_size)
 elif args.model == 'resnet_large':
-	model = model_.ResNet_large(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=train_dataset.n_speakers, ncoef=args.ncoef, dropout_prob=args.dropout_prob, sm_type=args.softmax)
+	model = model_.ResNet_large(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=train_dataset.n_speakers, ncoef=args.ncoef, dropout_prob=args.dropout_prob, sm_type=args.softmax, ndiscriminators=args.ndiscriminators, r_proj_size=args.rproj_size)
 elif args.model == 'TDNN':
-	model = model_.TDNN(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=train_dataset.n_speakers, ncoef=args.ncoef, dropout_prob=args.dropout_prob, sm_type=args.softmax)
+	model = model_.TDNN(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=train_dataset.n_speakers, ncoef=args.ncoef, dropout_prob=args.dropout_prob, sm_type=args.softmax, ndiscriminators=args.ndiscriminators, r_proj_size=args.rproj_size)
 
 if args.cuda:
 	device = get_freer_gpu()
@@ -86,6 +88,8 @@ print('CP name: {}'.format(args.cp_name))
 print('Cuda Mode: {}'.format(args.cuda))
 print('Device: {}'.format(device))
 print('Selected model: {}'.format(args.model))
+print('Number of discriminators: {}'.format(args.ndiscriminators))
+print('Random projection size: {}'.format(args.rproj_size))
 print('Softmax Mode is: {}'.format(args.softmax))
 print('Embeddings size: {}'.format(args.latent_size))
 print('Number of hidden layers: {}'.format(args.n_hidden))

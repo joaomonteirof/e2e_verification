@@ -37,6 +37,8 @@ parser.add_argument('--epochs', type=int, default=200, metavar='N', help='number
 parser.add_argument('--budget', type=int, default=30, metavar='N', help='Maximum training runs')
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large', 'TDNN', 'all'], default='resnet_lstm', help='Model arch according to input type')
+parser.add_argument('--ndiscriminators', type=int, default=1, metavar='N', help='number of discriminators (default: 1)')
+parser.add_argument('--rproj-size', type=int, default=-1, metavar='S', help='Random projection size - active if greater than 1')
 parser.add_argument('--softmax', choices=['softmax', 'am_softmax'], default='softmax', help='Softmax type')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
 parser.add_argument('--hp-workers', type=int, help='number of search workers', default=1)
@@ -48,7 +50,7 @@ parser.add_argument('--logdir', type=str, default=None, metavar='Path', help='Pa
 args=parser.parse_args()
 args.cuda=True if not args.no_cuda and torch.cuda.is_available() else False
 
-def train(lr, l2, momentum, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, cp_path, softmax, logdir):
+def train(lr, l2, momentum, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ndiscriminators, rproj_size, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, cp_path, softmax, logdir):
 
 	if cuda:
 		device=get_freer_gpu()
@@ -68,17 +70,17 @@ def train(lr, l2, momentum, smoothing, warmup, latent_size, n_hidden, hidden_siz
 	valid_loader=torch.utils.data.DataLoader(valid_dataset, batch_size=valid_batch_size, shuffle=False, num_workers=n_workers, worker_init_fn=set_np_randomseed)
 
 	if args.model == 'resnet_stats':
-		model = model_.ResNet_stats(n_z=latent_size, nh=n_hidden, n_h=hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)
+		model = model_.ResNet_stats(n_z=latent_size, nh=n_hidden, n_h=hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax, ndiscriminators=ndiscriminators, r_proj_size=rproj_size)
 	elif args.model == 'resnet_mfcc':
-		model = model_.ResNet_mfcc(n_z=latent_size, nh=n_hidden, n_h=hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)
+		model = model_.ResNet_mfcc(n_z=latent_size, nh=n_hidden, n_h=hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax, ndiscriminators=ndiscriminators, r_proj_size=rproj_size)
 	if args.model == 'resnet_lstm':
-		model = model_.ResNet_lstm(n_z=latent_size, nh=n_hidden, n_h=hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)
+		model = model_.ResNet_lstm(n_z=latent_size, nh=n_hidden, n_h=hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax, ndiscriminators=ndiscriminators, r_proj_size=rproj_size)
 	elif args.model == 'resnet_small':
-		model = model_.ResNet_small(n_z=latent_size, nh=n_hidden, n_h=hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)
+		model = model_.ResNet_small(n_z=latent_size, nh=n_hidden, n_h=hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax, ndiscriminators=ndiscriminators, r_proj_size=rproj_size)
 	elif args.model == 'resnet_large':
-		model = model_.ResNet_large(n_z=latent_size, nh=n_hidden, n_h=hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)
+		model = model_.ResNet_large(n_z=latent_size, nh=n_hidden, n_h=hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax, ndiscriminators=ndiscriminators, r_proj_size=rproj_size)
 	elif args.model == 'TDNN':
-		model = model_.TDNN(n_z=latent_size, nh=n_hidden, n_h=hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax)
+		model = model_.TDNN(n_z=latent_size, nh=n_hidden, n_h=hidden_size, proj_size=len(train_dataset.speakers_list), ncoef=ncoef, dropout_prob=dropout_prob, sm_type=softmax, ndiscriminators=ndiscriminators, r_proj_size=rproj_size)
 
 	if cuda:
 		model=model.cuda(device)
@@ -102,6 +104,8 @@ hidden_size=instru.var.OrderedDiscrete([64, 128, 256, 512])
 n_frames=instru.var.OrderedDiscrete([300, 500, 800])
 dropout_prob=instru.var.OrderedDiscrete([0.01, 0.1, 0.2])
 model=instru.var.OrderedDiscrete(['resnet_mfcc', 'resnet_lstm', 'resnet_stats', 'resnet_small', 'TDNN']) if args.model=='all' else args.model
+ndiscriminators=args.ndiscriminators
+rproj_size=args.rproj_size
 ncoef=args.ncoef
 epochs=args.epochs
 batch_size=args.batch_size
@@ -115,7 +119,7 @@ checkpoint_path=args.checkpoint_path
 softmax=instru.var.OrderedDiscrete(['softmax', 'am_softmax'])
 logdir=args.logdir
 
-instrum=instru.Instrumentation(lr, l2, momentum, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, cp_path, softmax, logdir)
+instrum=instru.Instrumentation(lr, l2, momentum, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ndiscriminators, rproj_size, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, cp_path, softmax, logdir)
 
 hp_optimizer=optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget, num_workers=args.hp_workers)
 

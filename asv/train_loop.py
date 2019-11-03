@@ -349,6 +349,9 @@ class TrainLoop(object):
 			self.cur_epoch = ckpt['cur_epoch']
 			if self.cuda_mode:
 				self.model = self.model.to(self.device)
+			if self.model.ndiscriminators > 1 and self.model.r_proj_size > 0:
+				for disc in self.model.classifier:
+					disc[0].weight.requires_grad = False
 
 		else:
 			print('No checkpoint found at: {}'.format(ckpt))

@@ -45,6 +45,8 @@ parser.add_argument('--sub-file', type=str, default='./run_hp.sh', metavar='Path
 parser.add_argument('--train-hdf-file', type=str, default='./data/train.hdf', metavar='Path', help='Path to hdf data')
 parser.add_argument('--valid-hdf-file', type=str, default=None, metavar='Path', help='Path to hdf data')
 parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large', 'TDNN', 'all'], default='resnet_lstm', help='Model arch according to input type')
+parser.add_argument('--ndiscriminators', type=int, default=1, metavar='N', help='number of discriminators (default: 1)')
+parser.add_argument('--rproj-size', type=int, default=-1, metavar='S', help='Random projection size - active if greater than 1')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
 parser.add_argument('--hp-workers', type=int, help='number of search workers', default=1)
 parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
@@ -57,12 +59,12 @@ args=parser.parse_args()
 
 args.cuda=True if not args.no_cuda else False
 
-def train(lr, l2, momentum, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, submission_file, tmp_dir, cp_path, softmax, logdir):
+def train(lr, l2, momentum, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ndiscriminators, rproj_size, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, submission_file, tmp_dir, cp_path, softmax, logdir):
 
 	file_name = get_file_name(tmp_dir)
 	np.random.seed()
 
-	command = 'sbatch' + ' ' + submission_file + ' ' + str(lr) + ' ' + str(l2) + ' ' + str(momentum) + ' ' + str(smoothing) + ' ' + str(int(warmup)) + ' ' + str(int(latent_size)) + ' ' + str(int(n_hidden)) + ' ' + str(int(hidden_size)) + ' ' + str(int(n_frames)) + ' ' + str(model) + ' ' + str(ncoef) + ' ' + str(dropout_prob) + ' ' + str(epochs) + ' ' + str(batch_size) + ' ' + str(valid_batch_size) + ' ' + str(n_workers) + ' ' + str(cuda) + ' ' + str(train_hdf_file) + ' ' + str(valid_hdf_file) + ' ' + str(file_name) + ' ' + str(cp_path) + ' ' + str(file_name.split('/')[-1]+'t')+ ' ' + str(softmax) + ' ' + str(logdir)
+	command = 'sbatch' + ' ' + submission_file + ' ' + str(lr) + ' ' + str(l2) + ' ' + str(momentum) + ' ' + str(smoothing) + ' ' + str(int(warmup)) + ' ' + str(int(latent_size)) + ' ' + str(int(n_hidden)) + ' ' + str(int(hidden_size)) + ' ' + str(int(n_frames)) + ' ' + str(model) + ' ' + str(ndiscriminators) + ' ' + str(rproj_size) + ' ' + str(ncoef) + ' ' + str(dropout_prob) + ' ' + str(epochs) + ' ' + str(batch_size) + ' ' + str(valid_batch_size) + ' ' + str(n_workers) + ' ' + str(cuda) + ' ' + str(train_hdf_file) + ' ' + str(valid_hdf_file) + ' ' + str(file_name) + ' ' + str(cp_path) + ' ' + str(file_name.split('/')[-1]+'t')+ ' ' + str(softmax) + ' ' + str(logdir)
 
 	for j in range(10):
 
@@ -89,6 +91,8 @@ def train(lr, l2, momentum, smoothing, warmup, latent_size, n_hidden, hidden_siz
 			print(' ')
 			print('With hyperparameters:')
 			print('Model: {}'.format(model))
+			print('Number of discriminators: {}'.format(ndiscriminators))
+			print('Random projection size: {}'.format(rproj_size))
 			print('Softmax mode: {}'.format(softmax))
 			print('Embeddings size: {}'.format(int(latent_size)))
 			print('Number of hidden layers: {}'.format(int(n_hidden)))
@@ -117,6 +121,8 @@ hidden_size=instru.var.OrderedDiscrete([64, 128, 256, 512])
 n_frames=instru.var.OrderedDiscrete([300, 500, 800])
 dropout_prob=instru.var.OrderedDiscrete([0.01, 0.1, 0.2])
 model=instru.var.OrderedDiscrete(['resnet_mfcc', 'resnet_lstm', 'resnet_stats', 'resnet_small', 'TDNN']) if args.model=='all' else args.model
+ndiscriminators=args.ndiscriminators
+rproj_size=args.rproj_size
 ncoef=args.ncoef
 epochs=args.epochs
 batch_size=args.batch_size
@@ -135,7 +141,7 @@ tmp_dir = os.getcwd() + '/' + args.temp_folder + '/'
 if not os.path.isdir(tmp_dir):
 	os.mkdir(tmp_dir)
 
-instrum=instru.Instrumentation(lr, l2, momentum, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, sub_file, tmp_dir, checkpoint_path, softmax, logdir)
+instrum=instru.Instrumentation(lr, l2, momentum, smoothing, warmup, latent_size, n_hidden, hidden_size, n_frames, model, ndiscriminators, rproj_size, ncoef, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, train_hdf_file, valid_hdf_file, sub_file, tmp_dir, checkpoint_path, softmax, logdir)
 
 hp_optimizer=optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget, num_workers=args.hp_workers)
 

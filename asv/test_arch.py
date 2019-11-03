@@ -11,6 +11,8 @@ import model as model_
 parser = argparse.ArgumentParser(description='Test new architectures')
 parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large', 'TDNN', 'all'], default='resnet_lstm', help='Model arch according to input type')
 parser.add_argument('--ncoef', type=int, default=23, metavar='N', help='number of MFCCs (default: 23)')
+parser.add_argument('--ndiscriminators', type=int, default=1, metavar='N', help='number of discriminators (default: 1)')
+parser.add_argument('--rproj-size', type=int, default=-1, metavar='S', help='Random projection size - active if greater than 1')
 parser.add_argument('--latent-size', type=int, default=256, metavar='S', help='latent layer dimension (default: 256)')
 parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
 parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
@@ -18,7 +20,7 @@ args = parser.parse_args()
 
 if args.model == 'resnet_stats' or  args.model == 'all':
 	batch = torch.rand(3, 1, args.ncoef, 200)
-	model = model_.ResNet_stats(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=100, ncoef=args.ncoef)
+	model = model_.ResNet_stats(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=100, ncoef=args.ncoef, ndiscriminators=args.ndiscriminators, r_proj_size=args.rproj_size)
 	print('resnet_stats')
 	mu, emb = model.forward(batch)
 	print(mu.size())
@@ -30,7 +32,7 @@ if args.model == 'resnet_stats' or  args.model == 'all':
 	print(scores_p.size())
 if args.model == 'resnet_mfcc' or  args.model == 'all':
 	batch = torch.rand(3, 1, args.ncoef, 200)
-	model = model_.ResNet_mfcc(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=100, ncoef=args.ncoef)
+	model = model_.ResNet_mfcc(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=100, ncoef=args.ncoef, ndiscriminators=args.ndiscriminators, r_proj_size=args.rproj_size)
 	print('resnet_mfcc')
 	mu, emb = model.forward(batch)
 	print(mu.size())
@@ -42,7 +44,7 @@ if args.model == 'resnet_mfcc' or  args.model == 'all':
 	print(scores_p.size())
 if args.model == 'resnet_lstm' or  args.model == 'all':
 	batch = torch.rand(3, 1, args.ncoef, 200)
-	model = model_.ResNet_lstm(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=100, ncoef=args.ncoef)
+	model = model_.ResNet_lstm(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=100, ncoef=args.ncoef, ndiscriminators=args.ndiscriminators, r_proj_size=args.rproj_size)
 	print('resnet_lstm')
 	mu, emb = model.forward(batch)
 	print(mu.size())
@@ -54,7 +56,7 @@ if args.model == 'resnet_lstm' or  args.model == 'all':
 	print(scores_p.size())
 if args.model == 'resnet_small' or  args.model == 'all':
 	batch = torch.rand(3, 1, args.ncoef, 200)
-	model = model_.ResNet_small(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=100, ncoef=args.ncoef)
+	model = model_.ResNet_small(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=100, ncoef=args.ncoef, ndiscriminators=args.ndiscriminators, r_proj_size=args.rproj_size)
 	print('resnet_small')
 	mu, emb = model.forward(batch)
 	print(mu.size())
@@ -66,7 +68,7 @@ if args.model == 'resnet_small' or  args.model == 'all':
 	print(scores_p.size())
 if args.model == 'resnet_large' or  args.model == 'all':
 	batch = torch.rand(3, 1, args.ncoef, 200)
-	model = model_.ResNet_large(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=100, ncoef=args.ncoef)
+	model = model_.ResNet_large(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=100, ncoef=args.ncoef, ndiscriminators=args.ndiscriminators, r_proj_size=args.rproj_size)
 	print('resnet_large')
 	mu, emb = model.forward(batch)
 	print(mu.size())
@@ -78,7 +80,7 @@ if args.model == 'resnet_large' or  args.model == 'all':
 	print(scores_p.size())
 if args.model == 'TDNN' or  args.model == 'all':
 	batch = torch.rand(3, 1, args.ncoef, 200)
-	model = model_.TDNN(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=100, ncoef=args.ncoef)
+	model = model_.TDNN(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=100, ncoef=args.ncoef, ndiscriminators=args.ndiscriminators, r_proj_size=args.rproj_size)
 	print('TDNN')
 	mu, emb = model.forward(batch)
 	print(mu.size())
