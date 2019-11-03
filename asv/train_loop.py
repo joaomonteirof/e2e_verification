@@ -236,14 +236,14 @@ class TrainLoop(object):
 				y_ = y_.to(self.device, non_blocking=True)
 
 			loss_bin = 0.0
-			pred_bin = self.model.forward_bin(emb_).squeeze()
+			pred_bin = self.model.forward_bin(emb_)
 
 			if self.model.ndiscriminators>1:
 				for pred in pred_bin:
-					loss_bin += torch.nn.BCELoss()(pred, y_)
+					loss_bin += torch.nn.BCELoss()(pred.squeeze(), y_)
 				loss_bin /= self.model.ndiscriminators
 			else:
-				loss_bin = torch.nn.BCELoss()(pred_bin, y_)
+				loss_bin = torch.nn.BCELoss()(pred_bin.squeeze(), y_)
 
 		except IndexError:
 
