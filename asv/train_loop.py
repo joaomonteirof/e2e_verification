@@ -241,7 +241,6 @@ class TrainLoop(object):
 			if self.model.ndiscriminators>1:
 				for pred in pred_bin:
 					loss_bin += torch.nn.BCELoss()(pred.squeeze(), y_)
-				loss_bin /= self.model.ndiscriminators
 			else:
 				loss_bin = torch.nn.BCELoss()(pred_bin.squeeze(), y_)
 
@@ -257,7 +256,7 @@ class TrainLoop(object):
 		if self.logger:
 			self.logger.add_scalar('Info/Grad_norm', grad_norm, self.total_iters)
 
-		return loss.item(), ce_loss.item(), loss_bin.item()
+		return loss.item(), ce_loss.item(), loss_bin.item()/self.model.ndiscriminators
 
 	def pretrain_step(self, batch):
 
