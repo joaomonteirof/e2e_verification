@@ -224,20 +224,20 @@ class ResNet_stats(nn.Module):
 	def forward_bin(self, z):
 
 		if self.ndiscriminators>1:
-			out = 0.0
+			out = []
 			for disc in self.classifier:
 				z_ = z
 				for l in disc:
 					z_ = l(z_)
-				out += z_
+				out.append(z_)
 
-			z = out/self.ndiscriminators
+			return out
 
 		else:
 			for l in self.classifier:
 				z = l(z)
 		
-		return z
+			return z
 
 class ResNet_mfcc(nn.Module):
 	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,6,3], block=PreActBottleneck, proj_size=100, ncoef=23, dropout_prob=0.25, sm_type='softmax', ndiscriminators=1, r_proj_size=0):
@@ -339,20 +339,20 @@ class ResNet_mfcc(nn.Module):
 	def forward_bin(self, z):
 
 		if self.ndiscriminators>1:
-			out = 0.0
+			out = []
 			for disc in self.classifier:
 				z_ = z
 				for l in disc:
 					z_ = l(z_)
-				out += z_
+				out.append(z_)
 
-			z = out/self.ndiscriminators
+			return out
 
 		else:
 			for l in self.classifier:
 				z = l(z)
 		
-		return z
+			return z
 
 class ResNet_lstm(nn.Module):
 	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,6,3], block=PreActBottleneck, proj_size=100, ncoef=23, dropout_prob=0.25, sm_type='softmax', ndiscriminators=1, r_proj_size=0):
@@ -468,20 +468,20 @@ class ResNet_lstm(nn.Module):
 	def forward_bin(self, z):
 
 		if self.ndiscriminators>1:
-			out = 0.0
+			out = []
 			for disc in self.classifier:
 				z_ = z
 				for l in disc:
 					z_ = l(z_)
-				out += z_
+				out.append(z_)
 
-			z = out/self.ndiscriminators
+			return out
 
 		else:
 			for l in self.classifier:
 				z = l(z)
 		
-		return z
+			return z
 
 class ResNet_small(nn.Module):
 	def __init__(self, n_z=256, nh=1, n_h=512, layers=[2,2,2,2], block=PreActBlock, proj_size=0, ncoef=23, dropout_prob=0.25, sm_type='none', ndiscriminators=1, r_proj_size=0):
@@ -584,20 +584,20 @@ class ResNet_small(nn.Module):
 	def forward_bin(self, z):
 
 		if self.ndiscriminators>1:
-			out = 0.0
+			out = []
 			for disc in self.classifier:
 				z_ = z
 				for l in disc:
 					z_ = l(z_)
-				out += z_
+				out.append(z_)
 
-			z = out/self.ndiscriminators
+			return out
 
 		else:
 			for l in self.classifier:
 				z = l(z)
 		
-		return z
+			return z
 
 class ResNet_large(nn.Module):
 	def __init__(self, n_z=256, nh=1, n_h=512, layers=[3,4,23,3], block=PreActBottleneck, proj_size=100, ncoef=23, dropout_prob=0.25, sm_type='softmax', ndiscriminators=1, r_proj_size=0):
@@ -699,20 +699,20 @@ class ResNet_large(nn.Module):
 	def forward_bin(self, z):
 
 		if self.ndiscriminators>1:
-			out = 0.0
+			out = []
 			for disc in self.classifier:
 				z_ = z
 				for l in disc:
 					z_ = l(z_)
-				out += z_
+				out.append(z_)
 
-			z = out/self.ndiscriminators
+			return out
 
 		else:
 			for l in self.classifier:
 				z = l(z)
 		
-		return z
+			return z
 
 class StatisticalPooling(nn.Module):
 
@@ -812,20 +812,20 @@ class TDNN(nn.Module):
 	def forward_bin(self, z):
 
 		if self.ndiscriminators>1:
-			out = 0.0
+			out = []
 			for disc in self.classifier:
 				z_ = z
 				for l in disc:
 					z_ = l(z_)
-				out += z_
+				out.append(z_)
 
-			z = out/self.ndiscriminators
+			return out
 
 		else:
 			for l in self.classifier:
 				z = l(z)
 		
-		return z
+			return z
 
 	def initialize_params(self):
 

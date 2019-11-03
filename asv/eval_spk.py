@@ -199,7 +199,11 @@ if __name__ == '__main__':
 
 				mem_embeddings_enroll_spk[speakers_enroll[i]] = emb_spk_enroll
 
-			e2e_scores.append( model.forward_bin(torch.cat([emb_spk_enroll, emb_test],1)).squeeze().item() )
+			if model.ndiscriminators>1:
+				e2e_scores.append( torch.cat(pred, 1).mean(1).squeeze().item() )
+			else:
+				e2e_scores.append( pred.squeeze().item() )
+
 			cos_scores.append( 0.5*(torch.nn.functional.cosine_similarity(emb_spk_enroll, emb_test).mean().item()+1.) )
 			fus_scores.append( (e2e_scores[-1]+cos_scores[-1])*0.5 )
 

@@ -235,9 +235,15 @@ class TrainLoop(object):
 			if self.cuda_mode:
 				y_ = y_.to(self.device, non_blocking=True)
 
+			loss_bin = 0.0
 			pred_bin = self.model.forward_bin(emb_).squeeze()
 
-			loss_bin = torch.nn.BCELoss()(pred_bin, y_)
+			if self.model.ndiscriminators>1:
+				for pred in pred_bin:
+					loss_bin += torch.nn.BCELoss()(pred, y_)
+				loss_bin /= self.model.ndiscriminators
+			else:
+				loss_bin = torch.nn.BCELoss()(pred_bin, y_)
 
 		except IndexError:
 
@@ -279,7 +285,7 @@ class TrainLoop(object):
 		return loss.item()
 
 
-	def valid(self, batch, n=10):
+	def valid(self, batch):
 
 		self.model.eval()
 
@@ -311,8 +317,13 @@ class TrainLoop(object):
 			emb_ap = torch.cat([emb_a, emb_p],1)
 			emb_an = torch.cat([emb_a, emb_n],1)
 
-			e2e_scores_p = self.model.forward_bin(emb_ap).squeeze()
-			e2e_scores_n = self.model.forward_bin(emb_an).squeeze()
+			if self.model.ndiscriminators>1:
+				e2e_scores_p = torch.cat(self.model.forward_bin(emb_ap), 1).mean(1).squeeze()
+				e2e_scores_n = torch.cat(self.model.forward_bin(emb_an), 1).mean(1).squeeze()
+			else:
+				e2e_scores_p = self.model.forward_bin(emb_ap).squeeze()
+				e2e_scores_n = self.model.forward_bin(emb_an).squeeze()
+
 			cos_scores_p = torch.nn.functional.cosine_similarity(emb_a, emb_p)
 			cos_scores_n = torch.nn.functional.cosine_similarity(emb_a, emb_n)
 
