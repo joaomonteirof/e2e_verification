@@ -15,18 +15,17 @@ if __name__ == '__main__':
 
 
 	parser = argparse.ArgumentParser(description='Cifar10 Evaluation')
-	parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
+	parser.add_argument('--cp-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
 	parser.add_argument('--data-path', type=str, default='./data/', metavar='Path', help='Path to data')
 	parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
 	parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
 	parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
-	parser.add_argument('--out-path', type=str, default='./', metavar='Path', help='Path for saving computed scores')
+	parser.add_argument('--out-path', type=str, default=None, metavar='Path', help='Path for saving computed scores')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 	args = parser.parse_args()
 	args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
 	transform_test = transforms.Compose([transforms.ToTensor(), transforms.Normalize([x / 255 for x in [125.3, 123.0, 113.9]], [x / 255 for x in [63.0, 62.1, 66.7]])])
-
 	validset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
 	labels_list = [x[1] for x in validset]
 
@@ -101,15 +100,17 @@ if __name__ == '__main__':
 
 	print('\nScoring done')
 
-	with open(args.out_path+'e2e_scores.out', 'w') as f:
-		for el in out_e2e:
-			item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
-			f.write("%s" % item)
+	if args.out_path:
 
-	with open(args.out_path+'cos_scores.out', 'w') as f:
-		for el in out_cos:
-			item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
-			f.write("%s" % item)
+		with open(args.out_path+'e2e_scores.out', 'w') as f:
+			for el in out_e2e:
+				item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
+				f.write("%s" % item)
+
+		with open(args.out_path+'cos_scores.out', 'w') as f:
+			for el in out_cos:
+				item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
+				f.write("%s" % item)
 
 	e2e_scores = np.asarray(e2e_scores)
 	cos_scores = np.asarray(cos_scores)
