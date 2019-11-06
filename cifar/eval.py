@@ -25,7 +25,6 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 	args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
-	transform_train = transforms.Compose([transforms.RandomCrop(32, padding=4), transforms.RandomHorizontalFlip(), transforms.ToTensor(),])
 	transform_test = transforms.Compose([transforms.ToTensor(), transforms.Normalize([x / 255 for x in [125.3, 123.0, 113.9]], [x / 255 for x in [63.0, 62.1, 66.7]])])
 
 	validset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
@@ -57,6 +56,7 @@ if __name__ == '__main__':
 	e2e_scores = []
 	out_e2e = []
 	out_cos = []
+
 	mem_embeddings = {}
 
 	model.eval()
