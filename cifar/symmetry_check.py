@@ -14,7 +14,7 @@ from utils import *
 if __name__ == '__main__':
 
 
-	parser = argparse.ArgumentParser(description='Cifar10 Evaluation')
+	parser = argparse.ArgumentParser(description='Symmetry check')
 	parser.add_argument('--cp-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
 	parser.add_argument('--data-path', type=str, default='./data/', metavar='Path', help='Path to data')
 	parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
@@ -52,10 +52,7 @@ if __name__ == '__main__':
 	idxs_enroll, idxs_test, labels = create_trials_labels(labels_list)
 	print('\n{} trials created out of which {} are target trials'.format(len(idxs_enroll), np.sum(labels)))
 
-	cos_scores = []
-	e2e_scores = []
-	out_e2e = []
-	out_cos = []
+	scores_dif = []
 
 	mem_embeddings = {}
 
@@ -93,39 +90,12 @@ if __name__ == '__main__':
 				emb_test = model.forward(test_ex_data).detach()
 				mem_embeddings[str(idxs_test[i])] = emb_test
 
-			e2e_scores.append( model.forward_bin(torch.cat([emb_enroll, emb_test],1)).squeeze().item() )
-			cos_scores.append( torch.nn.functional.cosine_similarity(emb_enroll, emb_test).mean().item() )
-
-			out_e2e.append([str(idxs_enroll[i]), str(idxs_test[i]), e2e_scores[-1]])
-			out_cos.append([str(idxs_enroll[i]), str(idxs_test[i]), cos_scores[-1]])
+			scores_dif.append( abs( model.forward_bin(torch.cat([emb_enroll, emb_test],1)).squeeze().item(), model.forward_bin(torch.cat([emb_test, emb_enroll],1)).squeeze().item() ) )
 
 	print('\nScoring done')
 
-	if args.out_path:
-
-		with open(args.out_path+'e2e_scores.out', 'w') as f:
-			for el in out_e2e:
-				item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
-				f.write("%s" % item)
-
-		with open(args.out_path+'cos_scores.out', 'w') as f:
-			for el in out_cos:
-				item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
-				f.write("%s" % item)
-
-	e2e_scores = np.asarray(e2e_scores)
-	cos_scores = np.asarray(cos_scores)
-	all_scores = (e2e_scores + 0.5*(cos_scores+1.))*0.5
-	labels = np.asarray(labels)
-
-	eer, auc, avg_precision, acc, threshold = compute_metrics(labels, e2e_scores)
-	print('\nE2E eval:')
-	print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
-
-	eer, auc, avg_precision, acc, threshold = compute_metrics(labels, cos_scores)
-	print('\nCOS eval:')
-	print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
-
-	eer, auc, avg_precision, acc, threshold = compute_metrics(labels, all_scores)
-	print('\nFUS eval:')
-	print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
+	print('Avg: {}'.format(np.mean(scores_dif)))
+	print('Std: {}'.format(np.std(scores_dif)))
+	print('Median: {}'.format(np.median(scores_dif)))
+	print('Max: {}'.format(np.max(scores_dif)))
+	print('Min: {}'.format(np.min(scores_dif)))

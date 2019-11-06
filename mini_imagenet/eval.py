@@ -49,6 +49,7 @@ if __name__ == '__main__':
 		model = model.cuda(device)
 
 	idxs_enroll, idxs_test, labels = create_trials_labels(labels_list)
+	print('\n{} trials created out of which {} are target trials'.format(len(idxs_enroll), np.sum(labels)))
 
 	cos_scores = []
 	e2e_scores = []
