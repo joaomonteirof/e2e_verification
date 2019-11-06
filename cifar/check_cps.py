@@ -30,8 +30,5 @@ for cp in cp_list:
 	try:
 		model.load_state_dict(ckpt['model_state'], strict=True)
 		print('lol', cp.split('/')[-1])
-	except RuntimeError as err:
-		print("Runtime Error: {0}".format(err))
 	except:
-		print("Unexpected error:", sys.exc_info()[0])
-		raise
+		pass
