@@ -22,9 +22,11 @@ elif args.model == 'densenet':
 
 cp_list = glob.glob(args.cp_path+'*.pt')
 
+assert len(cp_list)>0, 'No cp found in the given path!'
+
 for cp in cp_list:
 
-	ckpt = torch.load(args.cp_path, map_location = lambda storage, loc: storage)
+	ckpt = torch.load(cp, map_location = lambda storage, loc: storage)
 	try:
 		model.load_state_dict(ckpt['model_state'], strict=True)
 		print('lol', cp.split('/')[-1])
