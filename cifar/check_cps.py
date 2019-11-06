@@ -11,14 +11,15 @@ parser.add_argument('--cp-path', type=str, default=None, metavar='Path', help='P
 parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
 parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
 parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
+parser.add_argument('--softmax', choices=['softmax', 'am_softmax'], default='softmax', help='Softmax type')
 args = parser.parse_args()
 
 if args.model == 'vgg':
-	model = vgg.VGG('VGG16', nh=args.n_hidden, n_h=args.hidden_size)
+	model = vgg.VGG('VGG16', nh=args.n_hidden, n_h=args.hidden_size, sm_type=args.softmax)
 elif args.model == 'resnet':
-	model = resnet.ResNet18(nh=args.n_hidden, n_h=args.hidden_size)
+	model = resnet.ResNet18(nh=args.n_hidden, n_h=args.hidden_size, sm_type=args.softmax)
 elif args.model == 'densenet':
-	model = densenet.densenet_cifar(nh=args.n_hidden, n_h=args.hidden_size)
+	model = densenet.densenet_cifar(nh=args.n_hidden, n_h=args.hidden_size, sm_type=args.softmax)
 
 cp_list = glob.glob(args.cp_path+'*.pt')
 
