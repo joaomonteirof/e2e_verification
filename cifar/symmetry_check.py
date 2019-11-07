@@ -22,6 +22,7 @@ if __name__ == '__main__':
 	parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
 	parser.add_argument('--out-path', type=str, default=None, metavar='Path', help='Path for saving computed scores')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
+	parser.add_argument('--no-histogram', action='store_true', default=False, help='Disables histogram plot')
 	args = parser.parse_args()
 	args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
@@ -99,3 +100,7 @@ if __name__ == '__main__':
 	print('Median: {}'.format(np.median(scores_dif)))
 	print('Max: {}'.format(np.max(scores_dif)))
 	print('Min: {}'.format(np.min(scores_dif)))
+
+	if not args.no_histogram:
+		import matplotlib.pyplot as plt
+		plt.hist(scores_dif, normed=True, bins=30)

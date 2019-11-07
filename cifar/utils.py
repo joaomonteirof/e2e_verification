@@ -8,6 +8,24 @@ import sys
 import pickle
 from time import sleep
 
+def get_classifier_config_from_model(model):
+	x=0
+	for layer in model.classifier:
+		if isinstance(layer, torch.nn.Linear):
+			x+=1
+	return max(x-1, 1), model.classifier[0].weight.size(0)
+
+def get_classifier_config_from_cp(ckpt):
+	keys=ckpt['model_state'].keys()
+	classifier_params=[]
+	out_proj_params=[]
+	for x in keys:
+		if 'classifier' in x:
+			classifier_params.append(x)
+		elif 'out_proj' in x:
+			out_proj_params.append(x)
+	return max(len(classifier_params)//2 - 1, 1), ckpt['model_state']['classifier.0.weight'].size(0), 'am_softmax' if len(out_proj_params)==1 else 'softmax'
+
 def create_trials_labels(labels_list):
 
 	enroll_ex, test_ex, labels = [], [], []

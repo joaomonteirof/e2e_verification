@@ -216,7 +216,7 @@ class TrainLoop(object):
 		return loss.item()
 
 
-	def valid(self, batch, n=10):
+	def valid(self, batch):
 
 		self.model.eval()
 
