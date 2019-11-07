@@ -8,7 +8,7 @@ from models import vgg, resnet, densenet
 import numpy as np
 import os
 import sys
-
+from tqdm import tqdm
 from utils import *
 
 if __name__ == '__main__':
@@ -58,7 +58,8 @@ if __name__ == '__main__':
 
 	with torch.no_grad():
 
-		for batch in test_loader:
+		iterator = tqdm(test_loader, total=len(test_loader))
+		for i in iterator:
 
 			x, y = batch
 

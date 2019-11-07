@@ -8,7 +8,7 @@ from models import vgg, resnet, densenet
 import numpy as np
 import os
 import sys
-
+from tqdm import tqdm
 from utils import *
 
 if __name__ == '__main__':
@@ -64,7 +64,8 @@ if __name__ == '__main__':
 
 	with torch.no_grad():
 
-		for i in range(len(labels)):
+		iterator = tqdm(range(len(labels)), total=len(labels))
+		for i in iterator:
 
 			enroll_ex = str(idxs_enroll[i])
 
