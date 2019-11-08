@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
 	for cp in cp_list:
 
-		ckpt = torch.load(pc, map_location = lambda storage, loc: storage)
+		ckpt = torch.load(cp, map_location = lambda storage, loc: storage)
 		n_hidden, hidden_size, softmax = get_classifier_config_from_cp(ckpt)
 
 		if args.model == 'vgg':
@@ -82,7 +82,7 @@ if __name__ == '__main__':
 		acc = 100.*correct/len(testset)
 		model_id = cp.split('/')[-1]
 
-		print('\nAccuracy of model {}: {}'.format(model_id, acc)
+		print('\nAccuracy of model {}: {}'.format(model_id, acc))
 
 		if acc<best_acc:
 			best_model, best_acc = model_id, acc
