@@ -8,9 +8,8 @@ from models import vgg, resnet, densenet
 import numpy as np
 import os
 import sys
-import from
-
-glob utils import *
+import glob
+from utils import *
 
 if __name__ == '__main__':
 
