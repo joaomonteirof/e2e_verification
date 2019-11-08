@@ -79,7 +79,7 @@ if __name__ == '__main__':
 				pred = F.softmax(out, dim=1).max(1)[1].long()
 				correct += pred.squeeze().eq(y.squeeze()).detach().sum().item()
 
-		acc = 100.*correct/len(testset))
+		acc = 100.*correct/len(testset)
 		model_id = cp.split('/')[-1]
 
 		print('\nAccuracy of model {}: {}'.format(model_id, acc)
