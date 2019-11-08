@@ -103,5 +103,8 @@ if __name__ == '__main__':
 	print('Min: {}'.format(np.min(scores_dif)))
 
 	if not args.no_histogram:
+		import matplotlib
+		matplotlib.use('agg')
 		import matplotlib.pyplot as plt
 		plt.hist(scores_dif, normed=True, bins=30)
+		plt.savefig('sym_hist.pdf', bbox_inches='tight')
