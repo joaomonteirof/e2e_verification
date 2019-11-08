@@ -68,7 +68,7 @@ if __name__ == '__main__':
 
 			embeddings_norm = F.normalize(embeddings, p=2, dim=1)
 
-			out = model.out_proj(embeddings_norm, y)
+			out = model.out_proj(embeddings_norm, y, eval_=True)
 
 			pred = F.softmax(out, dim=1).max(1)[1].long()
 			correct += pred.squeeze().eq(y.squeeze()).detach().sum().item()
