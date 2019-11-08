@@ -31,12 +31,6 @@ if __name__ == '__main__':
 	parser.add_argument('--spk2utt', type=str, default=None, metavar='Path', help='Path to spk2utt file. Will be used in case no trials file is provided')
 	parser.add_argument('--cp-path', type=str, default=None, metavar='Path', help='Path for file containing model')
 	parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large', 'TDNN'], default='resnet_lstm', help='Model arch according to input type')
-	parser.add_argument('--ndiscriminators', type=int, default=1, metavar='N', help='number of discriminators (default: 1)')
-	parser.add_argument('--rproj-size', type=int, default=-1, metavar='S', help='Random projection size - active if greater than 1')
-	parser.add_argument('--ncoef', type=int, default=23, metavar='N', help='number of MFCCs (default: 23)')
-	parser.add_argument('--latent-size', type=int, default=256, metavar='S', help='latent layer dimension (default: 256)')
-	parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
-	parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
 	parser.add_argument('--out-path', type=str, default='./', metavar='Path', help='Path for saving computed scores')
 	parser.add_argument('--out-prefix', type=str, default=None, metavar='Path', help='Prefix to be added to score files')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
@@ -52,20 +46,22 @@ if __name__ == '__main__':
 	if args.cuda:
 		device = get_freer_gpu()
 
-	if args.model == 'resnet_stats':
-		model = model_.ResNet_stats(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=1, ncoef=args.ncoef, ndiscriminators=args.ndiscriminators, r_proj_size=args.rproj_size)
-	elif args.model == 'resnet_mfcc':
-		model = model_.ResNet_mfcc(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=1, ncoef=args.ncoef, ndiscriminators=args.ndiscriminators, r_proj_size=args.rproj_size)
-	if args.model == 'resnet_lstm':
-		model = model_.ResNet_lstm(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=1, ncoef=args.ncoef, ndiscriminators=args.ndiscriminators, r_proj_size=args.rproj_size)
-	elif args.model == 'resnet_small':
-		model = model_.ResNet_small(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=1, ncoef=args.ncoef, ndiscriminators=args.ndiscriminators, r_proj_size=args.rproj_size)
-	elif args.model == 'resnet_large':
-		model = model_.ResNet_large(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=1, ncoef=args.ncoef, ndiscriminators=args.ndiscriminators, r_proj_size=args.rproj_size)
-	elif args.model == 'TDNN':
-		model = model_.TDNN(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=1, ncoef=args.ncoef, ndiscriminators=args.ndiscriminators, r_proj_size=args.rproj_size)
-
 	ckpt = torch.load(args.cp_path, map_location = lambda storage, loc: storage)
+
+	if args.model == 'resnet_mfcc':
+		model = model_.ResNet_mfcc(n_z=ckpt['latent_size'], nh=ckpt['n_hidden'], n_h=ckpt['hidden_size'], proj_size=ckpt['r_proj_size'], ncoef=ckpt['ncoef'], ndiscriminators=ckpt['ndiscriminators'], r_proj_size=ckpt['rproj_size'])
+	elif args.model == 'resnet_lstm':
+		model = model_.ResNet_lstm(n_z=ckpt['latent_size'], nh=ckpt['n_hidden'], n_h=ckpt['hidden_size'], proj_size=ckpt['r_proj_size'], ncoef=ckpt['ncoef'], ndiscriminators=ckpt['ndiscriminators'], r_proj_size=ckpt['rproj_size'])
+	elif args.model == 'resnet_stats':
+		model = model_.ResNet_stats(n_z=ckpt['latent_size'], nh=ckpt['n_hidden'], n_h=ckpt['hidden_size'], proj_size=ckpt['r_proj_size'], ncoef=ckpt['ncoef'], ndiscriminators=ckpt['ndiscriminators'], r_proj_size=ckpt['rproj_size'])
+	elif args.model == 'resnet_small':
+		model = model_.ResNet_small(n_z=ckpt['latent_size'], nh=ckpt['n_hidden'], n_h=ckpt['hidden_size'], proj_size=ckpt['r_proj_size'], ncoef=ckpt['ncoef'], ndiscriminators=ckpt['ndiscriminators'], r_proj_size=ckpt['rproj_size'])
+	elif args.model == 'resnet_large':
+		model = model_.ResNet_large(n_z=ckpt['latent_size'], nh=ckpt['n_hidden'], n_h=ckpt['hidden_size'], proj_size=ckpt['r_proj_size'], ncoef=ckpt['ncoef'], ndiscriminators=ckpt['ndiscriminators'], r_proj_size=ckpt['rproj_size'])
+	elif args.model == 'TDNN':
+		model = model_.TDNN(n_z=ckpt['latent_size'], nh=ckpt['n_hidden'], n_h=ckpt['hidden_size'], proj_size=ckpt['r_proj_size'], ncoef=ckpt['ncoef'], ndiscriminators=ckpt['ndiscriminators'], r_proj_size=ckpt['rproj_size'])
+
+
 	try:
 		model.load_state_dict(ckpt['model_state'], strict=True)
 	except RuntimeError as err:
@@ -74,8 +70,9 @@ if __name__ == '__main__':
 		print("Unexpected error:", sys.exc_info()[0])
 		raise
 
+	model.eval()
 	if args.cuda:
-		model = model.cuda(device)
+		model = model.to(device)
 
 	test_data = None
 
@@ -119,7 +116,7 @@ if __name__ == '__main__':
 				enroll_utt_data = prep_feats(test_data[enroll_utt])
 
 				if args.cuda:
-					enroll_utt_data = enroll_utt_data.cuda(device)
+					enroll_utt_data = enroll_utt_data.to(device)
 
 				emb_enroll = model.forward(enroll_utt_data)[1].detach() if args.inner else model.forward(enroll_utt_data)[0].detach()
 				mem_embeddings[enroll_utt] = emb_enroll
@@ -135,8 +132,8 @@ if __name__ == '__main__':
 				test_utt_data = prep_feats(test_data[test_utt])
 
 				if args.cuda:
-					enroll_utt_data = enroll_utt_data.cuda(device)
-					test_utt_data = test_utt_data.cuda(device)
+					enroll_utt_data = enroll_utt_data.to(device)
+					test_utt_data = test_utt_data.to(device)
 
 				emb_test = model.forward(test_utt_data)[1].detach() if args.inner else model.forward(test_utt_data)[0].detach()
 				mem_embeddings[test_utt] = emb_test

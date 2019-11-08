@@ -136,6 +136,11 @@ class ResNet_stats(nn.Module):
 		self.r_proj_size = r_proj_size
 		self.classifier = nn.ModuleList()
 		self.dropout_prob = dropout_prob
+		self.n_hidden = nh
+		self.hidden_size = n_h
+		self.latent_size = n_z
+		self.sm_type = sm_type
+		self.ncoef = ncoef
 	
 		self.conv1 = nn.Conv2d(1, 32, kernel_size=(ncoef,3), stride=(1,1), padding=(0,1), bias=False)
 		
@@ -249,6 +254,10 @@ class ResNet_mfcc(nn.Module):
 		self.r_proj_size = r_proj_size
 		self.classifier = nn.ModuleList()
 		self.dropout_prob = dropout_prob
+		self.n_hidden = nh
+		self.hidden_size = n_h
+		self.latent_size = n_z
+		self.sm_type = sm_type
 
 		self.conv1 = nn.Conv2d(1, 32, kernel_size=(ncoef,3), stride=(1,1), padding=(0,1), bias=False)
 		
@@ -365,6 +374,10 @@ class ResNet_lstm(nn.Module):
 		self.r_proj_size = r_proj_size
 		self.classifier = nn.ModuleList()
 		self.dropout_prob = dropout_prob
+		self.n_hidden = nh
+		self.hidden_size = n_h
+		self.latent_size = n_z
+		self.sm_type = sm_type
 	
 		self.conv1 = nn.Conv2d(1, 32, kernel_size=(ncoef,3), stride=(1,1), padding=(0,1), bias=False)
 		
@@ -495,6 +508,10 @@ class ResNet_small(nn.Module):
 		self.r_proj_size = r_proj_size
 		self.classifier = nn.ModuleList()
 		self.dropout_prob = dropout_prob
+		self.n_hidden = nh
+		self.hidden_size = n_h
+		self.latent_size = n_z
+		self.sm_type = sm_type
 
 		self.conv1 = nn.Conv2d(1, 32, kernel_size=(ncoef,3), stride=(1,1), padding=(0,1), bias=False)
 		
@@ -612,6 +629,10 @@ class ResNet_large(nn.Module):
 		self.r_proj_size = r_proj_size
 		self.classifier = nn.ModuleList()
 		self.dropout_prob = dropout_prob
+		self.n_hidden = nh
+		self.hidden_size = n_h
+		self.latent_size = n_z
+		self.sm_type = sm_type
 
 		self.conv1 = nn.Conv2d(1, 32, kernel_size=(ncoef,3), stride=(1,1), padding=(0,1), bias=False)
 		
@@ -738,6 +759,10 @@ class TDNN(nn.Module):
 		self.r_proj_size = r_proj_size
 		self.classifier = nn.ModuleList()
 		self.dropout_prob = dropout_prob
+		self.n_hidden = nh
+		self.hidden_size = n_h
+		self.latent_size = n_z
+		self.sm_type = sm_type
 
 		self.model = nn.Sequential( nn.Conv1d(ncoef, 512, 5, padding=2),
 			nn.BatchNorm1d(512),

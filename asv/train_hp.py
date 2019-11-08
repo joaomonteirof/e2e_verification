@@ -49,10 +49,7 @@ args.logdir = None if args.logdir=='None' else args.logdir
 if args.logdir:
 	from torch.utils.tensorboard import SummaryWriter
 	writer = SummaryWriter(log_dir=args.logdir+args.cp_name, comment=args.model, purge_step=True)
-	args_dict = dict(vars(args))
-	for arg_key in args_dict:
-		if args_dict[arg_key] is None:
-			args_dict[arg_key] = 'None'
+	args_dict = parse_args_for_log(args)
 	writer.add_hparams(hparam_dict=args_dict, metric_dict={'.':0.0})
 else:
 	writer = None

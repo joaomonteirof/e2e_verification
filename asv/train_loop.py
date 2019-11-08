@@ -335,7 +335,14 @@ class TrainLoop(object):
 			print('Checkpointing...')
 		ckpt = {'model_state': self.model.state_dict(),
 		'optimizer_state': self.optimizer.state_dict(),
+		'ndiscriminators': self.model.ndiscriminators,
+		'r_proj_size': self.model.r_proj_size,
 		'dropout_prob': self.model.dropout_prob,
+		'n_hidden': self.model.n_hidden,
+		'hidden_size': self.model.hidden_size,
+		'latent_size': self.model.latent_size,
+		'sm_type': self.model.sm_type,
+		'ncoef': self.model.ncoef,
 		'history': self.history,
 		'total_iters': self.total_iters,
 		'cur_epoch': self.cur_epoch}

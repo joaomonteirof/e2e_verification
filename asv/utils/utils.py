@@ -9,6 +9,25 @@ import sys
 import pickle
 from time import sleep
 
+def parse_args_for_log(args)
+	args_dict = dict(vars(args))
+	for arg_key in args_dict:
+		if args_dict[arg_key] is None:
+			args_dict[arg_key] = 'None'
+
+	return args_dict
+
+def get_classifier_config_from_cp(ckpt):
+	keys=ckpt['model_state'].keys()
+	classifier_params=[]
+	out_proj_params=[]
+	for x in keys:
+		if 'classifier' in x:
+			classifier_params.append(x)
+		elif 'out_proj' in x:
+			out_proj_params.append(x)
+	return max(len(classifier_params)//2 - 1, 1), ckpt['model_state']['classifier.0.weight'].size(0), 'am_softmax' if len(out_proj_params)==1 else 'softmax'
+
 def strided_app(a, L, S):
 	nrows = ( (len(a)-L) // S ) + 1
 	n = a.strides[0]

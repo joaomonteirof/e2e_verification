@@ -61,6 +61,8 @@ else:
 
 if args.logdir:
 	writer = SummaryWriter(log_dir=args.logdir, comment=args.model, purge_step=True if args.checkpoint_epoch is None else False)
+	args_dict = parse_args_for_log(args)
+	writer.add_hparams(hparam_dict=args_dict, metric_dict={'.':0.0})
 else:
 	writer = None
 
@@ -131,4 +133,7 @@ if args.verbose > 0:
 		print('Number of valid examples: {}'.format(len(valid_dataset.utt_list)))
 	print(' ')
 
-trainer.train(n_epochs=args.epochs, save_every=args.save_every)
+best_eer = trainer.train(n_epochs=args.epochs, save_every=args.save_every)
+
+if args.logdir:
+	writer.add_hparams(hparam_dict=args_dict, metric_dict={'best_eer':best_eer})
