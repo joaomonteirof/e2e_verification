@@ -9,7 +9,7 @@ import sys
 import pickle
 from time import sleep
 
-def parse_args_for_log(args)
+def parse_args_for_log(args):
 	args_dict = dict(vars(args))
 	for arg_key in args_dict:
 		if args_dict[arg_key] is None:
