@@ -93,7 +93,7 @@ if __name__ == '__main__':
 				emb_test = model.forward(test_ex_data).detach()
 				mem_embeddings[str(idxs_test[i])] = emb_test
 
-			scores_dif.append( abs( model.forward_bin(torch.cat([emb_enroll, emb_test],1)).squeeze().item(), model.forward_bin(torch.cat([emb_test, emb_enroll],1)).squeeze().item() ) )
+			scores_dif.append( abs( model.forward_bin(torch.cat([emb_enroll, emb_test],1)).squeeze().item() - model.forward_bin(torch.cat([emb_test, emb_enroll],1)).squeeze().item() ) )
 
 	print('\nScoring done')
 
