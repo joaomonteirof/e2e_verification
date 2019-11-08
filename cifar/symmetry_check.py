@@ -18,8 +18,6 @@ if __name__ == '__main__':
 	parser.add_argument('--cp-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
 	parser.add_argument('--data-path', type=str, default='./data/', metavar='Path', help='Path to data')
 	parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
-	parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
-	parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
 	parser.add_argument('--out-path', type=str, default=None, metavar='Path', help='Path for saving computed scores')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 	parser.add_argument('--no-histogram', action='store_true', default=False, help='Disables histogram plot')
@@ -30,14 +28,16 @@ if __name__ == '__main__':
 	validset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
 	labels_list = [x[1] for x in validset]
 
-	if args.model == 'vgg':
-		model = vgg.VGG('VGG16', nh=args.n_hidden, n_h=args.hidden_size)
-	elif args.model == 'resnet':
-		model = resnet.ResNet18(nh=args.n_hidden, n_h=args.hidden_size)
-	elif args.model == 'densenet':
-		model = densenet.densenet_cifar(nh=args.n_hidden, n_h=args.hidden_size)
-
 	ckpt = torch.load(args.cp_path, map_location = lambda storage, loc: storage)
+	n_hidden, hidden_size, softmax = get_classifier_config_from_cp(ckpt)
+
+	if args.model == 'vgg':
+		model = vgg.VGG('VGG16', nh=n_hidden, n_h=hidden_size, dropout_prob=args.dropout_prob, sm_type=softmax)
+	elif args.model == 'resnet':
+		model = resnet.ResNet18(nh=n_hidden, n_h=hidden_size, dropout_prob=args.dropout_prob, sm_type=softmax)
+	elif args.model == 'densenet':
+		model = densenet.densenet_cifar(nh=n_hidden, n_h=hidden_size, dropout_prob=args.dropout_prob, sm_type=softmax)
+	
 	try:
 		model.load_state_dict(ckpt['model_state'], strict=True)
 	except RuntimeError as err:
