@@ -10,7 +10,7 @@ from data_load import Loader, Loader_valid
 import os
 import sys
 from torch.utils.tensorboard import SummaryWriter
-from utils.utils import set_np_randomseed, get_freer_gpu
+from utils.utils import set_np_randomseed, get_freer_gpu, parse_args_for_log
 from utils.optimizer import TransformerOptimizer
 
 # Training settings
