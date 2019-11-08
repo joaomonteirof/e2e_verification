@@ -84,7 +84,7 @@ if __name__ == '__main__':
 
 		print('\nAccuracy of model {}: {}'.format(model_id, acc))
 
-		if acc<best_acc:
+		if acc>best_acc:
 			best_model, best_acc = model_id, acc
 
 	print('Best model and corresponding ACC: {} - {}'.format(best_model, best_acc))
