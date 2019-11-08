@@ -38,11 +38,11 @@ if __name__ == '__main__':
 		n_hidden, hidden_size, softmax = get_classifier_config_from_cp(ckpt)
 
 		if args.model == 'vgg':
-			model = vgg.VGG('VGG16', nh=n_hidden, n_h=hidden_size, dropout_prob=args.dropout_prob, sm_type=softmax)
+			model = vgg.VGG('VGG16', nh=n_hidden, n_h=hidden_size, sm_type=softmax)
 		elif args.model == 'resnet':
-			model = resnet.ResNet18(nh=n_hidden, n_h=hidden_size, dropout_prob=args.dropout_prob, sm_type=softmax)
+			model = resnet.ResNet18(nh=n_hidden, n_h=hidden_size, sm_type=softmax)
 		elif args.model == 'densenet':
-			model = densenet.densenet_cifar(nh=n_hidden, n_h=hidden_size, dropout_prob=args.dropout_prob, sm_type=softmax)
+			model = densenet.densenet_cifar(nh=n_hidden, n_h=hidden_size, sm_type=softmax)
 		
 		try:
 			model.load_state_dict(ckpt['model_state'], strict=True)
