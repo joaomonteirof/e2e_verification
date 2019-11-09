@@ -38,6 +38,12 @@ class Transition(nn.Module):
 class DenseNet(nn.Module):
 	def __init__(self, block, nblocks, nh, n_h, sm_type, growth_rate=12, reduction=0.5, num_classes=10, dropout_prob=0.25):
 		super(DenseNet, self).__init__()
+
+		self.dropout_prob = dropout_prob
+		self.n_hidden = nh
+		self.hidden_size = n_h
+		self.sm_type = sm_type
+
 		self.growth_rate = growth_rate
 
 		num_planes = 2*growth_rate

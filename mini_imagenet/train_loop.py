@@ -248,6 +248,10 @@ class TrainLoop(object):
 		if self.verbose>0:
 			print('Checkpointing...')
 		ckpt = {'model_state': self.model.state_dict(),
+		'dropout_prob': self.model.dropout_prob,
+		'n_hidden': self.model.n_hidden,
+		'hidden_size': self.model.hidden_size,
+		'sm_type': self.model.sm_type,
 		'optimizer_state': self.optimizer.state_dict(),
 		'scheduler_state': self.scheduler.state_dict(),
 		'history': self.history,

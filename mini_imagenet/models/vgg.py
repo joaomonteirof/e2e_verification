@@ -16,6 +16,12 @@ cfg = {
 class VGG(nn.Module):
 	def __init__(self, vgg_name, nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax'):
 		super(VGG, self).__init__()
+
+		self.dropout_prob = dropout_prob
+		self.n_hidden = nh
+		self.hidden_size = n_h
+		self.sm_type = sm_type
+
 		self.features = self._make_layers(cfg[vgg_name])
 		self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
 		self.lin_proj = nn.Sequential(nn.Linear(512 * 7 * 7, 4096), nn.ReLU(True), nn.Dropout(), nn.Linear(4096, 512))

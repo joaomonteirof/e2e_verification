@@ -115,6 +115,12 @@ class PreActBottleneck(nn.Module):
 class ResNet(nn.Module):
 	def __init__(self, block, num_blocks, nh, n_h, sm_type, num_classes=10, dropout_prob=0.25):
 		super(ResNet, self).__init__()
+
+		self.dropout_prob = dropout_prob
+		self.n_hidden = nh
+		self.hidden_size = n_h
+		self.sm_type = sm_type
+
 		self.in_planes = 64
 
 		self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
