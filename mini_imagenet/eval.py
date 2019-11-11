@@ -28,14 +28,19 @@ if __name__ == '__main__':
 	labels_list = [x[1] for x in validset]
 
 	ckpt = torch.load(args.cp_path, map_location = lambda storage, loc: storage)
-	n_hidden, hidden_size, softmax = get_classifier_config_from_cp(ckpt)
+	try :
+		dropout_prob, n_hidden, hidden_size, softmax = ckpt['dropout_prob'], ckpt['n_hidden'], ckpt['hidden_size'], ckpt['sm_type']
+	except KeyError:
+		print('\nProbably old cp has no info regarding classifiers arch!\n')
+		n_hidden, hidden_size, softmax = get_classifier_config_from_cp(ckpt)
+		dropout_prob = args.dropout_prob
 
 	if args.model == 'vgg':
-		model = vgg.VGG('VGG16', nh=n_hidden, n_h=hidden_size, dropout_prob=args.dropout_prob, sm_type=softmax)
+		model = vgg.VGG('VGG16', nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax)
 	elif args.model == 'resnet':
-		model = resnet.ResNet18(nh=n_hidden, n_h=hidden_size, dropout_prob=args.dropout_prob, sm_type=softmax)
+		model = resnet.ResNet18(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax)
 	elif args.model == 'densenet':
-		model = densenet.densenet_cifar(nh=n_hidden, n_h=hidden_size, dropout_prob=args.dropout_prob, sm_type=softmax)
+		model = densenet.densenet_cifar(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax)
 
 	try:
 		model.load_state_dict(ckpt['model_state'], strict=True)
