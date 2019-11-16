@@ -62,7 +62,7 @@ else:
 if args.logdir:
 	writer = SummaryWriter(log_dir=args.logdir, comment=args.model, purge_step=True if args.checkpoint_epoch is None else False)
 	args_dict = parse_args_for_log(args)
-	writer.add_hparams(hparam_dict=args_dict, metric_dict={'.':0.0})
+	writer.add_hparams(hparam_dict=args_dict, metric_dict={'best_eer':0.0})
 else:
 	writer = None
 
