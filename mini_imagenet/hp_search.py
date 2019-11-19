@@ -108,9 +108,9 @@ def train(lr, l2, momentum, patience, model, n_hidden, hidden_size, dropout_prob
 lr = instru.var.OrderedDiscrete([0.5, 0.1, 0.01, 0.001])
 l2 = instru.var.OrderedDiscrete([1e-2, 1e-3, 1e-4, 1e-5])
 momentum = instru.var.OrderedDiscrete([0.1, 0.5, 0.9])
-patience = instru.var.OrderedDiscrete([1, 10, 30, 100])
+patience = instru.var.OrderedDiscrete([1, 5, 10, 30, 100])
 n_hidden=instru.var.OrderedDiscrete([1, 2, 3, 4])
-hidden_size=instru.var.OrderedDiscrete([64, 128, 256, 512])
+hidden_size=instru.var.OrderedDiscrete([128, 256, 350, 512])
 dropout_prob=instru.var.OrderedDiscrete([0.01, 0.1, 0.2])
 model = args.model
 epochs = args.epochs
