@@ -195,7 +195,7 @@ class ResNet_stats(nn.Module):
 			with torch.no_grad():
 				projection.weight.div_(torch.norm(projection.weight, keepdim=True))
 
-			projection.weight.requires_grad = False
+			projection.weight.require_grad=False
 
 			classifier = nn.ModuleList([projection, nn.Linear(self.r_proj_size, h_size), nn.LeakyReLU(0.1)])
 
@@ -315,7 +315,7 @@ class ResNet_mfcc(nn.Module):
 			with torch.no_grad():
 				projection.weight.div_(torch.norm(projection.weight, keepdim=True))
 
-			projection.weight.requires_grad = False
+			projection.weight.require_grad=False
 
 			classifier = nn.ModuleList([projection, nn.Linear(self.r_proj_size, h_size), nn.LeakyReLU(0.1)])
 
@@ -438,7 +438,7 @@ class ResNet_lstm(nn.Module):
 			with torch.no_grad():
 				projection.weight.div_(torch.norm(projection.weight, keepdim=True))
 
-			projection.weight.requires_grad = False
+			projection.weight.require_grad=False
 
 			classifier = nn.ModuleList([projection, nn.Linear(self.r_proj_size, h_size), nn.LeakyReLU(0.1)])
 
@@ -572,7 +572,7 @@ class ResNet_small(nn.Module):
 			with torch.no_grad():
 				projection.weight.div_(torch.norm(projection.weight, keepdim=True))
 
-			projection.weight.requires_grad = False
+			projection.weight.require_grad=False
 
 			classifier = nn.ModuleList([projection, nn.Linear(self.r_proj_size, h_size), nn.LeakyReLU(0.1)])
 
@@ -693,7 +693,7 @@ class ResNet_large(nn.Module):
 			with torch.no_grad():
 				projection.weight.div_(torch.norm(projection.weight, keepdim=True))
 
-			projection.weight.requires_grad = False
+			projection.weight.require_grad=False
 
 			classifier = nn.ModuleList([projection, nn.Linear(self.r_proj_size, h_size), nn.LeakyReLU(0.1)])
 
@@ -816,11 +816,16 @@ class TDNN(nn.Module):
 	def make_bin_layers(self, n_in, n_h_layers, h_size, dropout_p):
 
 		if self.r_proj_size>0:
-			projection = nn.Linear(n_in, self.r_proj_size, bias=False)
-			with torch.no_grad():
-				projection.weight.div_(torch.norm(projection.weight, keepdim=True))
+#			projection = nn.Linear(n_in, self.r_proj_size, bias=False)
+#			with torch.no_grad():
+#				projection.weight.div_(torch.norm(projection.weight, keepdim=True))
 
-			projection.weight.requires_grad = False
+			projection = nn.utils.weight_norm(nn.Linear(n_in, self.r_proj_size, bias=False))
+			with torch.no_grad():
+				projection.weight_g.fill_(1)
+
+			projection.weight.require_grad=False
+			projection.weight_g.require_grad=False
 
 			classifier = nn.ModuleList([projection, nn.Linear(self.r_proj_size, h_size), nn.LeakyReLU(0.1)])
 
