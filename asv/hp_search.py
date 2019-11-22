@@ -57,6 +57,8 @@ def train(lr, l2, momentum, smoothing, warmup, latent_size, n_hidden, hidden_siz
 
 	if rproj_size>0:
 		rproj_size = int(rproj_size*latent_size*2)
+	else:
+		rproj_size = -1
 
 	cp_name = get_file_name(cp_path)
 
