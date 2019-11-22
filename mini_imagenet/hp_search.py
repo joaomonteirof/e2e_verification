@@ -73,6 +73,20 @@ def train(lr, l2, momentum, patience, model, n_hidden, hidden_size, dropout_prob
 
 	for i in range(5):
 
+		print(' ')
+		print('Hyperparameters:')
+		print('Selected model: {}'.format(model))
+		print('Hidden layer size size: {}'.format(int(hidden_size)))
+		print('Number of hidden layers: {}'.format(int(n_hidden)))
+		print('Dropout rate: {}'.format(dropout_prob))
+		print('Batch size: {}'.format(batch_size))
+		print('LR: {}'.format(lr))
+		print('Momentum: {}'.format(momentum))
+		print('l2: {}'.format(l2))
+		print('Patience: {}'.format(patience))
+		print('Softmax Mode is: {}'.format(softmax))
+		print(' ')
+
 		if i>0:
 			print(' ')
 			print('Trial {}'.format(i+1))
@@ -85,20 +99,8 @@ def train(lr, l2, momentum, patience, model, n_hidden, hidden_size, dropout_prob
 			print('Best e2e EER in file ' + cp_name + ' was: {}'.format(cost[0]))
 			print('Best cos EER in file ' + cp_name + ' was: {}'.format(cost[1]))
 			print(' ')
-			print('With hyperparameters:')
-			print('Selected model: {}'.format(model))
-			print('Hidden layer size size: {}'.format(int(hidden_size)))
-			print('Number of hidden layers: {}'.format(int(n_hidden)))
-			print('Dropout rate: {}'.format(dropout_prob))
-			print('Batch size: {}'.format(batch_size))
-			print('LR: {}'.format(lr))
-			print('Momentum: {}'.format(momentum))
-			print('l2: {}'.format(l2))
-			print('Patience: {}'.format(patience))
-			print('Softmax Mode is: {}'.format(softmax))
-			print(' ')
 
-			return np.min(cost)
+			return cost[0]
 		except:
 			pass
 
@@ -108,8 +110,8 @@ def train(lr, l2, momentum, patience, model, n_hidden, hidden_size, dropout_prob
 lr = instru.var.OrderedDiscrete([0.5, 0.1, 0.01, 0.001])
 l2 = instru.var.OrderedDiscrete([1e-2, 1e-3, 1e-4, 1e-5])
 momentum = instru.var.OrderedDiscrete([0.1, 0.5, 0.9])
-patience = instru.var.OrderedDiscrete([1, 5, 10, 30, 100])
-n_hidden=instru.var.OrderedDiscrete([1, 2, 3, 4])
+patience = instru.var.OrderedDiscrete([1, 5, 10, 20])
+n_hidden=instru.var.OrderedDiscrete([2, 3, 4, 5])
 hidden_size=instru.var.OrderedDiscrete([128, 256, 350, 512])
 dropout_prob=instru.var.OrderedDiscrete([0.01, 0.1, 0.2])
 model = args.model
