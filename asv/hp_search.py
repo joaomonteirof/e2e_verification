@@ -38,7 +38,7 @@ parser.add_argument('--budget', type=int, default=30, metavar='N', help='Maximum
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large', 'TDNN', 'all'], default='resnet_lstm', help='Model arch according to input type')
 parser.add_argument('--ndiscriminators', type=int, default=1, metavar='N', help='number of discriminators (default: 1)')
-parser.add_argument('--rproj-size', type=int, default=-1, metavar='S', help='Random projection size - active if greater than 1')
+parser.add_argument('--rproj', action='store_true', default=False, metavar='R', help='Enable search for random projection size')
 parser.add_argument('--softmax', choices=['softmax', 'am_softmax'], default='softmax', help='Softmax type')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
 parser.add_argument('--hp-workers', type=int, help='number of search workers', default=1)
@@ -54,6 +54,9 @@ def train(lr, l2, momentum, smoothing, warmup, latent_size, n_hidden, hidden_siz
 
 	if cuda:
 		device=get_freer_gpu()
+
+	if rproj_size>0:
+		rproj_size = int(rproj_size*latent_size*2)
 
 	cp_name = get_file_name(cp_path)
 
@@ -105,7 +108,7 @@ n_frames=instru.var.OrderedDiscrete([300, 500, 800])
 dropout_prob=instru.var.OrderedDiscrete([0.01, 0.1, 0.2])
 model=instru.var.OrderedDiscrete(['resnet_mfcc', 'resnet_lstm', 'resnet_stats', 'resnet_small', 'TDNN']) if args.model=='all' else args.model
 ndiscriminators=args.ndiscriminators
-rproj_size=args.rproj_size
+rproj_size=instru.var.OrderedDiscrete([0.3, 0.5, 0.8]) if args.rproj else -1
 ncoef=args.ncoef
 epochs=args.epochs
 batch_size=args.batch_size

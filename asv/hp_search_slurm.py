@@ -46,7 +46,7 @@ parser.add_argument('--train-hdf-file', type=str, default='./data/train.hdf', me
 parser.add_argument('--valid-hdf-file', type=str, default=None, metavar='Path', help='Path to hdf data')
 parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large', 'TDNN', 'all'], default='resnet_lstm', help='Model arch according to input type')
 parser.add_argument('--ndiscriminators', type=int, default=1, metavar='N', help='number of discriminators (default: 1)')
-parser.add_argument('--rproj-size', type=int, default=-1, metavar='S', help='Random projection size - active if greater than 1')
+parser.add_argument('--rproj', action='store_true', default=False, metavar='R', help='Enable search for random projection size')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
 parser.add_argument('--hp-workers', type=int, help='number of search workers', default=1)
 parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
@@ -63,6 +63,9 @@ def train(lr, l2, momentum, smoothing, warmup, latent_size, n_hidden, hidden_siz
 
 	file_name = get_file_name(tmp_dir)
 	np.random.seed()
+
+	if rproj_size>0:
+		rproj_size = int(rproj_size*latent_size*2)
 
 	command = 'sbatch' + ' ' + submission_file + ' ' + str(lr) + ' ' + str(l2) + ' ' + str(momentum) + ' ' + str(smoothing) + ' ' + str(int(warmup)) + ' ' + str(int(latent_size)) + ' ' + str(int(n_hidden)) + ' ' + str(int(hidden_size)) + ' ' + str(int(n_frames)) + ' ' + str(model) + ' ' + str(ndiscriminators) + ' ' + str(rproj_size) + ' ' + str(ncoef) + ' ' + str(dropout_prob) + ' ' + str(epochs) + ' ' + str(batch_size) + ' ' + str(valid_batch_size) + ' ' + str(n_workers) + ' ' + str(cuda) + ' ' + str(train_hdf_file) + ' ' + str(valid_hdf_file) + ' ' + str(file_name) + ' ' + str(cp_path) + ' ' + str(file_name.split('/')[-1]+'t')+ ' ' + str(softmax) + ' ' + str(logdir)
 
@@ -117,12 +120,12 @@ smoothing=instru.var.OrderedDiscrete([0.0, 0.1, 0.2])
 warmup=instru.var.OrderedDiscrete([1, 500, 2000])
 latent_size=instru.var.OrderedDiscrete([128, 256, 512])
 n_hidden=instru.var.OrderedDiscrete([1, 2, 3, 4])
-hidden_size=instru.var.OrderedDiscrete([64, 128, 256, 512])
+hidden_size=instru.var.OrderedDiscrete([128, 256, 350, 512])
 n_frames=instru.var.OrderedDiscrete([300, 500, 800])
 dropout_prob=instru.var.OrderedDiscrete([0.01, 0.1, 0.2])
 model=instru.var.OrderedDiscrete(['resnet_mfcc', 'resnet_lstm', 'resnet_stats', 'resnet_small', 'TDNN']) if args.model=='all' else args.model
 ndiscriminators=args.ndiscriminators
-rproj_size=args.rproj_size
+rproj_size=instru.var.OrderedDiscrete([0.3, 0.5, 0.8]) if args.rproj else -1
 ncoef=args.ncoef
 epochs=args.epochs
 batch_size=args.batch_size
