@@ -125,7 +125,7 @@ n_frames=instru.var.OrderedDiscrete([300, 500, 800])
 dropout_prob=instru.var.OrderedDiscrete([0.01, 0.1, 0.2])
 model=instru.var.OrderedDiscrete(['resnet_mfcc', 'resnet_lstm', 'resnet_stats', 'resnet_small', 'TDNN']) if args.model=='all' else args.model
 ndiscriminators=args.ndiscriminators
-rproj_size=instru.var.OrderedDiscrete([0.3, 0.5, 0.8]) if args.rproj else -1
+rproj_size=instru.var.OrderedDiscrete([-1.0, 0.3, 0.5, 0.8]) if args.rproj else -1
 ncoef=args.ncoef
 epochs=args.epochs
 batch_size=args.batch_size
