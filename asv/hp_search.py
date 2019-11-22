@@ -38,7 +38,7 @@ parser.add_argument('--budget', type=int, default=30, metavar='N', help='Maximum
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large', 'TDNN', 'all'], default='resnet_lstm', help='Model arch according to input type')
 parser.add_argument('--ndiscriminators', type=int, default=1, metavar='N', help='number of discriminators (default: 1)')
-parser.add_argument('--rproj', action='store_true', default=False, metavar='R', help='Enable search for random projection size')
+parser.add_argument('--rproj', action='store_true', default=False, help='Enable search for random projection size')
 parser.add_argument('--softmax', choices=['softmax', 'am_softmax'], default='softmax', help='Softmax type')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
 parser.add_argument('--hp-workers', type=int, help='number of search workers', default=1)

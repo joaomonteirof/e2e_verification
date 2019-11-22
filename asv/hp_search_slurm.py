@@ -46,7 +46,7 @@ parser.add_argument('--train-hdf-file', type=str, default='./data/train.hdf', me
 parser.add_argument('--valid-hdf-file', type=str, default=None, metavar='Path', help='Path to hdf data')
 parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large', 'TDNN', 'all'], default='resnet_lstm', help='Model arch according to input type')
 parser.add_argument('--ndiscriminators', type=int, default=1, metavar='N', help='number of discriminators (default: 1)')
-parser.add_argument('--rproj', action='store_true', default=False, metavar='R', help='Enable search for random projection size')
+parser.add_argument('--rproj', action='store_true', default=False, help='Enable search for random projection size')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
 parser.add_argument('--hp-workers', type=int, help='number of search workers', default=1)
 parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
