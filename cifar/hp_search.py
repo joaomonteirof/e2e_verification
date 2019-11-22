@@ -104,6 +104,7 @@ def train(lr, l2, momentum, smoothing, patience, model, n_hidden, hidden_size, d
 			return cost[0]
 
 		except:
+			print("Error:", sys.exc_info()[0])
 			pass
 
 	print('Returning dummy cost due to failures while training.')
