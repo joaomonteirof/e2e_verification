@@ -7,12 +7,12 @@ import os
 from tqdm import tqdm
 
 from harvester import HardestNegativeTripletSelector, AllTripletSelector
-
+from models.losses import LabelSmoothingLoss
 from utils import compute_eer
 
 class TrainLoop(object):
 
-	def __init__(self, model, optimizer, train_loader, valid_loader, patience, verbose=-1, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True):
+	def __init__(self, model, optimizer, train_loader, valid_loader, patience, label_smoothing, verbose=-1, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True):
 		if checkpoint_path is None:
 			# Save to current directory
 			self.checkpoint_path = os.getcwd()
@@ -35,6 +35,12 @@ class TrainLoop(object):
 		self.save_cp = save_cp
 		self.device = next(self.model.parameters()).device
 		self.history = {'train_loss': [], 'train_loss_batch': [], 'ce_loss': [], 'ce_loss_batch': [], 'bin_loss': [], 'bin_loss_batch': []}
+		self.disc_label_smoothing = label_smoothing*0.5
+
+		if label_smoothing>0.0:
+			self.ce_criterion = LabelSmoothingLoss(label_smoothing, lbl_set_size=train_loader.dataset.n_speakers)
+		else:
+			self.ce_criterion = torch.nn.CrossEntropyLoss()
 
 		if self.valid_loader is not None:
 			self.history['e2e_eer'] = []
@@ -169,7 +175,7 @@ class TrainLoop(object):
 
 		embeddings_norm = F.normalize(embeddings, p=2, dim=1)
 
-		ce_loss = F.cross_entropy(self.model.out_proj(embeddings_norm, y), y)
+		ce_loss = self.ce_criterion(self.model.out_proj(embeddings_norm, y), y)
 
 		# Get all triplets now for bin classifier
 		triplets_idx = self.harvester.get_triplets(embeddings_norm.detach(), y)
@@ -183,7 +189,7 @@ class TrainLoop(object):
 		emb_an = torch.cat([emb_a, emb_n],1)
 		emb_ = torch.cat([emb_ap, emb_an],0)
 
-		y_ = torch.cat([torch.ones(emb_ap.size(0)), torch.zeros(emb_an.size(0))],0)
+		y_ = torch.cat([torch.rand(emb_ap.size(0))*self.disc_label_smoothing+(1.0-self.disc_label_smoothing), torch.rand(emb_an.size(0))*self.disc_label_smoothing],0) if isinstance(self.ce_criterion, LabelSmoothingLoss) else torch.cat([torch.ones(emb_ap.size(0)), torch.zeros(emb_an.size(0))],0)
 		y_ = y_.to(self.device)
 
 		pred_bin = self.model.forward_bin(emb_).squeeze()

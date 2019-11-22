@@ -36,6 +36,7 @@ parser.add_argument('--valid-batch-size', type=int, default=16, metavar='N', hel
 parser.add_argument('--epochs', type=int, default=500, metavar='N', help='number of epochs to train (default: 500)')
 parser.add_argument('--lr', type=float, default=0.1, metavar='LR', help='learning rate (default: 0.1)')
 parser.add_argument('--l2', type=float, default=5e-4, metavar='lambda', help='L2 wheight decay coefficient (default: 0.0005)')
+parser.add_argument('--smoothing', type=float, default=0.2, metavar='l', help='Label smoothing (default: 0.2)')
 parser.add_argument('--patience', type=int, default=10, metavar='S', help='Epochs to wait before decreasing LR by a factor of 0.5 (default: 10)')
 parser.add_argument('--momentum', type=float, default=0.9, metavar='lambda', help='Momentum (default: 0.9)')
 parser.add_argument('--checkpoint-epoch', type=int, default=None, metavar='N', help='epoch to load for checkpointing. If None, training starts from scratch')
@@ -83,7 +84,7 @@ if args.cuda:
 
 optimizer = optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.l2, momentum=args.momentum)
 
-trainer = TrainLoop(model, optimizer, train_loader, valid_loader, patience=args.patience, verbose=args.verbose, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, cuda=args.cuda)
+trainer = TrainLoop(model, optimizer, train_loader, valid_loader, patience=args.patience, label_smoothing=args.smoothing, verbose=args.verbose, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, cuda=args.cuda)
 
 if args.verbose >0:
 	print('Cuda Mode is: {}'.format(args.cuda))
@@ -92,6 +93,7 @@ if args.verbose >0:
 	print('LR: {}'.format(args.lr))
 	print('Momentum: {}'.format(args.momentum))
 	print('l2: {}'.format(args.l2))
+	print('Label smoothing: {}'.format(args.smoothing))
 	print('Patience: {}'.format(args.patience))
 	print('Dropout rate: {}'.format(args.dropout_prob))
 	print('Softmax Mode is: {}'.format(args.softmax))
