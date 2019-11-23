@@ -120,6 +120,7 @@ def train(lr, l2, momentum, smoothing, warmup, latent_size, n_hidden, hidden_siz
 			print('LR: {}'.format(lr))
 			print('Momentum: {}'.format(momentum))
 			print('l2: {}'.format(l2))
+			print('Max. grad norm: {}'.format(max_gnorm))
 			print('Warmup iterations: {}'.format(warmup))
 			print('Label smoothing: {}'.format(smoothing))
 			print('Max. number of frames: {}'.format(int(n_frames)))
