@@ -195,6 +195,8 @@ if __name__ == '__main__':
 
 				mem_embeddings_enroll_spk[speakers_enroll[i]] = emb_spk_enroll
 
+			pred = model.forward_bin(torch.cat([emb_enroll, emb_test],1))
+
 			if model.ndiscriminators>1:
 				e2e_scores.append( torch.cat(pred, 1).mean(1).squeeze().item() )
 			else:
