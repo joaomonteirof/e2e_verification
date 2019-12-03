@@ -31,8 +31,8 @@ if __name__ == '__main__':
 	parser.add_argument('--spk2utt', type=str, default=None, metavar='Path', help='Path to spk2utt file. Will be used in case no trials file is provided')
 	parser.add_argument('--cp-path', type=str, default=None, metavar='Path', help='Path for file containing model')
 	parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large', 'TDNN'], default='resnet_lstm', help='Model arch according to input type')
-	parser.add_argument('--out-path', type=str, default='./', metavar='Path', help='Path for saving computed scores')
-	parser.add_argument('--out-prefix', type=str, default=None, metavar='Path', help='Prefix to be added to score files')
+	parser.add_argument('--out-path', type=str, default='./', metavar='Path', help='Path for saving outputs')
+	parser.add_argument('--out-prefix', type=str, default=None, metavar='Path', help='Prefix to be added to output file name')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 	parser.add_argument('--inner', action='store_true', default=True, help='Inner layer as embedding')
 	args = parser.parse_args()
@@ -86,7 +86,8 @@ if __name__ == '__main__':
 				test_data[k] = v
 
 	if args.trials_path:
-		_, utterances_list = read_trials(args.trials_path)
+		_, utterances_list, _ = read_trials(args.trials_path)
+		utterances_list = np.unique(utterances_list)
 	else:
 		spk2utt = read_spk2utt(args.spk2utt)
 		utterances_list = []
@@ -181,4 +182,4 @@ if __name__ == '__main__':
 		matplotlib.use('agg')
 		import matplotlib.pyplot as plt
 		plt.hist(scores_dif, normed=True, bins=30)
-		plt.savefig('triang_hist_vox.pdf', bbox_inches='tight')
+		plt.savefig(args.out_path+args.out_prefix+'triang_hist_vox.pdf', bbox_inches='tight')
