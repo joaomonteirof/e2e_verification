@@ -104,7 +104,7 @@ if __name__ == '__main__':
 
 	with torch.no_grad():
 
-		for idxs in itertools.permutationsrange(len(utterances_list)):
+		for idxs in itertools.permutations(range(len(utterances_list))):
 
 			i, j, k = idxs
 
