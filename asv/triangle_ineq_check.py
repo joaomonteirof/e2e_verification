@@ -35,6 +35,7 @@ if __name__ == '__main__':
 	parser.add_argument('--out-prefix', type=str, default=None, metavar='Path', help='Prefix to be added to output file name')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 	parser.add_argument('--inner', action='store_true', default=True, help='Inner layer as embedding')
+	parser.add_argument('--no-histogram', action='store_true', default=False, help='Disables histogram plot')
 	args = parser.parse_args()
 	args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
