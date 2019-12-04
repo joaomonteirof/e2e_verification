@@ -67,7 +67,7 @@ if __name__ == '__main__':
 		iterator = tqdm(itertools.permutations(range(len(validset)), 3), total=len(validset))
 		for i, j, k in iterator:
 
-			anchor_ex = str(idxs_enroll[i])
+			anchor_ex = str(i)
 
 			try:
 				emb_anchor = mem_embeddings[anchor_ex]
@@ -81,7 +81,7 @@ if __name__ == '__main__':
 				emb_anchor = model.forward(anchor_ex_data).detach()
 				mem_embeddings[anchor_ex] = emb_anchor
 
-			a_ex = str(idxs_enroll[j])
+			a_ex = str(j)
 
 			try:
 				emb_a = mem_embeddings[a_ex]
@@ -95,7 +95,7 @@ if __name__ == '__main__':
 				emb_a = model.forward(a_ex_data).detach()
 				mem_embeddings[a_ex] = emb_a
 
-			b_ex = str(idxs_enroll[k])
+			b_ex = str(k)
 
 			try:
 				emb_b = mem_embeddings[b_ex]
