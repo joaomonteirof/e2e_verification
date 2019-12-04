@@ -124,49 +124,49 @@ if __name__ == '__main__':
 				mem_embeddings[anchor_utt] = emb_anchor
 
 
-			1_utt = str(j)
+			a_utt = str(j)
 
 			try:
-				emb_1 = mem_embeddings[1_utt]
+				emb_a = mem_embeddings[a_utt]
 			except KeyError:
 
-				1_utt_data = prep_feats(test_data[utterances_list[j]])
+				a_utt_data = prep_feats(test_data[utterances_list[j]])
 
 				if args.cuda:
-					1_utt_data = 1_utt_data.to(device)
+					a_utt_data = a_utt_data.to(device)
 
-				emb_1 = model.forward(1_utt_data)[1].detach() if args.inner else model.forward(1_utt_data)[0].detach()
-				mem_embeddings[1_utt] = emb_1
+				emb_a = model.forward(a_utt_data)[1].detach() if args.inner else model.forward(a_utt_data)[0].detach()
+				mem_embeddings[a_utt] = emb_a
 
-			2_utt = str(k)
+			b_utt = str(k)
 
 			try:
-				emb_2 = mem_embeddings[2_utt]
+				emb_b = mem_embeddings[b_utt]
 			except KeyError:
 
-				2_utt_data = prep_feats(test_data[utterances_list[k]])
+				b_utt_data = prep_feats(test_data[utterances_list[k]])
 
 				if args.cuda:
-					2_utt_data = 2_utt_data.to(device)
+					b_utt_data = b_utt_data.to(device)
 
-				emb_2 = model.forward(2_utt_data)[1].detach() if args.inner else model.forward(2_utt_data)[0].detach()
-				mem_embeddings[2_utt] = emb_2
+				emb_b = model.forward(b_utt_data)[1].detach() if args.inner else model.forward(b_utt_data)[0].detach()
+				mem_embeddings[b_utt] = emb_b
 
-			pred_anchor_1 = model.forward_bin(torch.cat([emb_anchor, emb_1],1))
-			pred_anchor_2 = model.forward_bin(torch.cat([emb_anchor, emb_2],1))
-			pred_1_2 = model.forward_bin(torch.cat([emb_1, emb_2],1))
+			pred_anchor_a = model.forward_bin(torch.cat([emb_anchor, emb_a],1))
+			pred_anchor_b = model.forward_bin(torch.cat([emb_anchor, emb_b],1))
+			pred_a_b = model.forward_bin(torch.cat([emb_a, emb_b],1))
 
 			if model.ndiscriminators>1:
-				score_anchor_1 = torch.cat(pred_anchor_1, 1).mean(1).squeeze().item()
-				score_anchor_2 = torch.cat(pred_anchor_2, 1).mean(1).squeeze().item()
-				score_1_2 = torch.cat(pred_1_2, 1).mean(1).squeeze().item()
+				score_anchor_a = torch.cat(pred_anchor_a, 1).mean(1).squeeze().item()
+				score_anchor_b = torch.cat(pred_anchor_b, 1).mean(1).squeeze().item()
+				score_a_b = torch.cat(pred_a_b, 1).mean(1).squeeze().item()
 			else:
-				score_anchor_1 = pred_anchor_1.squeeze().item()
-				score_anchor_2 = pred_anchor_2.squeeze().item()
-				score_1_2 = pred_1_2.squeeze().item()
+				score_anchor_a = pred_anchor_a.squeeze().item()
+				score_anchor_b = pred_anchor_b.squeeze().item()
+				score_a_b = pred_a_b.squeeze().item()
 
-			total_dist = score_anchor_1 + score_anchor_2
-			local_dist = score_1_2
+			total_dist = score_anchor_a + score_anchor_b
+			local_dist = score_a_b
 
 			scores_dif.append( max(local_dist-total_dist, 0.0) )
 

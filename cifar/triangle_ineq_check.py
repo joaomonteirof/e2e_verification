@@ -81,36 +81,36 @@ if __name__ == '__main__':
 				emb_anchor = model.forward(anchor_ex_data).detach()
 				mem_embeddings[anchor_ex] = emb_anchor
 
-			1_ex = str(idxs_enroll[j])
+			a_ex = str(idxs_enroll[j])
 
 			try:
-				emb_1 = mem_embeddings[1_ex]
+				emb_a = mem_embeddings[a_ex]
 			except KeyError:
 
-				1_ex_data = validset[j][0].unsqueeze(0)
+				a_ex_data = validset[j][0].unsqueeze(0)
 
 				if args.cuda:
-					1_ex_data = 1_ex_data.cuda(device)
+					a_ex_data = a_ex_data.cuda(device)
 
-				emb_1 = model.forward(1_ex_data).detach()
-				mem_embeddings[1_ex] = emb_1
+				emb_a = model.forward(a_ex_data).detach()
+				mem_embeddings[a_ex] = emb_a
 
-			2_ex = str(idxs_enroll[k])
+			b_ex = str(idxs_enroll[k])
 
 			try:
-				emb_2 = mem_embeddings[2_ex]
+				emb_b = mem_embeddings[b_ex]
 			except KeyError:
 
-				2_ex_data = validset[k][0].unsqueeze(0)
+				b_ex_data = validset[k][0].unsqueeze(0)
 
 				if args.cuda:
-					2_ex_data = 2_ex_data.cuda(device)
+					b_ex_data = b_ex_data.cuda(device)
 
-				emb_2 = model.forward(2_ex_data).detach()
-				mem_embeddings[2_ex] = emb_2
+				emb_b = model.forward(b_ex_data).detach()
+				mem_embeddings[b_ex] = emb_b
 
-			total_dist = model.forward_bin(torch.cat([emb_anchor, emb_1],1)).squeeze().item() + model.forward_bin(torch.cat([emb_anchor, emb_2],1)).squeeze().item()
-			local_dist = model.forward_bin(torch.cat([emb_1, emb_2],1)).squeeze().item()
+			total_dist = model.forward_bin(torch.cat([emb_anchor, emb_a],1)).squeeze().item() + model.forward_bin(torch.cat([emb_anchor, emb_b],1)).squeeze().item()
+			local_dist = model.forward_bin(torch.cat([emb_a, emb_b],1)).squeeze().item()
 
 			scores_dif.append( max(local_dist-total_dist, 0.0) )
 
