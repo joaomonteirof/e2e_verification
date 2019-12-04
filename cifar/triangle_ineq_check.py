@@ -64,7 +64,8 @@ if __name__ == '__main__':
 
 	with torch.no_grad():
 
-		iterator = tqdm(itertools.permutations(range(len(validset)), 3), total=len(validset))
+		triplets = itertools.permutations(range(len(validset)), 3)
+		iterator = tqdm(triplets, total=len(triplets))
 		for i, j, k in iterator:
 
 			anchor_ex = str(i)
