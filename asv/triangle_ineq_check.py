@@ -10,6 +10,7 @@ import pickle
 import os
 import sys
 import itertools
+from tqdm import tqdm
 from utils.utils import *
 
 def prep_feats(data_, min_nb_frames=100):
@@ -105,9 +106,10 @@ if __name__ == '__main__':
 
 	with torch.no_grad():
 
-		for idxs in itertools.permutations(range(len(utterances_list)), 3):
+		triplets = itertools.combinations(range(len(utterances_list)), 3)
+		iterator = tqdm(triplets, total=len(utterances_list)*(len(utterances_list)-1)*(lenutterances_list)-2)/6)
 
-			i, j, k = idxs
+		for i, j, k in iterator:
 
 			anchor_utt = str(i)
 
