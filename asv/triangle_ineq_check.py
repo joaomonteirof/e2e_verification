@@ -150,7 +150,7 @@ if __name__ == '__main__':
 		print('\nComputing scores differences.')
 
 		triplets = itertools.combinations(range(len(utterances_list)), 3)
-		iterator = tqdm(triplets, total=len(utterances_list)*(len(utterances_list)-1)*(len(lenutterances_list)-2)/6)
+		iterator = tqdm(triplets, total=len(utterances_list)*(len(utterances_list)-1)*(len(utterances_list)-2)/6)
 
 		for i, j, k in iterator:
 
