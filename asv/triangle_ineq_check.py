@@ -101,15 +101,18 @@ if __name__ == '__main__':
 	scores_dif = []
 
 	mem_embeddings = {}
+	mem_dists = {}
 
 	model.eval()
 
 	with torch.no_grad():
 
-		triplets = itertools.combinations(range(len(utterances_list)), 3)
-		iterator = tqdm(triplets, total=len(utterances_list)*(len(utterances_list)-1)*(lenutterances_list)-2)/6)
+		print('\nPreparing distance dictionary.')
 
-		for i, j, k in iterator:
+		pairs = itertools.combinations(range(len(utterances_list)), 2)
+		iterator = tqdm(pairs, total=len(utterances_list)*(len(utterances_list)-1)/2)
+
+		for i, j in iterator:
 
 			anchor_utt = str(i)
 
@@ -140,37 +143,22 @@ if __name__ == '__main__':
 				emb_a = model.forward(a_utt_data)[1].detach() if args.inner else model.forward(a_utt_data)[0].detach()
 				mem_embeddings[a_utt] = emb_a
 
-			b_utt = str(k)
+			mem_dists[anchor_utt+'_'+a_utt] = model.forward_bin(torch.cat([emb_anchor, emb_a],1)).squeeze().item()
+			mem_dists[a_utt+'_'+anchor_utt] = model.forward_bin(torch.cat([emb_a, emb_anchor],1)).squeeze().item()
 
-			try:
-				emb_b = mem_embeddings[b_utt]
-			except KeyError:
 
-				b_utt_data = prep_feats(test_data[utterances_list[k]])
+		print('\nComputing scores differences.')
 
-				if args.cuda:
-					b_utt_data = b_utt_data.to(device)
+		triplets = itertools.combinations(range(len(utterances_list)), 3)
+		iterator = tqdm(triplets, total=len(utterances_list)*(len(utterances_list)-1)*(lenutterances_list)-2)/6)
 
-				emb_b = model.forward(b_utt_data)[1].detach() if args.inner else model.forward(b_utt_data)[0].detach()
-				mem_embeddings[b_utt] = emb_b
+		for i, j, k in iterator:
 
-			pred_anchor_a = model.forward_bin(torch.cat([emb_anchor, emb_a],1))
-			pred_anchor_b = model.forward_bin(torch.cat([emb_anchor, emb_b],1))
-			pred_a_b = model.forward_bin(torch.cat([emb_a, emb_b],1))
-
-			if model.ndiscriminators>1:
-				score_anchor_a = torch.cat(pred_anchor_a, 1).mean(1).squeeze().item()
-				score_anchor_b = torch.cat(pred_anchor_b, 1).mean(1).squeeze().item()
-				score_a_b = torch.cat(pred_a_b, 1).mean(1).squeeze().item()
-			else:
-				score_anchor_a = pred_anchor_a.squeeze().item()
-				score_anchor_b = pred_anchor_b.squeeze().item()
-				score_a_b = pred_a_b.squeeze().item()
-
-			total_dist = score_anchor_a + score_anchor_b
-			local_dist = score_a_b
+			total_dist = mem_dists[str(i)+'_'+str(j)] + mem_dists[str(i)+'_'+str(k)]
+			local_dist = mem_dists[str(j)+'_'+str(k)]
 
 			scores_dif.append( max(local_dist-total_dist, 0.0) )
+
 
 	print('\nScoring done')
 

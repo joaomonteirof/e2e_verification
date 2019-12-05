@@ -59,15 +59,18 @@ if __name__ == '__main__':
 	scores_dif = []
 
 	mem_embeddings = {}
+	mem_dists = {}
 
 	model.eval()
 
 	with torch.no_grad():
 
-		triplets = itertools.combinations(range(len(validset)), 3)
-		iterator = tqdm(triplets, total=len(validset)*(len(validset)-1)*(len(validset)-2)/6)
+		print('\nPreparing distance dictionary.')
 
-		for i, j, k in iterator:
+		pairs = itertools.combinations(range(len(validset)), 2)
+		iterator = tqdm(pairs, total=len(validset)*(len(validset)-1)/2)
+
+		for i, j in iterator:
 
 			anchor_ex = str(i)
 
@@ -97,26 +100,23 @@ if __name__ == '__main__':
 				emb_a = model.forward(a_ex_data).detach()
 				mem_embeddings[a_ex] = emb_a
 
-			b_ex = str(k)
+			mem_dists[anchor_ex+'_'+a_ex] = model.forward_bin(torch.cat([emb_anchor, emb_a],1)).squeeze().item()
+			mem_dists[a_ex+'_'+anchor_ex] = model.forward_bin(torch.cat([emb_a, emb_anchor],1)).squeeze().item()
 
-			try:
-				emb_b = mem_embeddings[b_ex]
-			except KeyError:
 
-				b_ex_data = validset[k][0].unsqueeze(0)
+		print('\nComputing scores differences.')
 
-				if args.cuda:
-					b_ex_data = b_ex_data.cuda(device)
+		triplets = itertools.permutations(range(len(validset)), 3)
+		iterator = tqdm(triplets, total=len(validset)*(len(validset)-1)*(len(validset)-2))
 
-				emb_b = model.forward(b_ex_data).detach()
-				mem_embeddings[b_ex] = emb_b
+		for i, j, k in iterator:
 
-			total_dist = model.forward_bin(torch.cat([emb_anchor, emb_a],1)).squeeze().item() + model.forward_bin(torch.cat([emb_anchor, emb_b],1)).squeeze().item()
-			local_dist = model.forward_bin(torch.cat([emb_a, emb_b],1)).squeeze().item()
+			total_dist = mem_dists[str(i)+'_'+str(j)] + mem_dists[str(i)+'_'+str(k)]
+			local_dist = mem_dists[str(j)+'_'+str(k)]
 
 			scores_dif.append( max(local_dist-total_dist, 0.0) )
 
-	print('\nScoring done')
+	print('\nScoring done.')
 
 	print('Avg: {}'.format(np.mean(scores_dif)))
 	print('Std: {}'.format(np.std(scores_dif)))
