@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
 	transform_test = transforms.Compose([transforms.ToTensor(), transforms.Normalize([x / 255 for x in [125.3, 123.0, 113.9]], [x / 255 for x in [63.0, 62.1, 66.7]])])
 	validset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
-	idx_list = random.sample(xrange(len(validset)), min(len(validset), args.sample_size))
+	idx_list = random.sample(np.arange(len(validset)), min(len(validset), args.sample_size))
 
 	ckpt = torch.load(args.cp_path, map_location = lambda storage, loc: storage)
 	try :
