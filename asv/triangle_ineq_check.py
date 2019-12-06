@@ -33,7 +33,7 @@ if __name__ == '__main__':
 	parser.add_argument('--spk2utt', type=str, default=None, metavar='Path', help='Path to spk2utt file. Will be used in case no trials file is provided')
 	parser.add_argument('--cp-path', type=str, default=None, metavar='Path', help='Path for file containing model')
 	parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large', 'TDNN'], default='resnet_lstm', help='Model arch according to input type')
-	parser.add_argument('--sample-size', type=int, default=30000, metavar='N', help='Sample size (default: 3e4)')
+	parser.add_argument('--sample-size', type=int, default=5000, metavar='N', help='Sample size (default: 5000)')
 	parser.add_argument('--out-path', type=str, default='./', metavar='Path', help='Path for saving outputs')
 	parser.add_argument('--out-prefix', type=str, default=None, metavar='Path', help='Prefix to be added to output file name')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
