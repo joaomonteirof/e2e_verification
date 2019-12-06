@@ -12,6 +12,7 @@ import sys
 import itertools
 from tqdm import tqdm
 from utils.utils import *
+import random
 
 def prep_feats(data_, min_nb_frames=100):
 
@@ -32,6 +33,7 @@ if __name__ == '__main__':
 	parser.add_argument('--spk2utt', type=str, default=None, metavar='Path', help='Path to spk2utt file. Will be used in case no trials file is provided')
 	parser.add_argument('--cp-path', type=str, default=None, metavar='Path', help='Path for file containing model')
 	parser.add_argument('--model', choices=['resnet_stats', 'resnet_mfcc', 'resnet_lstm', 'resnet_small', 'resnet_large', 'TDNN'], default='resnet_lstm', help='Model arch according to input type')
+	parser.add_argument('--sample-size', type=int, default=30000, metavar='N', help='Sample size (default: 3e4)')
 	parser.add_argument('--out-path', type=str, default='./', metavar='Path', help='Path for saving outputs')
 	parser.add_argument('--out-prefix', type=str, default=None, metavar='Path', help='Prefix to be added to output file name')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
@@ -96,6 +98,8 @@ if __name__ == '__main__':
 		for spk in spk2utt:
 			utterances_list.extend(spk2utt[spk])
 
+	idx_list = random.sample(xrange(len(utterances_list)), min(len(utterances_list), args.sample_size))
+
 	print('\nAll data ready. Start of scoring')
 
 	scores_dif = []
@@ -109,8 +113,8 @@ if __name__ == '__main__':
 
 		print('\nPreparing distance dictionary.')
 
-		pairs = itertools.combinations(range(len(utterances_list)), 2)
-		iterator = tqdm(pairs, total=len(utterances_list)*(len(utterances_list)-1)/2)
+		pairs = itertools.combinations(range(len(idx_list)), 2)
+		iterator = tqdm(pairs, total=len(idx_list)*(len(idx_list)-1)/2)
 
 		for i, j in iterator:
 
@@ -120,7 +124,7 @@ if __name__ == '__main__':
 				emb_anchor = mem_embeddings[anchor_utt]
 			except KeyError:
 
-				anchor_utt_data = prep_feats(test_data[utterances_list[i]])
+				anchor_utt_data = prep_feats(test_data[utterances_list[idx_list[i]]])
 
 				if args.cuda:
 					anchor_utt_data = anchor_utt_data.to(device)
@@ -135,7 +139,7 @@ if __name__ == '__main__':
 				emb_a = mem_embeddings[a_utt]
 			except KeyError:
 
-				a_utt_data = prep_feats(test_data[utterances_list[j]])
+				a_utt_data = prep_feats(test_data[utterances_list[idx_list[j]]])
 
 				if args.cuda:
 					a_utt_data = a_utt_data.to(device)
@@ -149,8 +153,8 @@ if __name__ == '__main__':
 
 		print('\nComputing scores differences.')
 
-		triplets = itertools.combinations(range(len(utterances_list)), 3)
-		iterator = tqdm(triplets, total=len(utterances_list)*(len(utterances_list)-1)*(len(utterances_list)-2)/6)
+		triplets = itertools.combinations(range(len(idx_list)), 3)
+		iterator = tqdm(triplets, total=len(idx_list)*(len(idx_list)-1)*(len(idx_list)-2)/6)
 
 		for i, j, k in iterator:
 

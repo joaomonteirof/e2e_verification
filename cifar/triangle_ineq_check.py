@@ -11,6 +11,7 @@ import sys
 import itertools
 from tqdm import tqdm
 from utils import *
+import random
 
 if __name__ == '__main__':
 
@@ -19,6 +20,7 @@ if __name__ == '__main__':
 	parser.add_argument('--cp-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
 	parser.add_argument('--data-path', type=str, default='./data/', metavar='Path', help='Path to data')
 	parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
+	parser.add_argument('--sample-size', type=int, default=30000, metavar='N', help='Sample size (default: 3e4)')
 	parser.add_argument('--dropout-prob', type=float, default=0.25, metavar='p', help='Dropout probability (default: 0.25)')
 	parser.add_argument('--out-path', type=str, default=None, metavar='Path', help='Path for saving computed scores')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
@@ -28,6 +30,7 @@ if __name__ == '__main__':
 
 	transform_test = transforms.Compose([transforms.ToTensor(), transforms.Normalize([x / 255 for x in [125.3, 123.0, 113.9]], [x / 255 for x in [63.0, 62.1, 66.7]])])
 	validset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
+	idx_list = random.sample(xrange(len(validset)), min(len(validset), args.sample_size))
 
 	ckpt = torch.load(args.cp_path, map_location = lambda storage, loc: storage)
 	try :
@@ -67,8 +70,8 @@ if __name__ == '__main__':
 
 		print('\nPreparing distance dictionary.')
 
-		pairs = itertools.combinations(range(len(validset)), 2)
-		iterator = tqdm(pairs, total=len(validset)*(len(validset)-1)/2)
+		pairs = itertools.combinations(range(len(idx_list)), 2)
+		iterator = tqdm(pairs, total=len(idx_list)*(len(idx_list)-1)/2)
 
 		for i, j in iterator:
 
@@ -78,7 +81,7 @@ if __name__ == '__main__':
 				emb_anchor = mem_embeddings[anchor_ex]
 			except KeyError:
 
-				anchor_ex_data = validset[i][0].unsqueeze(0)
+				anchor_ex_data = validset[idx_list[i]][0].unsqueeze(0)
 
 				if args.cuda:
 					anchor_ex_data = anchor_ex_data.cuda(device)
@@ -92,7 +95,7 @@ if __name__ == '__main__':
 				emb_a = mem_embeddings[a_ex]
 			except KeyError:
 
-				a_ex_data = validset[j][0].unsqueeze(0)
+				a_ex_data = validset[idx_list[j]][0].unsqueeze(0)
 
 				if args.cuda:
 					a_ex_data = a_ex_data.cuda(device)
@@ -106,8 +109,8 @@ if __name__ == '__main__':
 
 		print('\nComputing scores differences.')
 
-		triplets = itertools.combinations(range(len(validset)), 3)
-		iterator = tqdm(triplets, total=len(validset)*(len(validset)-1)*(len(validset)-2)/6)
+		triplets = itertools.combinations(range(len(idx_list)), 3)
+		iterator = tqdm(triplets, total=len(idx_list)*(len(idx_list)-1)*(len(idx_list)-2)/6)
 
 		for i, j, k in iterator:
 
