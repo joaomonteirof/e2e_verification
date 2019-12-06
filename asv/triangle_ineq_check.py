@@ -98,7 +98,7 @@ if __name__ == '__main__':
 		for spk in spk2utt:
 			utterances_list.extend(spk2utt[spk])
 
-	idx_list = random.sample(np.arange(len(utterances_list)), min(len(utterances_list), args.sample_size))
+	idx_list = random.sample(range(len(utterances_list)), min(len(utterances_list), args.sample_size))
 
 	print('\nAll data ready. Start of scoring')
 
