@@ -106,8 +106,8 @@ if __name__ == '__main__':
 
 		print('\nComputing scores differences.')
 
-		triplets = itertools.permutations(range(len(validset)), 3)
-		iterator = tqdm(triplets, total=len(validset)*(len(validset)-1)*(len(validset)-2))
+		triplets = itertools.combinations(range(len(validset)), 3)
+		iterator = tqdm(triplets, total=len(validset)*(len(validset)-1)*(len(validset)-2)/6)
 
 		for i, j, k in iterator:
 
