@@ -132,4 +132,4 @@ if __name__ == '__main__':
 		matplotlib.use('agg')
 		import matplotlib.pyplot as plt
 		plt.hist(scores_dif, normed=True, bins=30)
-		plt.savefig('triang_hist_cifar.pdf', bbox_inches='tight')
+		plt.savefig(args.out_path+args.out_prefix+'triang_hist_cifar.pdf', bbox_inches='tight')
