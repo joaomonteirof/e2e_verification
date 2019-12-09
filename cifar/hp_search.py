@@ -94,7 +94,6 @@ def train(lr, l2, momentum, smoothing, patience, model, n_hidden, hidden_size, d
 
 		try:
 			cost = trainer.train(n_epochs=epochs, save_every=epochs+10)
-
 			print(' ')
 			print('Best e2e EER in file ' + cp_name + ' was: {}'.format(cost[0]))
 			print('Best cos EER in file ' + cp_name + ' was: {}'.format(cost[1]))
@@ -113,7 +112,7 @@ def train(lr, l2, momentum, smoothing, patience, model, n_hidden, hidden_size, d
 lr = instru.var.OrderedDiscrete([0.5, 0.1, 0.01, 0.001])
 l2 = instru.var.OrderedDiscrete([1e-2, 1e-3, 1e-4, 1e-5])
 momentum = instru.var.OrderedDiscrete([0.1, 0.5, 0.9])
-smoothing=instru.var.OrderedDiscrete([0.0, 0.1, 0.2])
+smoothing=instru.var.OrderedDiscrete([0.01, 0.1, 0.2])
 patience = instru.var.OrderedDiscrete([1, 5, 10, 20])
 n_hidden=instru.var.OrderedDiscrete([2, 3, 4, 5])
 hidden_size=instru.var.OrderedDiscrete([128, 256, 350, 512])
