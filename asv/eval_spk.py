@@ -9,6 +9,7 @@ import glob
 import pickle
 import os
 import sys
+import pathlib
 
 from utils.utils import *
 
@@ -44,6 +45,8 @@ if __name__ == '__main__':
 
 	if args.cp_path is None:
 		raise ValueError('There is no checkpoint/model path. Use arg --cp-path to indicate the path!')
+
+	pathlib.Path(args.out_path).mkdir(parents=True, exist_ok=True)
 
 	print('Cuda Mode is: {}'.format(args.cuda))
 
