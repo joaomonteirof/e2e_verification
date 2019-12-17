@@ -132,13 +132,14 @@ if __name__ == '__main__':
 
 	print('\nAll data ready. Start of scoring')
 
-	cos_scores = []
-	e2e_scores = []
-	fus_scores = []
-	out_e2e = []
-	out_cos = []
-	out_fus = []
+	cos_scores = {'emb_avg':[], 'scores_avg':[], 'scores_std':[], 'scores_median':[], 'scores_max':[], 'scores_min':[], 'scores_maxmin':[] }
+	e2e_scores = {'emb_avg':[], 'scores_avg':[], 'scores_std':[], 'scores_median':[], 'scores_max':[], 'scores_min':[], 'scores_maxmin':[] }
+	fus_scores = {'emb_avg':[], 'scores_avg':[], 'scores_std':[], 'scores_median':[], 'scores_max':[], 'scores_min':[], 'scores_maxmin':[] }
+	out_e2e = {'emb_avg':[], 'scores_avg':[], 'scores_std':[], 'scores_median':[], 'scores_max':[], 'scores_min':[], 'scores_maxmin':[] }
+	out_cos = {'emb_avg':[], 'scores_avg':[], 'scores_std':[], 'scores_median':[], 'scores_max':[], 'scores_min':[], 'scores_maxmin':[] }
+	out_fus = {'emb_avg':[], 'scores_avg':[], 'scores_std':[], 'scores_median':[], 'scores_max':[], 'scores_min':[], 'scores_maxmin':[] }
 	mem_embeddings_enroll_spk = {}
+	mem_embeddings_enroll_spk_avg = {}
 	mem_embeddings_test = {}
 
 	with torch.no_grad():
@@ -168,10 +169,11 @@ if __name__ == '__main__':
 				mem_embeddings_test[test_utt] = emb_test
 
 
-			## Get enroll embedding and e2e scoring
+			## Get enroll embeddings - both avg embedding (class prototype) and a list of all enroll embeddings are stored into dicts
 
 			try:
 
+				emb_avg_spk_enroll = mem_embeddings_enroll_spk_avg[speakers_enroll[i]]
 				emb_spk_enroll = mem_embeddings_enroll_spk[speakers_enroll[i]]
 
 			except KeyError:
@@ -194,54 +196,105 @@ if __name__ == '__main__':
 
 					spk_enroll.append(emb_enroll)
 
-				emb_spk_enroll = torch.cat(spk_enroll, 0).mean(0, keepdim=True)
+				mem_embeddings_enroll_spk[speakers_enroll[i]] = spk_enroll
 
-				mem_embeddings_enroll_spk[speakers_enroll[i]] = emb_spk_enroll
+				emb_avg_spk_enroll = torch.cat(spk_enroll, 0).mean(0, keepdim=True)
 
-			pred = model.forward_bin(torch.cat([emb_enroll, emb_test],1))
+				mem_embeddings_enroll_spk_avg[speakers_enroll[i]] = emb_avg_spk_enroll
+
+			## get score based on class prototype
+
+			pred = model.forward_bin(torch.cat([emb_avg_spk_enroll, emb_test],1))
 
 			if model.ndiscriminators>1:
-				e2e_scores.append( torch.cat(pred, 1).mean(1).squeeze().item() )
+				e2e_scores['emb_avg'].append( torch.cat(pred, 1).mean(1).squeeze().item() )
 			else:
-				e2e_scores.append( pred.squeeze().item() )
+				e2e_scores['emb_avg'].append( pred.squeeze().item() )
 
-			cos_scores.append( 0.5*(torch.nn.functional.cosine_similarity(emb_spk_enroll, emb_test).mean().item()+1.) )
-			fus_scores.append( (e2e_scores[-1]+cos_scores[-1])*0.5 )
+			cos_scores['emb_avg'].append( 0.5*(torch.nn.functional.cosine_similarity(emb_avg_spk_enroll, emb_test).mean().item()+1.) )
+			fus_scores['emb_avg'].append( (e2e_scores[-1]+cos_scores[-1])*0.5 )
 
-			out_e2e.append([enroll_utt, test_utt, e2e_scores[-1]])
-			out_cos.append([enroll_utt, test_utt, cos_scores[-1]])
-			out_fus.append([enroll_utt, test_utt, fus_scores[-1]])
+			## get score based on class prototype
+
+			raw_scores_e2e = []
+			raw_scores_cos = []
+			raw_scores_fus = []
+
+			for emb_enroll in emb_spk_enroll:
+
+				pred = model.forward_bin(torch.cat([emb_enroll, emb_test],1))
+
+				if model.ndiscriminators>1:
+					raw_scores_e2e.append( torch.cat(pred, 1).mean(1).squeeze().item() )
+				else:
+					raw_scores_e2e.append( pred.squeeze().item() )
+
+				raw_scores_cos.append( 0.5*(torch.nn.functional.cosine_similarity(emb_spk_enroll, emb_test).mean().item()+1.) )
+				raw_scores_fus.append( (e2e_scores[-1]+cos_scores[-1])*0.5 )
+
+
+			e2e_scores['scores_avg'].append(np.mean(raw_scores_e2e))
+			e2e_scores['scores_std'].append(np.std(raw_scores_e2e))
+			e2e_scores['scores_median'].append(np.median(raw_scores_e2e))
+			e2e_scores['scores_max'].append(np.max(raw_scores_e2e))
+			e2e_scores['scores_min'].append(np.min(raw_scores_e2e))
+			e2e_scores['scores_maxmin'].append(np.max(raw_scores_e2e)-np.min(raw_scores_e2e))
+
+			cos_scores['scores_avg'].append(np.mean(raw_scores_cos))
+			cos_scores['scores_std'].append(np.std(raw_scores_cos))
+			cos_scores['scores_median'].append(np.median(raw_scores_cos))
+			cos_scores['scores_max'].append(np.max(raw_scores_cos))
+			cos_scores['scores_min'].append(np.min(raw_scores_cos))
+			cos_scores['scores_maxmin'].append(np.max(raw_scores_cos)-np.min(raw_scores_cos))
+
+			fus_scores['scores_avg'].append(np.mean(raw_scores_fus))
+			fus_scores['scores_std'].append(np.std(raw_scores_fus))
+			fus_scores['scores_median'].append(np.median(raw_scores_fus))
+			fus_scores['scores_max'].append(np.max(raw_scores_fus))
+			fus_scores['scores_min'].append(np.min(raw_scores_fus))
+			fus_scores['scores_maxmin'].append(np.max(raw_scores_fus)-np.min(raw_scores_fus))
+
+			for score_type in cos_scores:
+				out_e2e[score_type].append([enroll_utt, test_utt, e2e_scores[score_type][-1]])
+				out_cos[score_type].append([enroll_utt, test_utt, cos_scores[score_type][-1]])
+				out_fus[score_type].append([enroll_utt, test_utt, fus_scores[score_type][-1]])
 
 	print('\nScoring done')
 
-	with open(args.out_path+'e2e_scores_spk.out', 'w') as f:
-		for el in out_e2e:
-			item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
-			f.write("%s" % item)
+	for score_type in cos_scores:
 
-	with open(args.out_path+'cos_scores_spk.out', 'w') as f:
-		for el in out_cos:
-			item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
-			f.write("%s" % item)
+		with open(args.out_path+'e2e_'+score_type+'_spk.out', 'w') as f:
+			for el in out_e2e:
+				item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
+				f.write("%s" % item)
 
-	with open(args.out_path+'fus_scores_spk.out', 'w') as f:
-		for el in out_fus:
-			item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
-			f.write("%s" % item)
+		with open(args.out_path+'cos_'+score_type+'_spk.out', 'w') as f:
+			for el in out_cos:
+				item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
+				f.write("%s" % item)
 
-	e2e_scores = np.asarray(e2e_scores)
-	cos_scores = np.asarray(cos_scores)
-	fus_scores = np.asarray(fus_scores)
-	labels = np.asarray(labels)
+		with open(args.out_path+'fus_'+score_type+'_spk.out', 'w') as f:
+			for el in out_fus:
+				item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
+				f.write("%s" % item)
 
-	eer, auc, avg_precision, acc, threshold = compute_metrics(labels, e2e_scores)
-	print('\nE2E eval:')
-	print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
+	for score_type in cos_scores:
 
-	eer, auc, avg_precision, acc, threshold = compute_metrics(labels, cos_scores)
-	print('\nCOS eval:')
-	print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
+		print('\nResults for scores of type: []'.format(score_type))
 
-	eer, auc, avg_precision, acc, threshold = compute_metrics(labels, fus_scores)
-	print('\nFUS eval:')
-	print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
+		e2e_scores = np.asarray(e2e_scores[score_type])
+		cos_scores = np.asarray(cos_scores[score_type])
+		fus_scores = np.asarray(fus_scores[score_type])
+		labels = np.asarray(labels)
+
+		eer, auc, avg_precision, acc, threshold = compute_metrics(labels, e2e_scores)
+		print('\nE2E eval:')
+		print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
+
+		eer, auc, avg_precision, acc, threshold = compute_metrics(labels, cos_scores)
+		print('\nCOS eval:')
+		print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
+
+		eer, auc, avg_precision, acc, threshold = compute_metrics(labels, fus_scores)
+		print('\nFUS eval:')
+		print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}\n'.format(eer, auc, avg_precision, acc, threshold))
