@@ -51,9 +51,11 @@ if __name__ == '__main__':
 
 		try:
 			model.load_state_dict(ckpt['model_state'], strict=True)
+		except RuntimeError as err:
+			print("Runtime Error: {0}".format(err))
 		except:
-			print('\nSkipping model {}'.format(cp.split('/')[-1]))
-			continue
+			print("Unexpected error:", sys.exc_info()[0])
+			raise
 
 		if args.cuda:
 			device = get_freer_gpu()
