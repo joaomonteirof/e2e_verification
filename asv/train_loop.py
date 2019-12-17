@@ -11,7 +11,7 @@ from utils.utils import compute_eer
 
 class TrainLoop(object):
 
-	def __init__(self, model, optimizer, train_loader, valid_loader, max_gnorm=10.0, label_smoothing=0.0, verbose=-1, device=0, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True, logger=None):
+	def __init__(self, model, optimizer, train_loader, valid_loader, max_gnorm=10.0, label_smoothing=0.0, verbose=-1, device=0, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, ablation=False, cuda=True, logger=None):
 		if checkpoint_path is None:
 			# Save to current directory
 			self.checkpoint_path = os.getcwd()
@@ -23,6 +23,7 @@ class TrainLoop(object):
 		self.save_epoch_fmt = os.path.join(self.checkpoint_path, cp_name) if cp_name else os.path.join(self.checkpoint_path, 'checkpoint_{}ep.pt')
 		self.cuda_mode = cuda
 		self.pretrain = pretrain
+		self.ablation = ablation
 		self.model = model
 		self.max_gnorm = max_gnorm
 		self.optimizer = optimizer
@@ -209,7 +210,10 @@ class TrainLoop(object):
 		out, embeddings = self.model.forward(utterances)
 		out_norm = F.normalize(out, p=2, dim=1)
 
-		ce_loss = self.ce_criterion(self.model.out_proj(out_norm, y), y)
+		if not self.ablation:
+			ce_loss = self.ce_criterion(self.model.out_proj(out_norm, y), y)
+		else:
+			ce_loss = 0.0
 
 		# Get all triplets now for bin classifier
 		triplets_idx = self.harvester.get_triplets(out_norm.detach(), y)
@@ -256,7 +260,7 @@ class TrainLoop(object):
 		if self.logger:
 			self.logger.add_scalar('Info/Grad_norm', grad_norm, self.total_iters)
 
-		return loss.item(), ce_loss.item(), loss_bin.item()/self.model.ndiscriminators
+		return loss.item(), ce_loss.item() if not self.ablation else 0.0, loss_bin.item()/self.model.ndiscriminators
 
 	def pretrain_step(self, batch):
 

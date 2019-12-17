@@ -43,7 +43,8 @@ parser.add_argument('--dropout-prob', type=float, default=0.25, metavar='p', hel
 parser.add_argument('--n-frames', type=int, default=1000, metavar='N', help='maximum number of frames per utterance (default: 1000)')
 parser.add_argument('--warmup', type=int, default=4000, metavar='N', help='Iterations until reach lr (default: 4000)')
 parser.add_argument('--smoothing', type=float, default=0.2, metavar='l', help='Label smoothing (default: 0.2)')
-parser.add_argument('--pretrain', action='store_true', default=False, help='Adds softmax layer for speaker identification and train exclusively with CE minimization')
+parser.add_argument('--pretrain', action='store_true', default=False, help='Multi class classifitcation training')
+parser.add_argument('--ablation', action='store_true', default=False, help='Drops the multi class classification loss')
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 parser.add_argument('--no-cp', action='store_true', default=False, help='Disables checkpointing')
 parser.add_argument('--verbose', type=int, default=1, metavar='N', help='Verbose is activated if > 0')
@@ -103,13 +104,14 @@ model = model.to(device)
 
 optimizer = TransformerOptimizer(optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.l2, nesterov=True), lr=args.lr, warmup_steps=args.warmup)
 
-trainer = TrainLoop(model, optimizer, train_loader, valid_loader, max_gnorm=args.max_gnorm, label_smoothing=args.smoothing, verbose=args.verbose, device=device, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, pretrain=args.pretrain, cuda=args.cuda, logger=writer)
+trainer = TrainLoop(model, optimizer, train_loader, valid_loader, max_gnorm=args.max_gnorm, label_smoothing=args.smoothing, verbose=args.verbose, device=device, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, pretrain=args.pretrain, ablation=args.ablation, cuda=args.cuda, logger=writer)
 
 if args.verbose > 0:
 	print(' ')
 	print('Cuda Mode: {}'.format(args.cuda))
 	print('Device: {}'.format(device))
 	print('Pretrain Mode: {}'.format(args.pretrain))
+	print('Ablation Mode: {}'.format(args.pretrain))
 	print('Selected model: {}'.format(args.model))
 	print('Number of discriminators: {}'.format(args.ndiscriminators))
 	print('Random projection size: {}'.format(args.rproj_size))
