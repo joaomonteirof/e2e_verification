@@ -230,7 +230,7 @@ if __name__ == '__main__':
 					raw_scores_e2e.append( pred.squeeze().item() )
 
 				raw_scores_cos.append( 0.5*(torch.nn.functional.cosine_similarity(emb_spk_enroll, emb_test).mean().item()+1.) )
-				raw_scores_fus.append( (e2e_scores[-1]+cos_scores[-1])*0.5 )
+				raw_scores_fus.append( (raw_scores_e2e[-1]+raw_scores_cos[-1])*0.5 )
 
 
 			e2e_scores['scores_avg'].append(np.mean(raw_scores_e2e))
