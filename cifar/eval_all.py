@@ -121,15 +121,15 @@ if __name__ == '__main__':
 
 		e2e_eer, e2e_auc, avg_precision, acc, threshold = compute_metrics(labels, e2e_scores)
 		print('\nE2E:')
-		print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
+		print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(e2e_eer, e2e_auc, avg_precision, acc, threshold))
 
 		cos_eer, cos_auc, avg_precision, acc, threshold = compute_metrics(labels, cos_scores)
 		print('\nCOS:')
-		print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
+		print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(e2e_eer, e2e_auc, avg_precision, acc, threshold))
 
 		fus_eer, fus_auc, avg_precision, acc, threshold = compute_metrics(labels, all_scores)
 		print('\nFUS:')
-		print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
+		print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(e2e_eer, e2e_auc, avg_precision, acc, threshold))
 
 		if e2e_eer<best_e2e_eer:
 			best_model, best_e2e_eer, best_e2e_auc, best_cos_eer, best_cos_auc, best_fus_eer, best_fus_auc = model_id, e2e_eer, e2e_auc, cos_eer, cos_auc, fus_eer, fus_auc
