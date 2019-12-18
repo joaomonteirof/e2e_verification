@@ -261,40 +261,44 @@ if __name__ == '__main__':
 
 	print('\nScoring done')
 
+	## Saving output score files. Each line is enroll_spk test_utt score
+
 	for score_type in cos_scores:
 
 		with open(args.out_path+'e2e_'+score_type+'_spk.out', 'w') as f:
-			for el in out_e2e:
+			for el in out_e2e[score_type]:
 				item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
 				f.write("%s" % item)
 
 		with open(args.out_path+'cos_'+score_type+'_spk.out', 'w') as f:
-			for el in out_cos:
+			for el in out_cos[score_type]:
 				item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
 				f.write("%s" % item)
 
 		with open(args.out_path+'fus_'+score_type+'_spk.out', 'w') as f:
-			for el in out_fus:
+			for el in out_fus[score_type]:
 				item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
 				f.write("%s" % item)
 
+	## Printing out results
+
+	labels = np.asarray(labels)
 	for score_type in cos_scores:
 
 		print('\nResults for scores of type: []'.format(score_type))
 
-		e2e_scores = np.asarray(e2e_scores[score_type])
-		cos_scores = np.asarray(cos_scores[score_type])
-		fus_scores = np.asarray(fus_scores[score_type])
-		labels = np.asarray(labels)
+		e2e_scores[score_type] = np.asarray(e2e_scores[score_type])
+		cos_scores[score_type] = np.asarray(cos_scores[score_type])
+		fus_scores[score_type] = np.asarray(fus_scores[score_type])
 
-		eer, auc, avg_precision, acc, threshold = compute_metrics(labels, e2e_scores)
+		eer, auc, avg_precision, acc, threshold = compute_metrics(labels, e2e_scores[score_type])
 		print('\nE2E eval:')
 		print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
 
-		eer, auc, avg_precision, acc, threshold = compute_metrics(labels, cos_scores)
+		eer, auc, avg_precision, acc, threshold = compute_metrics(labels, cos_scores[score_type])
 		print('\nCOS eval:')
 		print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}'.format(eer, auc, avg_precision, acc, threshold))
 
-		eer, auc, avg_precision, acc, threshold = compute_metrics(labels, fus_scores)
+		eer, auc, avg_precision, acc, threshold = compute_metrics(labels, fus_scores[score_type])
 		print('\nFUS eval:')
 		print('ERR, AUC,  Average Precision, Accuracy and corresponding threshold: {}, {}, {}, {}, {}\n'.format(eer, auc, avg_precision, acc, threshold))
