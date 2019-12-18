@@ -182,7 +182,7 @@ if __name__ == '__main__':
 
 				for enroll_utt in enroll_utts:
 
-					spk_enroll = []
+					emb_spk_enroll = []
 
 					enroll_utt_data = prep_feats(enroll_data[enroll_utt])
 
@@ -194,11 +194,11 @@ if __name__ == '__main__':
 					if unlab_emb is not None:
 						emb_enroll -= unlab_emb
 
-					spk_enroll.append(emb_enroll)
+					emb_spk_enroll.append(emb_enroll)
 
-				mem_embeddings_enroll_spk[speakers_enroll[i]] = spk_enroll
+				mem_embeddings_enroll_spk[speakers_enroll[i]] = emb_spk_enroll
 
-				emb_avg_spk_enroll = torch.cat(spk_enroll, 0).mean(0, keepdim=True)
+				emb_avg_spk_enroll = torch.cat(emb_spk_enroll, 0).mean(0, keepdim=True)
 
 				mem_embeddings_enroll_spk_avg[speakers_enroll[i]] = emb_avg_spk_enroll
 
@@ -229,7 +229,7 @@ if __name__ == '__main__':
 				else:
 					raw_scores_e2e.append( pred.squeeze().item() )
 
-				raw_scores_cos.append( 0.5*(torch.nn.functional.cosine_similarity(emb_spk_enroll, emb_test).mean().item()+1.) )
+				raw_scores_cos.append( 0.5*(torch.nn.functional.cosine_similarity(emb_enroll, emb_test).mean().item()+1.) )
 				raw_scores_fus.append( (raw_scores_e2e[-1]+raw_scores_cos[-1])*0.5 )
 
 
