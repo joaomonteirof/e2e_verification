@@ -160,5 +160,5 @@ if __name__ == '__main__':
 		import matplotlib
 		matplotlib.use('agg')
 		import matplotlib.pyplot as plt
-		plt.hist(scores_dif, normed=True, bins=30)
+		plt.hist(scores_dif, density=True, bins=30)
 		plt.savefig(args.out_path+args.out_prefix+'sym_hist_vox.pdf', bbox_inches='tight')
