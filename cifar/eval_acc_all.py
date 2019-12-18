@@ -42,6 +42,9 @@ if __name__ == '__main__':
 			print('\nProbably old cp has no info regarding classifiers arch!\n')
 			n_hidden, hidden_size, softmax = get_classifier_config_from_cp(ckpt)
 			dropout_prob = args.dropout_prob
+		except:
+			print('\nSkipping cp {}. Could not load it.'.format(cp))
+			continue
 
 		if args.model == 'vgg':
 			model = vgg.VGG('VGG16', nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax)
