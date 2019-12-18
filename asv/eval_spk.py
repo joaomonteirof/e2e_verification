@@ -212,7 +212,7 @@ if __name__ == '__main__':
 				e2e_scores['emb_avg'].append( pred.squeeze().item() )
 
 			cos_scores['emb_avg'].append( 0.5*(torch.nn.functional.cosine_similarity(emb_avg_spk_enroll, emb_test).mean().item()+1.) )
-			fus_scores['emb_avg'].append( (e2e_scores[-1]+cos_scores[-1])*0.5 )
+			fus_scores['emb_avg'].append( (e2e_scores['emb_avg'][-1]+cos_scores['emb_avg'][-1])*0.5 )
 
 			## get score based on class prototype
 

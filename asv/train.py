@@ -111,7 +111,7 @@ if args.verbose > 0:
 	print('Cuda Mode: {}'.format(args.cuda))
 	print('Device: {}'.format(device))
 	print('Pretrain Mode: {}'.format(args.pretrain))
-	print('Ablation Mode: {}'.format(args.pretrain))
+	print('Ablation Mode: {}'.format(args.ablation))
 	print('Selected model: {}'.format(args.model))
 	print('Number of discriminators: {}'.format(args.ndiscriminators))
 	print('Random projection size: {}'.format(args.rproj_size))
