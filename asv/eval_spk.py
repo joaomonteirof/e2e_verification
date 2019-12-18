@@ -285,7 +285,7 @@ if __name__ == '__main__':
 	labels = np.asarray(labels)
 	for score_type in cos_scores:
 
-		print('\nResults for scores of type: []'.format(score_type))
+		print('\nResults for scores of type: {}'.format(score_type))
 
 		e2e_scores[score_type] = np.asarray(e2e_scores[score_type])
 		cos_scores[score_type] = np.asarray(cos_scores[score_type])
