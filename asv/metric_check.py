@@ -100,7 +100,7 @@ if __name__ == '__main__':
 			emb_enroll = model.forward(enroll_utt_data)[1].detach() if args.inner else model.forward(enroll_utt_data)[0].detach()
 
 
-			pred = model.forward_bin(torch.cat([emb_enroll, emb_enroll],1))
+			pred = 1.-model.forward_bin(torch.cat([emb_enroll, emb_enroll],1))
 
 			if model.ndiscriminators>1:
 				score = torch.cat(pred, 1).mean(1).squeeze().item()
