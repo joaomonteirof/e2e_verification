@@ -78,6 +78,9 @@ elif args.model == 'resnet':
 elif args.model == 'densenet':
 	model = densenet.densenet_cifar(nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax)
 
+if args.verbose >0:
+	print(model)
+
 if args.cuda:
 	device = get_freer_gpu()
 	model = model.cuda(device)
@@ -87,7 +90,7 @@ optimizer = optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.l2, mome
 trainer = TrainLoop(model, optimizer, train_loader, valid_loader, patience=args.patience, label_smoothing=args.smoothing, verbose=args.verbose, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, cuda=args.cuda)
 
 if args.verbose >0:
-	print('Cuda Mode is: {}'.format(args.cuda))
+	print('\nCuda Mode is: {}'.format(args.cuda))
 	print('Selected model: {}'.format(args.model))
 	print('Batch size: {}'.format(args.batch_size))
 	print('LR: {}'.format(args.lr))

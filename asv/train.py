@@ -89,6 +89,9 @@ elif args.model == 'resnet_large':
 elif args.model == 'TDNN':
 	model = model_.TDNN(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=train_dataset.n_speakers, ncoef=args.ncoef, dropout_prob=args.dropout_prob, sm_type=args.softmax, ndiscriminators=args.ndiscriminators, r_proj_size=args.rproj_size)
 
+if args.verbose > 0:
+	print(model)
+
 if args.pretrained_path is not None:
 	ckpt = torch.load(args.pretrained_path, map_location = lambda storage, loc: storage)
 
@@ -108,7 +111,7 @@ trainer = TrainLoop(model, optimizer, train_loader, valid_loader, max_gnorm=args
 
 if args.verbose > 0:
 	print(' ')
-	print('Cuda Mode: {}'.format(args.cuda))
+	print('\nCuda Mode: {}'.format(args.cuda))
 	print('Device: {}'.format(device))
 	print('Pretrain Mode: {}'.format(args.pretrain))
 	print('Ablation Mode: {}'.format(args.ablation))
