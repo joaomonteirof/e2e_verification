@@ -107,7 +107,7 @@ if __name__ == '__main__':
 					emb_a = model.forward(a_ex_data).detach()
 					mem_embeddings[a_ex] = emb_a
 
-				scores_mat[i,j] = model.forward_bin(torch.cat([emb_anchor, emb_a],1)).squeeze().item()
+				scores_mat[i,j] = 1.-model.forward_bin(torch.cat([emb_anchor, emb_a],1)).squeeze().item()
 
 
 			print('\nComputing spectrum.')

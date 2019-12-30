@@ -74,7 +74,7 @@ if __name__ == '__main__':
 
 			emb_enroll = model.forward(enroll_ex_data).detach()
 
-			scores_dif.append( model.forward_bin(torch.cat([emb_enroll, emb_enroll],1)).squeeze().item() )
+			scores_dif.append( 1.-model.forward_bin(torch.cat([emb_enroll, emb_enroll],1)).squeeze().item() )
 
 	print('\nScoring done')
 
