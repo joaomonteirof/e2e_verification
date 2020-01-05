@@ -145,7 +145,7 @@ def read_trials(path):
 		enroll_utt, test_utt, label = line.split(' ')
 		enroll_utt_list.append(enroll_utt)
 		test_utt_list.append(test_utt)
-		labels_list.append(1 if label=='target\n' else 0)
+		labels_list.append(1 if label=='target\n' or label=='tgt' else 0)
 
 	return enroll_utt_list, test_utt_list, labels_list
 
