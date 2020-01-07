@@ -40,11 +40,11 @@ class Loader(Dataset):
 
 	def prep_utterance(self, data):
 
-		if data.shape[2]>self.max_nb_frames:
-			ridx = np.random.randint(0, data.shape[2]-self.max_nb_frames)
+		if data.shape[-1]>self.max_nb_frames:
+			ridx = np.random.randint(0, data.shape[-1]-self.max_nb_frames)
 			data_ = data[:, :, ridx:(ridx+self.max_nb_frames)]
 		else:
-			mul = int(np.ceil(self.max_nb_frames/data.shape[0]))
+			mul = int(np.ceil(self.max_nb_frames/data.shape[-1]))
 			data_ = np.tile(data, (1, 1, mul))
 			data_ = data_[:, :, :self.max_nb_frames]
 
@@ -117,11 +117,11 @@ class Loader_valid(Dataset):
 
 	def prep_utterance(self, data):
 
-		if data.shape[2]>self.max_nb_frames:
-			ridx = np.random.randint(0, data.shape[2]-self.max_nb_frames)
+		if data.shape[-1]>self.max_nb_frames:
+			ridx = np.random.randint(0, data.shape[-1]-self.max_nb_frames)
 			data_ = data[:, :, ridx:(ridx+self.max_nb_frames)]
 		else:
-			mul = int(np.ceil(self.max_nb_frames/data.shape[0]))
+			mul = int(np.ceil(self.max_nb_frames/data.shape[-1]))
 			data_ = np.tile(data, (1, 1, mul))
 			data_ = data_[:, :, :self.max_nb_frames]
 
