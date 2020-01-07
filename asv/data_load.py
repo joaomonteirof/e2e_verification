@@ -147,3 +147,44 @@ class Loader_valid(Dataset):
 				self.utt_list.append(utt)
 
 		open_file.close()
+
+if __name__=='__main__':
+
+	import torch.utils.data
+	import argparse
+
+	def compare_spk2utts(l1, l2):
+		assert len(l1)==len(l2)
+		assert len(set(l1.keys()) & set(l2.keys()))==len(l1)
+		count_1=0
+		count_2=0
+		for spk in l1:
+			assert len(set(l1[spk]) & set(l2[spk]))==min(len(l1[spk]), len(l2[spk]))
+			count_1+=len(l1[spk])
+			count_2+=len(l2[spk])
+
+		print(count_1, count_2)
+
+	parser = argparse.ArgumentParser(description='Test data loader')
+	parser.add_argument('--hdf-file', type=str, default='./data/train.hdf', metavar='Path', help='Path to hdf data')
+	args = parser.parse_args()
+
+	dataset = Loader_test(hdf5_name = args.hdf_file)
+	loader = torch.utils.data.DataLoader(dataset, batch_size=10, shuffle=True, num_workers=4)
+
+	loader.dataset.update_lists()
+
+	print('Dataset length: {}, {}'.format(len(loader.dataset), len(loader.dataset.utt_list)))
+
+	spk2utt = {}
+
+	for batch in loader:
+		utt_1, utt_2, utt_3, utt_4, utt_5, spk, y = batch
+
+		for i in range(len(batch[-1])):
+			if spk[i] in spk2utt:
+				spk2utt[spk[i]]+=[utt_1[i], utt_2[i], utt_3[i], utt_4[i], utt_5[i]]
+			else:
+				spk2utt[spk[i]]=[utt_1[i], utt_2[i], utt_3[i], utt_4[i], utt_5[i]]
+
+	compare_spk2utts(loader.dataset.spk2utt, spk2utt)
