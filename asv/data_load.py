@@ -167,9 +167,10 @@ if __name__=='__main__':
 
 	parser = argparse.ArgumentParser(description='Test data loader')
 	parser.add_argument('--hdf-file', type=str, default='./data/train.hdf', metavar='Path', help='Path to hdf data')
+	parser.add_argument('--n-frames', type=int, default=800, metavar='N', help='maximum number of frames per utterance (default: 800)')
 	args = parser.parse_args()
 
-	dataset = Loader_test(hdf5_name = args.hdf_file)
+	dataset = Loader(hdf5_name=args.hdf_file, max_nb_frames=args.n_frames)
 	loader = torch.utils.data.DataLoader(dataset, batch_size=10, shuffle=True, num_workers=4)
 
 	loader.dataset.update_lists()
