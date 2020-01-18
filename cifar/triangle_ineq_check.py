@@ -104,8 +104,8 @@ if __name__ == '__main__':
 				emb_a = model.forward(a_ex_data).detach()
 				mem_embeddings[a_ex] = emb_a
 
-			mem_dists[anchor_ex+'_'+a_ex] = model.forward_bin(torch.cat([emb_anchor, emb_a],1)).squeeze().item()
-			mem_dists[a_ex+'_'+anchor_ex] = model.forward_bin(torch.cat([emb_a, emb_anchor],1)).squeeze().item()
+			mem_dists[anchor_ex+'_'+a_ex] = 1.0-model.forward_bin(torch.cat([emb_anchor, emb_a],1)).squeeze().item()
+			mem_dists[a_ex+'_'+anchor_ex] = 1.0-model.forward_bin(torch.cat([emb_a, emb_anchor],1)).squeeze().item()
 
 
 		print('\nComputing scores differences.')
