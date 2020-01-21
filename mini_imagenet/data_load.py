@@ -27,11 +27,11 @@ class Loader(Dataset):
 
 		if not self.open_file: self.open_file = h5py.File(self.hdf5_name, 'r')
 
-		example_1_data = self.transformation( self.open_file[clss][example_1].data )
-		example_2_data = self.transformation( self.open_file[clss][example_2].data )
-		example_3_data = self.transformation( self.open_file[clss][example_3].data )
-		example_4_data = self.transformation( self.open_file[clss][example_4].data )
-		example_5_data = self.transformation( self.open_file[clss][example_5].data )
+		example_1_data = self.transformation( torch.from_numpy(self.open_file[clss][example_1][:,...]) )
+		example_2_data = self.transformation( torch.from_numpy(self.open_file[clss][example_2][:,...]) )
+		example_3_data = self.transformation( torch.from_numpy(self.open_file[clss][example_3][:,...]) )
+		example_4_data = self.transformation( torch.from_numpy(self.open_file[clss][example_4][:,...]) )
+		example_5_data = self.transformation( torch.from_numpy(self.open_file[clss][example_5][:,...]) )
 
 		return example_1_data.contiguous(), example_2_data.contiguous(), example_3_data.contiguous(), example_4_data.contiguous(), example_5_data.contiguous(), y
 
