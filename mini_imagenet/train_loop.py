@@ -58,7 +58,7 @@ class TrainLoop(object):
 		while (self.cur_epoch < n_epochs):
 
 			np.random.seed()
-			if isinstance(self.train_loader, Loader):
+			if isinstance(self.train_loader.dataset, Loader):
 				self.train_loader.update_lists()
 
 			if self.verbose>0:
@@ -162,7 +162,7 @@ class TrainLoop(object):
 		self.model.train()
 		self.optimizer.zero_grad()
 
-		if isinstance(self.train_loader, Loader):
+		if isinstance(self.train_loader.dataset, Loader):
 			x_1, x_2, x_3, x_4, x_5, y = batch
 			x = torch.cat([x_1, x_2, x_3, x_4, x_5], dim=0)
 			y = torch.cat(5*[y], dim=0).squeeze().contiguous()
