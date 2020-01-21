@@ -79,7 +79,7 @@ if __name__=='__main__':
 	parser.add_argument('--hdf-file', type=str, default='./data/train.hdf', metavar='Path', help='Path to hdf data')
 	args = parser.parse_args()
 
-	transform = transforms.Compose([transforms.ToPil(), transforms.RandomCrop(84, padding=4), transforms.RandomHorizontalFlip(), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])	
+	transform = transforms.Compose([transforms.ToPILImage(), transforms.RandomCrop(84, padding=4), transforms.RandomHorizontalFlip(), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])	
 	dataset = Loader(args.hdf_file, transform)
 	loader = torch.utils.data.DataLoader(dataset, batch_size=10, shuffle=True, num_workers=4)
 
