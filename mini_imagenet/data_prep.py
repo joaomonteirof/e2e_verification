@@ -21,7 +21,7 @@ if __name__ == '__main__':
 
 	transform = transforms.Compose([transforms.ToTensor()])
 	dataset = datasets.ImageFolder(args.path_to_data, transform=transform)
-	dataloader = torch.utils.data.DataLoader(trainset, batch_size=1, shuffle=False, num_workers=args.n_workers)
+	dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False, num_workers=args.n_workers)
 
 	print('Start of data preparation')
 
