@@ -36,7 +36,7 @@ if __name__ == '__main__':
 		y = str(y.squeeze().item())
 
 		if not y in hdf:
-			hdf.create_group(spk)
+			hdf.create_group(y)
 
 		hdf[y].create_dataset(y+'_'+str(i), data=x.squeeze(0))
 
