@@ -72,6 +72,7 @@ class Loader(Dataset):
 if __name__=='__main__':
 
 	import torch.utils.data
+	from torchvision import transforms
 	import argparse
 
 	parser = argparse.ArgumentParser(description='Test data loader')
