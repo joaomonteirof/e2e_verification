@@ -6,7 +6,7 @@ from torch.utils.data import Dataset
 import os
 import subprocess
 import shlex
-from utils.utils import strided_app
+from utils import strided_app
 
 class Loader(Dataset):
 
