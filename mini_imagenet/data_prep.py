@@ -5,7 +5,7 @@ import torch
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 import os
-import tqdm
+from tqdm import tqdm
 
 if __name__ == '__main__':
 
