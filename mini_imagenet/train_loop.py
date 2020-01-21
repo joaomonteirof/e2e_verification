@@ -9,6 +9,7 @@ from tqdm import tqdm
 from harvester import HardestNegativeTripletSelector, AllTripletSelector
 from models.losses import LabelSmoothingLoss
 from utils import compute_eer
+from data_load import Loader
 
 class TrainLoop(object):
 
@@ -57,6 +58,8 @@ class TrainLoop(object):
 		while (self.cur_epoch < n_epochs):
 
 			np.random.seed()
+			if isinstance(self.train_loader, Loader):
+				self.train_loader.update_lists()
 
 			if self.verbose>0:
 				print(' ')
@@ -159,7 +162,12 @@ class TrainLoop(object):
 		self.model.train()
 		self.optimizer.zero_grad()
 
-		x, y = batch
+		if isinstance(self.train_loader, Loader):
+			x_1, x_2, x_3, x_4, x_5, y = batch
+			x = torch.cat([x_1, x_2, x_3, x_4, x_5], dim=0)
+			y = torch.cat(5*[y], dim=0).squeeze().contiguous()
+		else:
+			x, y = batch
 
 		x = x.to(self.device, non_blocking=True)
 		y = y.to(self.device, non_blocking=True)
