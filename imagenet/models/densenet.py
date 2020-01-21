@@ -36,7 +36,7 @@ class Transition(nn.Module):
 
 
 class DenseNet(nn.Module):
-	def __init__(self, block, nblocks, nh, n_h, sm_type, growth_rate=12, reduction=0.5, num_classes=600, dropout_prob=0.25):
+	def __init__(self, block, nblocks, nh, n_h, sm_type, growth_rate=12, reduction=0.5, num_classes=1000, dropout_prob=0.25):
 		super(DenseNet, self).__init__()
 
 		self.dropout_prob = dropout_prob
@@ -72,12 +72,12 @@ class DenseNet(nn.Module):
 
 		self.bn = nn.BatchNorm2d(num_planes)
 
-		self.lin_proj = nn.Sequential(nn.Linear(1536, 512), nn.ReLU(True), nn.Dropout(), nn.Linear(512, 512))
+		self.lin_proj = nn.Sequential(nn.Linear(1024*6*6, 1024), nn.ReLU(True), nn.Dropout(0.1), nn.Linear(1024, 512))
 
 		if sm_type=='softmax':
-			self.out_proj=Softmax(input_features=num_planes, output_features=num_classes)
+			self.out_proj=Softmax(input_features=512, output_features=num_classes)
 		elif sm_type=='am_softmax':
-			self.out_proj=AMSoftmax(input_features=num_planes, output_features=num_classes)
+			self.out_proj=AMSoftmax(input_features=512, output_features=num_classes)
 		else:
 			raise NotImplementedError
 
