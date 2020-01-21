@@ -59,7 +59,7 @@ class Loader(Dataset):
 		self.example_list = []
 
 		for i, clss in enumerate(self.class2file):
-			clss_file_list = np.random.permutation(self.class2file[spk])
+			clss_file_list = np.random.permutation(self.class2file[clss])
 
 			idxs = strided_app(np.arange(len(clss_file_list)),5,5)
 
