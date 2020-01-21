@@ -85,15 +85,9 @@ if __name__=='__main__':
 
 	loader.dataset.update_lists()
 
-	print('Dataset length: {}, {}'.format(len(loader.dataset), len(loader.dataset.utt_list)))
-
-	spk2utt = {}
+	print('Dataset length: {}, {}'.format(len(loader.dataset), len(loader.dataset.example_list)))
 
 	for batch in loader:
-		utt_1, utt_2, utt_3, utt_4, utt_5, spk, y = batch
+		utt_1, utt_2, utt_3, utt_4, utt_5, y = batch
 
-		for i in range(len(batch[-1])):
-			if spk[i] in spk2utt:
-				spk2utt[spk[i]]+=[utt_1[i], utt_2[i], utt_3[i], utt_4[i], utt_5[i]]
-			else:
-				spk2utt[spk[i]]=[utt_1[i], utt_2[i], utt_3[i], utt_4[i], utt_5[i]]
+	print(utt_1.size(), utt_2.size(), utt_3.size(), utt_4.size(), utt_5.size(), y.size())
