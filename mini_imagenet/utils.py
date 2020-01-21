@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.lib.stride_tricks import as_strided
 from sklearn import metrics
 
 import torch
@@ -7,6 +8,11 @@ import os
 import sys
 import pickle
 from time import sleep
+
+def strided_app(a, L, S):
+	nrows = ( (len(a)-L) // S ) + 1
+	n = a.strides[0]
+	return as_strided(a, shape=(nrows, L), strides=(S*n,n))
 
 def get_classifier_config_from_cp(ckpt):
 	keys=ckpt['model_state'].keys()
