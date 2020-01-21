@@ -59,7 +59,7 @@ class TrainLoop(object):
 
 			np.random.seed()
 			if isinstance(self.train_loader.dataset, Loader):
-				self.train_loader.update_lists()
+				self.train_loader.dataset.update_lists()
 
 			if self.verbose>0:
 				print(' ')
