@@ -13,6 +13,7 @@ if __name__ == '__main__':
 	parser.add_argument('--path-to-data', type=str, default='./data/', metavar='Path', help='Path to scp files with features')
 	parser.add_argument('--out-path', type=str, default='./', metavar='Path', help='Path to output hdf file')
 	parser.add_argument('--out-name', type=str, default='train.hdf', metavar='Path', help='Output hdf file name')
+	parser.add_argument('--n-workers', type=int, default=4, metavar='N', help='Workers for data loading. Default is 4')
 	args = parser.parse_args()
 
 	if os.path.isfile(args.out_path+args.out_name):
