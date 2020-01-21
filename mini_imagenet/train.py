@@ -6,6 +6,7 @@ from train_loop import TrainLoop
 import torch.optim as optim
 from torchvision import datasets, transforms
 from models import vgg, resnet, densenet
+from data_load import Loader
 import numpy as np
 from time import sleep
 import os
