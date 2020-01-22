@@ -45,7 +45,7 @@ def train(lr, l2, momentum, smoothing, patience, model, n_hidden, hidden_size, d
 	cp_name = get_cp_name(checkpoint_path)
 
 	transform_train = transforms.Compose([transforms.Resize(256), transforms.RandomCrop(224, padding=4), transforms.RandomHorizontalFlip(), transforms.RandomVerticalFlip(), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
-	transform_test = transforms.Compose([transforms.Resize(224), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+	transform_test = transforms.Compose([transforms.CenterCrop(224), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
 
 	#trainset = Loader(args.data_path)
 	trainset = datasets.ImageFolder(args.data_path, transform=transform_train)
