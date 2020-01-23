@@ -63,7 +63,7 @@ class Loader(Dataset):
 			idxs = strided_app(np.arange(len(clss_file_list)), 4, 4)
 
 			for idxs_list in idxs:
-				if len(idxs_list)==5:
+				if len(idxs_list)==4:
 					self.example_list.append([clss_file_list[file_idx] for file_idx in idxs_list])
 					self.example_list[-1].append(clss)
 					self.example_list[-1].append(self.clss2label[clss])
