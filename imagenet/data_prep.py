@@ -40,6 +40,4 @@ if __name__ == '__main__':
 
 		hdf[y].create_dataset(y+'_'+str(i), data=x.squeeze(0))
 
-		del x, y
-
 	hdf.close()
