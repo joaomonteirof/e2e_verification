@@ -36,7 +36,7 @@ class Transition(nn.Module):
 
 
 class DenseNet(nn.Module):
-	def __init__(self, block, nblocks, nh, n_h, sm_type, growth_rate=12, reduction=0.5, num_classes=600, dropout_prob=0.25):
+	def __init__(self, block, nblocks, nh, n_h, sm_type, growth_rate=12, reduction=0.5, num_classes=64, dropout_prob=0.25):
 		super(DenseNet, self).__init__()
 
 		self.dropout_prob = dropout_prob

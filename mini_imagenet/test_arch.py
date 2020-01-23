@@ -27,6 +27,10 @@ emb = model.forward(batch)
 
 print(emb.size())
 
+out = model.out_proj(emb)
+
+print(out.size())
+
 emb = torch.cat([emb,emb],1)
 
 print(emb.size())

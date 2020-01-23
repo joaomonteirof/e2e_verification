@@ -113,7 +113,7 @@ class PreActBottleneck(nn.Module):
 
 
 class ResNet(nn.Module):
-	def __init__(self, block, num_blocks, nh, n_h, sm_type, num_classes=600, dropout_prob=0.25):
+	def __init__(self, block, num_blocks, nh, n_h, sm_type, num_classes=64, dropout_prob=0.25):
 		super(ResNet, self).__init__()
 
 		self.dropout_prob = dropout_prob

@@ -27,9 +27,9 @@ class VGG(nn.Module):
 		self.lin_proj = nn.Sequential(nn.Linear(512 * 7 * 7, 4096), nn.ReLU(True), nn.Dropout(), nn.Linear(4096, 512))
 
 		if sm_type=='softmax':
-			self.out_proj=Softmax(input_features=512, output_features=600)
+			self.out_proj=Softmax(input_features=512, output_features=64)
 		elif sm_type=='am_softmax':
-			self.out_proj=AMSoftmax(input_features=512, output_features=600)
+			self.out_proj=AMSoftmax(input_features=512, output_features=64)
 		else:
 			raise NotImplementedError
 
