@@ -9,6 +9,28 @@ import sys
 import pickle
 from time import sleep
 
+def adjust_learning_rate(optimizer, epoch, base_lr):
+	"""Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
+	lr = base_lr * (0.1 ** (epoch // 30))
+	for param_group in optimizer.param_groups:
+		param_group['lr'] = lr
+
+def correct_topk(output, target, topk=(1,)):
+	"""Computes the number of correct predicitions over the k top predictions for the specified values of k"""
+	with torch.no_grad():
+		maxk = max(topk)
+		batch_size = target.size(0)
+
+		_, pred = output.topk(maxk, 1, True, True)
+		pred = pred.t()
+		correct = pred.eq(target.view(1, -1).expand_as(pred))
+
+		res = []
+		for k in topk:
+			correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
+			res.append(correct_k)
+		return res
+
 def strided_app(a, L, S):
 	nrows = ( (len(a)-L) // S ) + 1
 	n = a.strides[0]
