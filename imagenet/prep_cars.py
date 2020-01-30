@@ -43,6 +43,6 @@ if __name__ == '__main__':
 		source_path = os.path.join(args.path_to_data, paths[i][0])
 		tgt_path = os.path.join(args.out_path, folder, class_id, paths[i][0])
 
-		pathlib.Path(os.path.join(args.path_to_data, folder, class_id).mkdir(parents=True, exist_ok=True))
+		pathlib.Path(os.path.join(args.path_to_data, folder, class_id)).mkdir(parents=True, exist_ok=True)
 
 		shutil.move(source_path, tgt_path)
