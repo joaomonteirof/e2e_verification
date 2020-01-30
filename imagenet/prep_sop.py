@@ -10,6 +10,9 @@ def read_metadata(path):
 	with open(path, 'r') as file:
 		info = file.readlines()
 
+	info = iter(a_list)
+	next(info)
+
 	label_list, path_list = [], []
 
 	for line in info:
