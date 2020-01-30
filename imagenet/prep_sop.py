@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
 	for i, class_id in data_iterator:
 
-		source_path = os.path.join(args.path_to_data, path_list[i].split('/')[0], path_list[i])
+		source_path = os.path.join(args.path_to_data, path_list[i])
 		tgt_path = os.path.join(args.out_path, class_id, path_list[i].split('/')[-1])
 
 		pathlib.Path(os.path.join(args.path_to_data, class_id)).mkdir(parents=True, exist_ok=True)
