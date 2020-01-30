@@ -123,6 +123,7 @@ class ResNet(nn.Module):
 		self.n_hidden = nh
 		self.hidden_size = n_h
 		self.sm_type = sm_type
+		self.n_classes = num_classes
 
 		self.inplanes = 64
 		self.dilation = 1
@@ -237,17 +238,17 @@ class ResNet(nn.Module):
 		return z
 
 
-def ResNet18(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax'):
-	return ResNet(BasicBlock, [2,2,2,2], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob)
+def ResNet18(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
+	return ResNet(BasicBlock, [2,2,2,2], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes)
 
-def ResNet34(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax'):
-	return ResNet(BasicBlock, [3,4,6,3], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob)
+def ResNet34(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
+	return ResNet(BasicBlock, [3,4,6,3], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes)
 
-def ResNet50(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax'):
-	return ResNet(Bottleneck, [3,4,6,3], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob)
+def ResNet50(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
+	return ResNet(Bottleneck, [3,4,6,3], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes)
 
-def ResNet101(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax'):
-	return ResNet(Bottleneck, [3,4,23,3], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob)
+def ResNet101(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
+	return ResNet(Bottleneck, [3,4,23,3], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes)
 
-def ResNet152(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax'):
-	return ResNet(Bottleneck, [3,8,36,3], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob)
+def ResNet152(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
+	return ResNet(Bottleneck, [3,8,36,3], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes)

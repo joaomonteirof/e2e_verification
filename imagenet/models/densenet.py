@@ -43,6 +43,7 @@ class DenseNet(nn.Module):
 		self.n_hidden = nh
 		self.hidden_size = n_h
 		self.sm_type = sm_type
+		self.n_classes = num_classes
 
 		self.growth_rate = growth_rate
 
@@ -123,17 +124,17 @@ class DenseNet(nn.Module):
 		
 		return z
 
-def DenseNet121(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax'):
-	return DenseNet(Bottleneck, [6,12,24,16], nh, n_h, sm_type, dropout_prob=dropout_prob, growth_rate=32)
+def DenseNet121(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
+	return DenseNet(Bottleneck, [6,12,24,16], nh, n_h, sm_type, dropout_prob=dropout_prob, growth_rate=32, num_classes=n_classes)
 
-def DenseNet169(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax'):
-	return DenseNet(Bottleneck, [6,12,32,32], nh, n_h, sm_type, dropout_prob=dropout_prob, growth_rate=32)
+def DenseNet169(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
+	return DenseNet(Bottleneck, [6,12,32,32], nh, n_h, sm_type, dropout_prob=dropout_prob, growth_rate=32, num_classes=n_classes)
 
-def DenseNet201(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax'):
-	return DenseNet(Bottleneck, [6,12,48,32], nh, n_h, sm_type, dropout_prob=dropout_prob, growth_rate=32)
+def DenseNet201(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
+	return DenseNet(Bottleneck, [6,12,48,32], nh, n_h, sm_type, dropout_prob=dropout_prob, growth_rate=32, num_classes=n_classes)
 
-def DenseNet161(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax'):
-	return DenseNet(Bottleneck, [6,12,36,24], nh, n_h, sm_type, dropout_prob=dropout_prob, growth_rate=48)
+def DenseNet161(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
+	return DenseNet(Bottleneck, [6,12,36,24], nh, n_h, sm_type, dropout_prob=dropout_prob, growth_rate=48, num_classes=n_classes)
 
-def densenet_cifar(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax'):
-	return DenseNet(Bottleneck, [6,12,24,16], nh, n_h, sm_type, dropout_prob=dropout_prob, growth_rate=12)
+def densenet_cifar(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
+	return DenseNet(Bottleneck, [6,12,24,16], nh, n_h, sm_type, dropout_prob=dropout_prob, growth_rate=12, num_classes=n_classes)

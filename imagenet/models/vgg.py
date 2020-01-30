@@ -14,22 +14,23 @@ cfg = {
 
 
 class VGG(nn.Module):
-	def __init__(self, vgg_name, nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax'):
+	def __init__(self, vgg_name, nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
 		super(VGG, self).__init__()
 
 		self.dropout_prob = dropout_prob
 		self.n_hidden = nh
 		self.hidden_size = n_h
 		self.sm_type = sm_type
+		self.n_classes = n_classes
 
 		self.features = self._make_layers(cfg[vgg_name])
 		self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
 		self.lin_proj = nn.Sequential(nn.Linear(512 * 7 * 7, 1024), nn.ReLU(True), nn.Dropout(0.1), nn.Linear(1024, 512))
 
 		if sm_type=='softmax':
-			self.out_proj=Softmax(input_features=512, output_features=1000)
+			self.out_proj=Softmax(input_features=512, output_features=self.n_classes)
 		elif sm_type=='am_softmax':
-			self.out_proj=AMSoftmax(input_features=512, output_features=1000)
+			self.out_proj=AMSoftmax(input_features=512, output_features=self.n_classes)
 		else:
 			raise NotImplementedError
 
