@@ -29,8 +29,6 @@ if __name__ == '__main__':
 	parser.add_argument('--n-workers', type=int, default=4, metavar='N', help='Workers for data loading. Default is 4')
 	args = parser.parse_args()
 
-	transform = transforms.Compose([transforms.ToTensor()])
-
 	label_list, path_list = read_metadata(args.path_to_metadata)
 
 	print('Start of data preparation')
@@ -39,7 +37,7 @@ if __name__ == '__main__':
 
 	for i, class_id in data_iterator:
 
-		source_path = os.path.join(args.path_to_data, class_id, path_list[i])
+		source_path = os.path.join(args.path_to_data, path_list[i].split('/')[0], path_list[i])
 		tgt_path = os.path.join(args.out_path, class_id, path_list[i].split('/')[-1])
 
 		pathlib.Path(os.path.join(args.data_path, class_id).mkdir(parents=True, exist_ok=True))

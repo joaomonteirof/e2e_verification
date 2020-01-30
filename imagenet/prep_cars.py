@@ -25,7 +25,7 @@ if __name__ == '__main__':
 	print('Start of data preparation')
 
 	classes = metadata['annotations']['class'][0]
-	paths = metadata['annotations']['fname'][0]
+	paths = metadata['annotations']['relative_im_path'][0]
 
 	data_iterator = tqdm(enumerate(classes), total=len(classes))
 
