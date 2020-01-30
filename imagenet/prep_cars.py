@@ -17,10 +17,10 @@ if __name__ == '__main__':
 
 	metadata = sio.loadmat(args.path_to_metadata)
 	annotations = metadata['annotations']
-    annotations_labels = annotations['class']
-    unique_labels = np.sort(np.unique(annotations_labels))
+	annotations_labels = annotations['class']
+	unique_labels = np.sort(np.unique(annotations_labels))
 
-    train_labels, test_labels = unique_labels[:len(unique_labels)//2], unique_labels[len(unique_labels)//2:]
+	train_labels, test_labels = unique_labels[:len(unique_labels)//2], unique_labels[len(unique_labels)//2:]
 
 	print('Start of data preparation')
 

@@ -12,7 +12,7 @@ def read_metadata(path):
 
 	label_list, path_list = [], []
 
-	for line in utt_labels:
+	for line in info:
 		_, label, _, im = line.split(' ')
 		im = im.strip()
 		label_list.append(label)
