@@ -21,6 +21,8 @@ if __name__ == '__main__':
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 	args = parser.parse_args()
 	args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
+	if type(args.k_list[0]) is str:
+		args.k_list = [int(x) for x in args.k_list[0].split(',')]
 
 	print(args)
 
