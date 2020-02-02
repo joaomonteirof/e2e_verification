@@ -18,7 +18,6 @@ if __name__ == '__main__':
 	parser.add_argument('--data-path', type=str, default='./data/', metavar='Path', help='Path to data')
 	parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
 	parser.add_argument('--dropout-prob', type=float, default=0.25, metavar='p', help='Dropout probability (default: 0.25)')
-	parser.add_argument('--out-path', type=str, default=None, metavar='Path', help='Path for saving computed scores')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 	args = parser.parse_args()
 	args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
@@ -65,7 +64,7 @@ if __name__ == '__main__':
 
 	with torch.no_grad():
 
-		iterator = tqdm(enumerate(labels_list), total=len(labels))
+		iterator = tqdm(enumerate(labels_list), total=len(labels_list))
 		for i, label in iterator:
 
 			example = str(i)
