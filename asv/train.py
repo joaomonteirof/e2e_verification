@@ -51,6 +51,9 @@ parser.add_argument('--verbose', type=int, default=1, metavar='N', help='Verbose
 args = parser.parse_args()
 args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
+if args.verbose > 0:
+	print(args)
+
 torch.manual_seed(args.seed)
 if args.cuda:
 	torch.cuda.manual_seed(args.seed)
