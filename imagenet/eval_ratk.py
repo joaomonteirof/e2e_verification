@@ -86,6 +86,7 @@ if __name__ == '__main__':
 				mem_embeddings[str(i)] = emb_enroll
 
 				e2e_scores[enroll_ex] = []
+				cos_scores[enroll_ex] = []
 
 			for j, label_2 in enumerate(labels_list):
 				
