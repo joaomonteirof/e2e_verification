@@ -22,6 +22,8 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 	args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
+	print(args)
+
 	transform_test = transforms.Compose([transforms.CenterCrop(224), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
 	validset = datasets.ImageFolder(args.data_path, transform=transform_test)
 
@@ -102,7 +104,7 @@ if __name__ == '__main__':
 						test_ex_data = test_ex_data.cuda(device)
 
 					emb_test = model.forward(test_ex_data).detach()
-					mem_embeddings[str(idxs_test[i])] = emb_test
+					mem_embeddings[str(j)] = emb_test
 
 					e2e_scores[enroll_ex].append( [model.forward_bin(torch.cat([emb_enroll, emb_test],1)).squeeze().item(), label_2] )
 					cos_scores[enroll_ex].append( [torch.nn.functional.cosine_similarity(emb_enroll, emb_test).mean().item(), label_2] )
