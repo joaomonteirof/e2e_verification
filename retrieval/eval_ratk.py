@@ -99,7 +99,7 @@ if __name__ == '__main__':
 
 		return (d_xy+d_yx)/2.0
 
-	sim_matrix = pairwise_distance(embeddings, metric=compute_similarity, n_jobs=-1)
+	sim_matrix = pairwise_distances(embeddings, metric=compute_similarity, n_jobs=-1)
 
 	with torch.no_grad():
 
