@@ -9,7 +9,7 @@ import os
 import sys
 from tqdm import tqdm
 from utils import *
-from scipy.spatial.distance import pdist, squareform
+from sklearn.metrics import pairwise_distance
 
 if __name__ == '__main__':
 
@@ -86,8 +86,10 @@ if __name__ == '__main__':
 
 	print('\nEmbedding done')
 
+	model = model.cpu()
+
 	def compute_similarity(x, y, *args, **kwargs):
-		x, y = torch.from_numpy(x).unsqueeze(0).to(device), torch.from_numpy(x).unsqueeze(0).to(device)
+		x, y = torch.from_numpy(x).unsqueeze(0), torch.from_numpy(x).unsqueeze(0)
 
 		x_y = torch.cat([x,y],1)
 		y_x = torch.cat([y,x],1)
@@ -97,7 +99,7 @@ if __name__ == '__main__':
 
 		return (d_xy+d_yx)/2.0
 
-	sim_matrix = squareform(pdist(embeddings, compute_similarity))
+	sim_matrix = pairwise_distance(embeddings, metric=compute_similarity, n_jobs=-1)
 
 	with torch.no_grad():
 
@@ -130,6 +132,4 @@ for k in args.k_list:
 
 print('\nR@k:')
 print(r_at_k_e2e)
-print('\nR@k - Cos:')
-print(r_at_k_cos)
 print('\n')
