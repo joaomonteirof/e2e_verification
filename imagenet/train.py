@@ -94,6 +94,7 @@ elif args.model == 'densenet':
 	model = densenet.DenseNet121(nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax, n_classes=args.nclasses)
 
 if args.pretrained_path:
+	print('\nLoading pretrained model from: {}\n'.format(args.pretrained_path))
 	ckpt=torch.load(args.pretrained_path, map_location = lambda storage, loc: storage)
 	if ckpt['sm_type'] == 'am_softmax':
 		del(ckpt['model_state']['out_proj.w'])
@@ -105,7 +106,7 @@ if args.pretrained_path:
 	print('\n')
 
 elif args.pretrained:
-	print('\nLoading pretrained model\n')
+	print('\nLoading pretrained encoder from torchvision\n')
 	if args.model == 'vgg':
 		model_pretrained = torchvision.models.vgg19(pretrained=True)
 	elif args.model == 'resnet':
