@@ -36,31 +36,21 @@ if __name__ == '__main__':
 
 		ckpt = torch.load(cp, map_location = lambda storage, loc: storage)
 		try :
-			dropout_prob, n_hidden, hidden_size, softmax = ckpt['dropout_prob'], ckpt['n_hidden'], ckpt['hidden_size'], ckpt['sm_type']
+			dropout_prob, n_hidden, hidden_size, softmax, n_classes = ckpt['dropout_prob'], ckpt['n_hidden'], ckpt['hidden_size'], ckpt['sm_type'], ckpt['n_classes']
 		except KeyError as err:
 			print("Key Error: {0}".format(err))
 			print('\nProbably old cp has no info regarding classifiers arch!\n')
-			try:
-				n_hidden, hidden_size, softmax = get_classifier_config_from_cp(ckpt)
-				dropout_prob = args.dropout_prob
-			except:
-				print('\nSkipping cp {}. Could not load it.'.format(cp))
-				continue
+			n_hidden, hidden_size, softmax, n_classes = get_classifier_config_from_cp(ckpt)
+			dropout_prob = args.dropout_prob
 
 		if args.model == 'vgg':
-			model = vgg.VGG('VGG19', nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax)
+			model = vgg.VGG('VGG19', nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes)
 		elif args.model == 'resnet':
-			model = resnet.ResNet50(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax)
+			model = resnet.ResNet50(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes)
 		elif args.model == 'densenet':
-			model = densenet.DenseNet121(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax)
+			model = densenet.DenseNet121(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes)
 
-		try:
-			model.load_state_dict(ckpt['model_state'], strict=True)
-		except RuntimeError as err:
-			print("Runtime Error: {0}".format(err))
-		except:
-			print("Unexpected error:", sys.exc_info()[0])
-			raise
+		print(model.load_state_dict(ckpt['model_state'], strict=False))
 
 		if args.cuda:
 			device = get_freer_gpu()

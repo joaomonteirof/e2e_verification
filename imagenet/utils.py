@@ -45,7 +45,15 @@ def get_classifier_config_from_cp(ckpt):
 			classifier_params.append(x)
 		elif 'out_proj' in x:
 			out_proj_params.append(x)
-	return max(len(classifier_params)//2 - 1, 1), ckpt['model_state']['classifier.0.weight'].size(0), 'am_softmax' if len(out_proj_params)==1 else 'softmax'
+	
+	n_hidden, hidden_size, softmax = max(len(classifier_params)//2 - 1, 1), ckpt['model_state']['classifier.0.weight'].size(0), 'am_softmax' if len(out_proj_params)==1 else 'softmax', ckpt['model_state']['out_proj.w'].size(1)
+
+	if softmax == 'am_softmax':
+		n_classes = ckpt['model_state']['out_proj.w'].size(1)
+	elif softmax == 'softmax':
+		n_classes = ckpt['model_state']['out_proj.w.weight'].size(0)
+
+	return n_hidden, hidden_size, softmax, n_classes
 
 def create_trials_labels(labels_list):
 
