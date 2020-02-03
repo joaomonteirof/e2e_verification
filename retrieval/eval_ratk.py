@@ -89,8 +89,8 @@ if __name__ == '__main__':
 	def compute_similarity(x, y, *args, **kwargs):
 		x, y = torch.from_numpy(x).unsqueeze(0).to(device), torch.from_numpy(x).unsqueeze(0).to(device)
 
-		x_y = torch.cat([x,y],0)
-		y_x = torch.cat([y,x],0)
+		x_y = torch.cat([x,y],1)
+		y_x = torch.cat([y,x],1)
 
 		d_xy = model.forward_bin(x_y).squeeze().item()
 		d_yx = model.forward_bin(y_x).squeeze().item()
