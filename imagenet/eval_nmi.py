@@ -46,13 +46,7 @@ if __name__ == '__main__':
 	elif args.model == 'densenet':
 		model = densenet.DenseNet121(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax)
 
-	try:
-		model.load_state_dict(ckpt['model_state'], strict=True)
-	except RuntimeError as err:
-		print("Runtime Error: {0}".format(err))
-	except:
-		print("Unexpected error:", sys.exc_info()[0])
-		raise
+	print(model.load_state_dict(ckpt['model_state'], strict=True))
 
 	if args.cuda:
 		device = get_freer_gpu()
@@ -89,7 +83,7 @@ if __name__ == '__main__':
 		for k in class_center:
 			class_center[k] /= class_count[k]
 
-		for i, label in iterator:
+		for i, label in enumerate(labels_list):
 			class_scores = []
 			example = str(i)
 			for k in class_center:

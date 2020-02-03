@@ -49,13 +49,7 @@ if __name__ == '__main__':
 	elif args.model == 'densenet':
 		model = densenet.DenseNet121(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax)
 
-	try:
-		model.load_state_dict(ckpt['model_state'], strict=True)
-	except RuntimeError as err:
-		print("Runtime Error: {0}".format(err))
-	except:
-		print("Unexpected error:", sys.exc_info()[0])
-		raise
+	print(model.load_state_dict(ckpt['model_state'], strict=True))
 
 	if args.cuda:
 		device = get_freer_gpu()
@@ -85,10 +79,10 @@ if __name__ == '__main__':
 					enroll_ex_data = enroll_ex_data.cuda(device)
 
 				emb_enroll = model.forward(enroll_ex_data).detach()
-				mem_embeddings[str(i)] = emb_enroll
+				mem_embeddings[enroll_ex] = emb_enroll
 
-				e2e_scores[enroll_ex] = []
-				cos_scores[enroll_ex] = []
+			e2e_scores[enroll_ex] = []
+			cos_scores[enroll_ex] = []
 
 			for j, label_2 in enumerate(labels_list):
 				
@@ -107,24 +101,26 @@ if __name__ == '__main__':
 						test_ex_data = test_ex_data.cuda(device)
 
 					emb_test = model.forward(test_ex_data).detach()
-					mem_embeddings[str(j)] = emb_test
+					mem_embeddings[test_ex] = emb_test
 
-					e2e_scores[enroll_ex].append( [model.forward_bin(torch.cat([emb_enroll, emb_test],1)).squeeze().item(), label_2] )
-					cos_scores[enroll_ex].append( [torch.nn.functional.cosine_similarity(emb_enroll, emb_test).mean().item(), label_2] )
+				e2e_scores[enroll_ex].append( [model.forward_bin(torch.cat([emb_enroll, emb_test],1)).squeeze().item(), label_2] )
+				cos_scores[enroll_ex].append( [torch.nn.functional.cosine_similarity(emb_enroll, emb_test).mean().item(), label_2] )
 
 	print('\nScoring done')
 
-for i, label in iterator:
-	sorted_e2e_classes = np.array(sorted(e2e_scores[str(i)], reverse=True))[:,1]
-	sorted_cos_classes = np.array(sorted(cos_scores[str(i)], reverse=True))[:,1]
+for i, label in enumerate(labels_list):
+	eval_ex = str(i)
+	sorted_e2e_classes = np.array(sorted(e2e_scores[eval_ex], reverse=True))[:,1]
+	sorted_cos_classes = np.array(sorted(cos_scores[eval_ex], reverse=True))[:,1]
 
 	for k in args.k_list:
 		if label in sorted_e2e_classes[:k]:
 			r_at_k_e2e['R@'+str(k)]+=1
-		if label in sorted_e2e_classes[:k]:
+		if label in sorted_cos_classes[:k]:
 			r_at_k_e2e['R@'+str(k)]+=1
 
 print('\nR@k - E2E:')
 print(r_at_k_e2e)
 print('\nR@k - Cos:')
 print(r_at_k_cos)
+print('\n')
