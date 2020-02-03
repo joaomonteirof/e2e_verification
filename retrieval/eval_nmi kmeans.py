@@ -76,7 +76,7 @@ if __name__ == '__main__':
 			emb = model.forward(x).detach()
 
 			embeddings.append(emb.detach().cpu())
-			labels.append(y.squeeze().item())
+			labels.append(y)
 
 	embeddings = torch.cat(embeddings, 0)
 	y = torch.cat(y, 0)
