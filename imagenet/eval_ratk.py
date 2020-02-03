@@ -15,8 +15,6 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Retrieval Evaluation')
 	parser.add_argument('--cp-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
 	parser.add_argument('--data-path', type=str, default='./data/', metavar='Path', help='Path to data')
-	parser.add_argument('--out-path', type=str, default=None, metavar='Path', help='Path to save scores dict')
-	parser.add_argument('--sim-path', type=str, default='./data/', metavar='Path', help='Path to pre computed similarities dict')
 	parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
 	parser.add_argument('--dropout-prob', type=float, default=0.25, metavar='p', help='Dropout probability (default: 0.25)')
 	parser.add_argument('--k-list', nargs='+', required=True, help='List of k values for R@K computation')
