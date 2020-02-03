@@ -9,7 +9,7 @@ import os
 import sys
 from tqdm import tqdm
 from utils import *
-from sklearn.metrics import pairwise_distance
+from sklearn.metrics import pairwise_distances
 
 if __name__ == '__main__':
 
