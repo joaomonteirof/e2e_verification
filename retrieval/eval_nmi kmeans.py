@@ -9,24 +9,22 @@ import os
 import sys
 from tqdm import tqdm
 from utils import *
-from scipy.spatial.distance import pdist, squareform
+from sklearn.metrics.cluster import normalized_mutual_info_score
+from sklearn.cluster import KMeans
 
 if __name__ == '__main__':
 
 
-	parser = argparse.ArgumentParser(description='Retrieval Evaluation')
+	parser = argparse.ArgumentParser(description='Clustering Evaluation')
 	parser.add_argument('--cp-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
 	parser.add_argument('--data-path', type=str, default='./data/', metavar='Path', help='Path to data')
 	parser.add_argument('--batch-size', type=int, default=64, metavar='N', help='input batch size for training (default: 64)')
 	parser.add_argument('--n-workers', type=int, default=4, metavar='N', help='Workers for data loading. Default is 4')
 	parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
 	parser.add_argument('--dropout-prob', type=float, default=0.25, metavar='p', help='Dropout probability (default: 0.25)')
-	parser.add_argument('--k-list', nargs='+', required=True, help='List of k values for R@K computation')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 	args = parser.parse_args()
 	args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
-	if type(args.k_list[0]) is str:
-		args.k_list = [int(x) for x in args.k_list[0].split(',')]
 
 	print(args)
 
@@ -34,8 +32,8 @@ if __name__ == '__main__':
 	validset = datasets.ImageFolder(args.data_path, transform=transform_test)
 	valid_loader = torch.utils.data.DataLoader(validset, batch_size=args.batch_size, shuffle=False, num_workers=args.n_workers)
 
-	r_at_k_e2e = {'R@'+str(x):0 for x in args.k_list}
-	r_at_k_cos = {'R@'+str(x):0 for x in args.k_list}
+	n_test_classes = len(validset.classes)
+	pred_list = []
 
 	ckpt = torch.load(args.cp_path, map_location = lambda storage, loc: storage)
 	try :
@@ -59,7 +57,6 @@ if __name__ == '__main__':
 		device = get_freer_gpu()
 		model = model.cuda(device)
 
-	e2e_scores = {}
 	embeddings = []
 	labels = []
 
@@ -86,50 +83,5 @@ if __name__ == '__main__':
 
 	print('\nEmbedding done')
 
-	def compute_similarity(x, y, *args, **kwargs):
-		x, y = x.unsqueeze(0).to(device), y.unsqueeze(0).to(device)
-
-		x_y = torch.cat([x,y],0)
-		y_x = torch.cat([y,x],0)
-
-		d_xy = model.forward_bin(x_y).squeeze().item()
-		d_yx = model.forward_bin(y_x).squeeze().item()
-
-		return (d_xy+d_yx)/2.0
-
-	sim_matrix = squareform(pdist(embeddings, compute_similarity))
-
-	with torch.no_grad():
-
-		iterator = tqdm(enumerate(labels), total=len(labels))
-		for i, label_1 in iterator:
-
-			enroll_ex = str(i)
-
-			e2e_scores[enroll_ex] = []
-			cos_scores[enroll_ex] = []
-
-			for j, label_2 in enumerate(labels):
-				
-				if i==j: continue ## skip same example
-
-				e2e_scores[enroll_ex].append( [sim_matrix[i][j], label_2] )
-
-	print('\nScoring done')
-
-for i, label in enumerate(labels):
-	eval_ex = str(i)
-	sorted_e2e_classes = np.array(sorted(e2e_scores[eval_ex], reverse=True))[:,1]
-
-	for k in args.k_list:
-		if label in sorted_e2e_classes[:k]:
-			r_at_k_e2e['R@'+str(k)]+=1
-
-for k in args.k_list:
-	r_at_k_e2e['R@'+str(k)]/=len(labels_list)
-
-print('\nR@k:')
-print(r_at_k_e2e)
-print('\nR@k - Cos:')
-print(r_at_k_cos)
-print('\n')
+	kmeans = KMeans(n_clusters=n_test_classes).fit(embeddings)
+	print('\n NMI: {}'.format(normalized_mutual_info_score(kmeans.labels_, labels_)))
