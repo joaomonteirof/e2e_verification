@@ -87,7 +87,7 @@ if __name__ == '__main__':
 	print('\nEmbedding done')
 
 	def compute_similarity(x, y, *args, **kwargs):
-		x, y = x.unsqueeze(0).to(device), y.unsqueeze(0).to(device)
+		x, y = torch.from_numpy(x).unsqueeze(0).to(device), torch.from_numpy(x).unsqueeze(0).to(device)
 
 		x_y = torch.cat([x,y],0)
 		y_x = torch.cat([y,x],0)
