@@ -51,7 +51,8 @@ parser.add_argument('--n-workers', type=int, default=4, metavar='N', help='Worke
 parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
 parser.add_argument('--softmax', choices=['softmax', 'am_softmax'], default='softmax', help='Softmax type')
 parser.add_argument('--nclasses', type=int, default=1000, metavar='N', help='number of classes (default: 1000)')
-parser.add_argument('--pretrained', action='store_true', default=False, help='Get pretrained weights on imagenet')
+parser.add_argument('--pretrained', action='store_true', default=False, help='Get pretrained weights on imagenet. Encoder only')
+parser.add_argument('--pretrained-path', type=str, default=None, metavar='Path', help='Path to trained model. Discards outpu layer')
 parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
 parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
 parser.add_argument('--dropout-prob', type=float, default=0.25, metavar='p', help='Dropout probability (default: 0.25)')
@@ -92,7 +93,18 @@ elif args.model == 'resnet':
 elif args.model == 'densenet':
 	model = densenet.DenseNet121(nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax, n_classes=args.nclasses)
 
-if args.pretrained:
+if args.pretrained_path:
+	ckpt=torch.load(args.pretrained_path, map_location = lambda storage, loc: storage)
+	if ckpt['sm_type'] == 'am_softmax':
+		del(ckpt['model_state']['out_proj.w'])
+	elif ckpt['sm_type'] == 'softmax':
+		del(ckpt['model_state']['out_proj.w.weight'])
+		del(ckpt['model_state']['out_proj.w.bias'])
+
+	print(model.load_state_dict(ckpt['model_state'], strict=False))
+	print('\n')
+
+elif args.pretrained:
 	print('\nLoading pretrained model\n')
 	if args.model == 'vgg':
 		model_pretrained = torchvision.models.vgg19(pretrained=True)
