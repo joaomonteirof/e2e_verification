@@ -82,7 +82,7 @@ if __name__ == '__main__':
 			labels.append(y)
 
 	embeddings = torch.cat(embeddings, 0)
-	y = torch.cat(y, 0)
+	labels = torch.cat(labels, 0)
 
 	print('\nEmbedding done')
 
