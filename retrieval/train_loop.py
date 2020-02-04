@@ -223,13 +223,18 @@ class TrainLoop(object):
 		return loss.item()
 
 
-	def valid(self, batch, n=10):
+	def valid(self, batch):
 
 		self.model.eval()
 
 		with torch.no_grad():
 
-			x, y = batch
+			if isinstance(self.valid_loader.dataset, Loader):
+				x_1, x_2, x_3, x_4, x_5, y = batch
+				x = torch.cat([x_1, x_2, x_3, x_4, x_4], dim=0)
+				y = torch.cat(5*[y], dim=0).squeeze().contiguous()
+			else:
+				x, y = batch
 
 			x = x.to(self.device, non_blocking=True)
 			y = y.to(self.device, non_blocking=True)
