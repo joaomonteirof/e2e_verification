@@ -35,7 +35,6 @@ if __name__ == '__main__':
 	valid_loader = torch.utils.data.DataLoader(validset, batch_size=args.batch_size, shuffle=False, num_workers=args.n_workers)
 
 	r_at_k_e2e = {'R@'+str(x):0 for x in args.k_list}
-	r_at_k_cos = {'R@'+str(x):0 for x in args.k_list}
 
 	ckpt = torch.load(args.cp_path, map_location = lambda storage, loc: storage)
 	try :
@@ -96,7 +95,6 @@ if __name__ == '__main__':
 			enroll_emb = embeddings[i].to(device)
 
 			e2e_scores[enroll_ex] = []
-			cos_scores[enroll_ex] = []
 
 			for j in range(0, len(labels), args.batch_size):
 
