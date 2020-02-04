@@ -119,7 +119,7 @@ if __name__ == '__main__':
 						e2e_scores[enroll_ex].append( [dist[k].item(), labels[j+k]] )
 
 		if args.out_path:
-			torch.save(args.out_path)
+			torch.save(e2e_scores, args.out_path)
 
 		print('\nScoring done')
 
