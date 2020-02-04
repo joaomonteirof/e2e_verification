@@ -39,8 +39,8 @@ if __name__ == '__main__':
 	r_at_k_e2e = {'R@'+str(x):0 for x in args.k_list}
 
 	if args.sim_path:
-		
-		e2e_scores = torch.load(args.sim_path):
+
+		e2e_scores = torch.load(args.sim_path)
 		labels = [x[1] for x in validset]
 
 	else:
