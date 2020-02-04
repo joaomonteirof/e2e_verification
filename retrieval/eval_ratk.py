@@ -17,6 +17,8 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Retrieval Evaluation')
 	parser.add_argument('--cp-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
 	parser.add_argument('--data-path', type=str, default='./data/', metavar='Path', help='Path to data')
+	parser.add_argument('--out-path', type=str, default=None, metavar='Path', help='Path to output similarity matrix.')
+	parser.add_argument('--sim-path', type=str, default=None, metavar='Path', help='Path to precomputed similarity matrix.')
 	parser.add_argument('--batch-size', type=int, default=64, metavar='N', help='input batch size for training (default: 64)')
 	parser.add_argument('--n-workers', type=int, default=4, metavar='N', help='Workers for data loading. Default is 4')
 	parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
@@ -36,80 +38,90 @@ if __name__ == '__main__':
 
 	r_at_k_e2e = {'R@'+str(x):0 for x in args.k_list}
 
-	ckpt = torch.load(args.cp_path, map_location = lambda storage, loc: storage)
-	try :
-		dropout_prob, n_hidden, hidden_size, softmax, n_classes = ckpt['dropout_prob'], ckpt['n_hidden'], ckpt['hidden_size'], ckpt['sm_type'], ckpt['n_classes']
-	except KeyError as err:
-		print("Key Error: {0}".format(err))
-		print('\nProbably old cp has no info regarding classifiers arch!\n')
-		n_hidden, hidden_size, softmax, n_classes = get_classifier_config_from_cp(ckpt)
-		dropout_prob = args.dropout_prob
+	if args.sim_path:
+		
+		e2e_scores = torch.load(args.sim_path):
+		labels = [x[1] for x in validset]
 
-	if args.model == 'vgg':
-		model = vgg.VGG('VGG19', nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes)
-	elif args.model == 'resnet':
-		model = resnet.ResNet50(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes)
-	elif args.model == 'densenet':
-		model = densenet.DenseNet121(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes)
+	else:
 
-	print(model.load_state_dict(ckpt['model_state'], strict=False))
+		ckpt = torch.load(args.cp_path, map_location = lambda storage, loc: storage)
+		try :
+			dropout_prob, n_hidden, hidden_size, softmax, n_classes = ckpt['dropout_prob'], ckpt['n_hidden'], ckpt['hidden_size'], ckpt['sm_type'], ckpt['n_classes']
+		except KeyError as err:
+			print("Key Error: {0}".format(err))
+			print('\nProbably old cp has no info regarding classifiers arch!\n')
+			n_hidden, hidden_size, softmax, n_classes = get_classifier_config_from_cp(ckpt)
+			dropout_prob = args.dropout_prob
 
-	if args.cuda:
-		device = get_freer_gpu()
-		model = model.cuda(device)
+		if args.model == 'vgg':
+			model = vgg.VGG('VGG19', nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes)
+		elif args.model == 'resnet':
+			model = resnet.ResNet50(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes)
+		elif args.model == 'densenet':
+			model = densenet.DenseNet121(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes)
 
-	e2e_scores = {}
-	embeddings = []
-	labels = []
+		print(model.load_state_dict(ckpt['model_state'], strict=False))
 
-	model.eval()
+		if args.cuda:
+			device = get_freer_gpu()
+			model = model.cuda(device)
 
-	iterator = tqdm(valid_loader, total=len(valid_loader))
+		e2e_scores = {}
+		embeddings = []
+		labels = []
 
-	with torch.no_grad():
+		model.eval()
 
-		for batch in iterator:
+		iterator = tqdm(valid_loader, total=len(valid_loader))
 
-			x, y = batch
+		with torch.no_grad():
 
-			if args.cuda:
-				x, y = x.to(device), y.to(device)
+			for batch in iterator:
 
-			emb = model.forward(x).detach()
+				x, y = batch
 
-			embeddings.append(emb.detach().cpu())
-			labels.append(y)
+				if args.cuda:
+					x, y = x.to(device), y.to(device)
 
-	embeddings = torch.cat(embeddings, 0)
-	labels = torch.cat(labels, 0)
+				emb = model.forward(x).detach()
 
-	print('\nEmbedding done')
+				embeddings.append(emb.detach().cpu())
+				labels.append(y)
 
-	with torch.no_grad():
+		embeddings = torch.cat(embeddings, 0)
+		labels = torch.cat(labels, 0)
 
-		iterator = tqdm(enumerate(labels), total=len(labels))
-		for i, label_1 in iterator:
+		print('\nEmbedding done')
 
-			enroll_ex = str(i)
+		with torch.no_grad():
 
-			enroll_emb = embeddings[i].unsqueeze(0).to(device)
+			iterator = tqdm(enumerate(labels), total=len(labels))
+			for i, label_1 in iterator:
 
-			e2e_scores[enroll_ex] = []
+				enroll_ex = str(i)
 
-			for j in range(0, len(labels), args.batch_size):
+				enroll_emb = embeddings[i].unsqueeze(0).to(device)
 
-				test_emb = embeddings[j:(min(j+args.batch_size, len(embeddings))),:].to(device)
-				enroll_emb_repeated = enroll_emb.repeat(test_emb.size(0), 1)
+				e2e_scores[enroll_ex] = []
 
-				dist = model.forward_bin(torch.cat([enroll_emb_repeated, test_emb], 1)).squeeze()
-				
-				for k in range(dist.size(0)):
+				for j in range(0, len(labels), args.batch_size):
 
-					if i==(j+k): continue ## skip same example
+					test_emb = embeddings[j:(min(j+args.batch_size, len(embeddings))),:].to(device)
+					enroll_emb_repeated = enroll_emb.repeat(test_emb.size(0), 1)
 
-					e2e_scores[enroll_ex].append( [dist[k].item(), labels[j+k]] )
+					dist = model.forward_bin(torch.cat([enroll_emb_repeated, test_emb], 1)).squeeze()
+					
+					for k in range(dist.size(0)):
 
-	print('\nScoring done')
+						if i==(j+k): continue ## skip same example
+
+						e2e_scores[enroll_ex].append( [dist[k].item(), labels[j+k]] )
+
+		if args.out_path:
+			torch.save(args.out_path)
+
+		print('\nScoring done')
 
 for i, label in enumerate(labels):
 	eval_ex = str(i)
