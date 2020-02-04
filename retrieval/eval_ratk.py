@@ -120,7 +120,7 @@ for i, label in enumerate(labels):
 			r_at_k_e2e['R@'+str(k)]+=1
 
 for k in args.k_list:
-	r_at_k_e2e['R@'+str(k)]/=len(labels_list)
+	r_at_k_e2e['R@'+str(k)]/=len(labels)
 
 print('\nR@k:')
 print(r_at_k_e2e)
