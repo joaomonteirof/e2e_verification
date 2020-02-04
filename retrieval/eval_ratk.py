@@ -98,7 +98,7 @@ if __name__ == '__main__':
 
 			for j in range(0, len(labels), args.batch_size):
 
-				test_emb = embeddings[j:(min(j+args.batch_size, len(embeddings)))].to(device)
+				test_emb = embeddings[j:(min(j+args.batch_size, len(embeddings))),:].to(device)
 				enroll_emb.repeat(test_emb.size(0), 1)
 
 				dist = model.forward_bin(torch.cat([enroll_emb, test_emb], 1)).squeeze()
