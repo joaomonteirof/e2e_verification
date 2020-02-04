@@ -2,7 +2,6 @@ from __future__ import print_function
 import argparse
 import torch
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader
 from models import vgg, resnet, densenet
 import numpy as np
 import os
@@ -17,8 +16,6 @@ if __name__ == '__main__':
 	parser.add_argument('--cp-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
 	parser.add_argument('--data-path', type=str, default='./data/', metavar='Path', help='Path to data')
 	parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
-	parser.add_argument('--batch-size', type=int, default=64, metavar='N', help='input batch size for training (default: 64)')
-	parser.add_argument('--n-workers', type=int, default=4, metavar='N', help='Workers for data loading. Default is 4')
 	parser.add_argument('--dropout-prob', type=float, default=0.25, metavar='p', help='Dropout probability (default: 0.25)')
 	parser.add_argument('--out-path', type=str, default=None, metavar='Path', help='Path for saving computed scores')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
@@ -27,7 +24,8 @@ if __name__ == '__main__':
 
 	transform_test = transforms.Compose([transforms.CenterCrop(224), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
 	validset = datasets.ImageFolder(args.data_path, transform=transform_test)
-	valid_loader = torch.utils.data.DataLoader(validset, batch_size=args.batch_size, shuffle=False, num_workers=args.n_workers)
+
+	labels_list = [x[1] for x in validset]
 
 	ckpt = torch.load(args.cp_path, map_location = lambda storage, loc: storage)
 	try :
@@ -50,36 +48,8 @@ if __name__ == '__main__':
 	if args.cuda:
 		device = get_freer_gpu()
 		model = model.cuda(device)
-	else:
-		device = torch.device('cpu')
 
-	embeddings = []
-	labels = []
-
-	model.eval()
-
-	iterator = tqdm(valid_loader, total=len(valid_loader))
-
-	with torch.no_grad():
-
-		for batch in iterator:
-
-			x, y = batch
-
-			if args.cuda:
-				x = x.to(device)
-
-			emb = model.forward(x).detach()
-
-			embeddings.append(emb.detach().cpu())
-			labels.append(y)
-
-	embeddings = torch.cat(embeddings, 0)
-	labels = list(torch.cat(labels, 0).squeeze().numpy())
-
-	print('\nEmbedding done')
-
-	idxs_enroll, idxs_test, labels = create_trials_labels(labels)
+	idxs_enroll, idxs_test, labels = create_trials_labels(labels_list)
 	print('\n{} trials created out of which {} are target trials'.format(len(idxs_enroll), np.sum(labels)))
 
 	cos_scores = []
@@ -93,24 +63,42 @@ if __name__ == '__main__':
 
 	with torch.no_grad():
 
-		iterator = tqdm(enumerate(labels), total=len(labels))
-		for i in range(0, len(labels), args.batch_size):
+		iterator = tqdm(range(len(labels)), total=len(labels))
+		for i in iterator:
 
-			enroll_ex = idxs_enroll[i:(min(i+args.batch_size, len(labels)))]
-			test_ex = idxs_test[i:(min(i+args.batch_size, len(labels)))]
+			enroll_ex = str(idxs_enroll[i])
 
-			enroll_emb = embeddings[enroll_ex,:].to(device)
-			test_emb = embeddings[test_ex,:].to(device)
-			cat_emb = torch.cat([enroll_emb, test_emb], 1)
+			try:
+				emb_enroll = mem_embeddings[enroll_ex]
+			except KeyError:
 
-			dist_e2e = model.forward_bin(cat_emb).squeeze()
-			dist_cos = torch.nn.functional.cosine_similarity(cat_emb)
-				
-			for k in range(dist.size(0)):
-				e2e_scores.append( dist_e2e[k].item() )
-				cos_scores.append( dist_cos[k].item() )
-				out_e2e.append([str(idxs_enroll[i+k]), str(idxs_test[i+k]), e2e_scores[-1]])
-				out_cos.append([str(idxs_enroll[i+k]), str(idxs_test[i+k]), cos_scores[-1]])
+				enroll_ex_data = validset[idxs_enroll[i]][0].unsqueeze(0)
+
+				if args.cuda:
+					enroll_ex_data = enroll_ex_data.cuda(device)
+
+				emb_enroll = model.forward(enroll_ex_data).detach()
+				mem_embeddings[str(idxs_enroll[i])] = emb_enroll
+
+			test_ex = str(idxs_test[i])
+
+			try:
+				emb_test = mem_embeddings[test_ex]
+			except KeyError:
+
+				test_ex_data = validset[idxs_test[i]][0].unsqueeze(0)
+
+				if args.cuda:
+					test_ex_data = test_ex_data.cuda(device)
+
+				emb_test = model.forward(test_ex_data).detach()
+				mem_embeddings[str(idxs_test[i])] = emb_test
+
+			e2e_scores.append( model.forward_bin(torch.cat([emb_enroll, emb_test],1)).squeeze().item() )
+			cos_scores.append( torch.nn.functional.cosine_similarity(emb_enroll, emb_test).mean().item() )
+
+			out_e2e.append([str(idxs_enroll[i]), str(idxs_test[i]), e2e_scores[-1]])
+			out_cos.append([str(idxs_enroll[i]), str(idxs_test[i]), cos_scores[-1]])
 
 	print('\nScoring done')
 

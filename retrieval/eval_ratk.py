@@ -65,7 +65,9 @@ if __name__ == '__main__':
 
 		if args.cuda:
 			device = get_freer_gpu()
-			model = model.cuda(device)
+			model = model.to(device)
+		else:
+			device = torch.device('cpu')
 
 		e2e_scores = {}
 		embeddings = []
