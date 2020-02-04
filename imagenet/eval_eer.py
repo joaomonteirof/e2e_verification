@@ -104,7 +104,7 @@ if __name__ == '__main__':
 			cat_emb = torch.cat([enroll_emb, test_emb], 1)
 
 			dist_e2e = model.forward_bin(cat_emb).squeeze()
-			dist_cos = torch.nn.functional.cosine_similarity(cat_emb)
+			dist_cos = torch.nn.functional.cosine_similarity(enroll_emb, test_emb)
 				
 			for k in range(dist.size(0)):
 				e2e_scores.append( dist_e2e[k].item() )
