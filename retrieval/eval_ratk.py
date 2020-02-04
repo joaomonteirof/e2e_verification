@@ -86,21 +86,6 @@ if __name__ == '__main__':
 
 	print('\nEmbedding done')
 
-	model = model.cpu()
-
-	def compute_similarity(x, y, *args, **kwargs):
-		x, y = torch.from_numpy(x).unsqueeze(0), torch.from_numpy(x).unsqueeze(0)
-
-		x_y = torch.cat([x,y],1)
-		y_x = torch.cat([y,x],1)
-
-		d_xy = model.forward_bin(x_y).squeeze().item()
-		d_yx = model.forward_bin(y_x).squeeze().item()
-
-		return (d_xy+d_yx)/2.0
-
-	sim_matrix = pairwise_distances(embeddings, metric=compute_similarity, n_jobs=-1)
-
 	with torch.no_grad():
 
 		iterator = tqdm(enumerate(labels), total=len(labels))
@@ -108,14 +93,23 @@ if __name__ == '__main__':
 
 			enroll_ex = str(i)
 
+			enroll_emb = embeddings[i].to(device)
+
 			e2e_scores[enroll_ex] = []
 			cos_scores[enroll_ex] = []
 
-			for j, label_2 in enumerate(labels):
-				
-				if i==j: continue ## skip same example
+			for j in range(0, len(labels), args.batch_size):
 
-				e2e_scores[enroll_ex].append( [sim_matrix[i][j], label_2] )
+				test_emb = embeddings[j:(min(j+args.batch_size, len(embeddings)))].to(device)
+				enroll_emb.repeat(test_emb.size(0), 1)
+
+				dist = model.forward_bin(torch.cat([enroll_emb, test_emb], 1)).squeeze()
+				
+				for k in range(dist.size(0)):
+
+					if i==(j+k): continue ## skip same example
+
+					e2e_scores[enroll_ex].append( [dist[k].item(), labels[j+k]] )
 
 	print('\nScoring done')
 
