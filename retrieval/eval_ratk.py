@@ -82,7 +82,7 @@ if __name__ == '__main__':
 				x, y = batch
 
 				if args.cuda:
-					x, y = x.to(device), y.to(device)
+					x = x.to(device)
 
 				emb = model.forward(x).detach()
 
@@ -90,7 +90,7 @@ if __name__ == '__main__':
 				labels.append(y)
 
 		embeddings = torch.cat(embeddings, 0)
-		labels = torch.cat(labels, 0)
+		labels = list(torch.cat(labels, 0).squeeze().numpy())
 
 		print('\nEmbedding done')
 

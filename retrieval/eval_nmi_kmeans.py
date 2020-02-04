@@ -71,17 +71,17 @@ if __name__ == '__main__':
 			x, y = batch
 
 			if args.cuda:
-				x, y = x.to(device), y.to(device)
+				x = x.to(device)
 
 			emb = model.forward(x).detach()
 
 			embeddings.append(emb.detach().cpu())
-			labels.append(y.squeeze().item())
+			labels.append(y)
 
 	embeddings = torch.cat(embeddings, 0)
-	y = torch.cat(y, 0)
+	labels = torch.cat(labels, 0).squeeze().numpy()
 
 	print('\nEmbedding done')
 
 	kmeans = KMeans(n_clusters=n_test_classes).fit(embeddings)
-	print('\n NMI: {}'.format(normalized_mutual_info_score(kmeans.labels_, labels_)))
+	print('\n NMI: {}'.format(normalized_mutual_info_score(kmeans.labels_, labels)))
