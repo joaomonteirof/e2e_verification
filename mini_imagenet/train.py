@@ -31,7 +31,7 @@ def get_freer_gpu(trials=10):
 	exit(1)
 
 # Training settings
-parser = argparse.ArgumentParser(description='MiniImagenet Classification')
+parser = argparse.ArgumentParser(description='MiniImagenet Verification')
 parser.add_argument('--batch-size', type=int, default=64, metavar='N', help='input batch size for training (default: 64)')
 parser.add_argument('--valid-batch-size', type=int, default=16, metavar='N', help='input batch size for testing (default: 256)')
 parser.add_argument('--epochs', type=int, default=500, metavar='N', help='number of epochs to train (default: 500)')

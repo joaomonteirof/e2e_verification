@@ -8,12 +8,12 @@ from tqdm import tqdm
 
 from harvester import HardestNegativeTripletSelector, AllTripletSelector
 from models.losses import LabelSmoothingLoss
-from utils import compute_eer, correct_topk
+from utils import compute_eer
 from data_load import Loader
 
 class TrainLoop(object):
 
-	def __init__(self, model, optimizer, train_loader, valid_loader, max_gnorm, label_smoothing, verbose=-1, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True):
+	def __init__(self, model, optimizer, train_loader, valid_loader, patience, label_smoothing, verbose=-1, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True):
 		if checkpoint_path is None:
 			# Save to current directory
 			self.checkpoint_path = os.getcwd()
@@ -27,7 +27,6 @@ class TrainLoop(object):
 		self.pretrain = pretrain
 		self.model = model
 		self.optimizer = optimizer
-		self.max_gnorm = max_gnorm
 		self.train_loader = train_loader
 		self.valid_loader = valid_loader
 		self.total_iters = 0
@@ -47,8 +46,9 @@ class TrainLoop(object):
 		if self.valid_loader is not None:
 			self.history['e2e_eer'] = []
 			self.history['cos_eer'] = []
-			self.history['acc_1'] = []
-			self.history['acc_5'] = []
+			self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, factor=0.5, patience=patience, verbose=True if self.verbose>0 else False, threshold=1e-4, min_lr=1e-7)
+		else:
+			self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[20, 100, 200, 300, 400], gamma=0.1)
 
 		if checkpoint_epoch is not None:
 			self.load_checkpoint(self.save_epoch_fmt.format(checkpoint_epoch))
@@ -110,11 +110,10 @@ class TrainLoop(object):
 
 			if self.valid_loader is not None:
 
-				tot_correct_1, tot_correct_5, tot_ = 0, 0, 0
 				e2e_scores, cos_scores, labels = None, None, None
 
 				for t, batch in enumerate(self.valid_loader):
-					correct_1, correct_5, total, e2e_scores_batch, cos_scores_batch, labels_batch = self.valid(batch)
+					e2e_scores_batch, cos_scores_batch, labels_batch = self.valid(batch)
 
 					try:
 						e2e_scores = np.concatenate([e2e_scores, e2e_scores_batch], 0)
@@ -123,24 +122,21 @@ class TrainLoop(object):
 					except:
 						e2e_scores, cos_scores, labels = e2e_scores_batch, cos_scores_batch, labels_batch
 
-					tot_correct_1 += correct_1
-					tot_correct_5 += correct_5
-					tot_ += total
-
 				self.history['e2e_eer'].append(compute_eer(labels, e2e_scores))
 				self.history['cos_eer'].append(compute_eer(labels, cos_scores))
-				self.history['acc_1'].append(float(tot_correct_1)/tot_)
-				self.history['acc_5'].append(float(tot_correct_5)/tot_)
 
 				if self.verbose>0:
 					print(' ')
 					print('Current e2e EER, best e2e EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['e2e_eer'][-1], np.min(self.history['e2e_eer']), 1+np.argmin(self.history['e2e_eer'])))
 					print('Current cos EER, best cos EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['cos_eer'][-1], np.min(self.history['cos_eer']), 1+np.argmin(self.history['cos_eer'])))
-					print('Current Top 1 Acc, best Top 1 Acc, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['acc_1'][-1], np.max(self.history['acc_1']), 1+np.argmax(self.history['acc_1'])))
-					print('Current Top 5 Acc, best Top 5 Acc, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['acc_5'][-1], np.max(self.history['acc_5']), 1+np.argmax(self.history['acc_5'])))
+
+				self.scheduler.step(np.min([self.history['e2e_eer'][-1], self.history['cos_eer'][-1]]))
+
+			else:
+				self.scheduler.step()
 
 			if self.verbose>0:
-				print('Current LR: {}'.format(self.optimizer.optimizer.param_groups[0]['lr']))
+				print('Current LR: {}'.format(self.optimizer.param_groups[0]['lr']))
 
 			self.cur_epoch += 1
 
@@ -203,7 +199,6 @@ class TrainLoop(object):
 
 		loss = ce_loss + loss_bin
 		loss.backward()
-		grad_norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_gnorm)
 		self.optimizer.step()
 
 		return loss.item(), ce_loss.item(), loss_bin.item()
@@ -234,12 +229,7 @@ class TrainLoop(object):
 
 		with torch.no_grad():
 
-			if isinstance(self.valid_loader.dataset, Loader):
-				x_1, x_2, x_3, x_4, x_5, y = batch
-				x = torch.cat([x_1, x_2, x_3, x_4, x_5], dim=0)
-				y = torch.cat(5*[y], dim=0).squeeze().contiguous()
-			else:
-				x, y = batch
+			x, y = batch
 
 			x = x.to(self.device, non_blocking=True)
 			y = y.to(self.device, non_blocking=True)
@@ -247,11 +237,6 @@ class TrainLoop(object):
 			embeddings = self.model.forward(x)
 
 			embeddings_norm = F.normalize(embeddings, p=2, dim=1)
-
-			out = self.model.out_proj(embeddings_norm, y)
-
-			pred = F.softmax(out, dim=1)
-			(correct_1, correct_5) = correct_topk(pred, y, (1,5))
 
 			# Get all triplets now for bin classifier
 			triplets_idx = self.harvester.get_triplets(embeddings_norm.detach(), y)
@@ -269,7 +254,7 @@ class TrainLoop(object):
 			cos_scores_p = torch.nn.functional.cosine_similarity(emb_a, emb_p)
 			cos_scores_n = torch.nn.functional.cosine_similarity(emb_a, emb_n)
 
-		return correct_1, correct_5, x.size(0), np.concatenate([e2e_scores_p.detach().cpu().numpy(), e2e_scores_n.detach().cpu().numpy()], 0), np.concatenate([cos_scores_p.detach().cpu().numpy(), cos_scores_n.detach().cpu().numpy()], 0), np.concatenate([np.ones(e2e_scores_p.size(0)), np.zeros(e2e_scores_n.size(0))], 0)
+		return np.concatenate([e2e_scores_p.detach().cpu().numpy(), e2e_scores_n.detach().cpu().numpy()], 0), np.concatenate([cos_scores_p.detach().cpu().numpy(), cos_scores_n.detach().cpu().numpy()], 0), np.concatenate([np.ones(e2e_scores_p.size(0)), np.zeros(e2e_scores_n.size(0))], 0)
 
 	def checkpointing(self):
 
@@ -281,8 +266,8 @@ class TrainLoop(object):
 		'n_hidden': self.model.n_hidden,
 		'hidden_size': self.model.hidden_size,
 		'sm_type': self.model.sm_type,
-		'n_classes': self.model.n_classes,
 		'optimizer_state': self.optimizer.state_dict(),
+		'scheduler_state': self.scheduler.state_dict(),
 		'history': self.history,
 		'total_iters': self.total_iters,
 		'cur_epoch': self.cur_epoch}
@@ -300,7 +285,8 @@ class TrainLoop(object):
 			self.model.load_state_dict(ckpt['model_state'])
 			# Load optimizer state
 			self.optimizer.load_state_dict(ckpt['optimizer_state'])
-			self.optimizer.step_num = ckpt['total_iters']
+			# Load scheduler state
+			self.scheduler.load_state_dict(ckpt['scheduler_state'])
 			# Load history
 			self.history = ckpt['history']
 			self.total_iters = ckpt['total_iters']
