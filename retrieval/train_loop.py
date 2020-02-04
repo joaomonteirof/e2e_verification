@@ -8,12 +8,12 @@ from tqdm import tqdm
 
 from harvester import HardestNegativeTripletSelector, AllTripletSelector
 from models.losses import LabelSmoothingLoss
-from utils import compute_eer, adjust_learning_rate, correct_topk
+from utils import compute_eer, correct_topk
 from data_load import Loader
 
 class TrainLoop(object):
 
-	def __init__(self, model, optimizer, train_loader, valid_loader, label_smoothing, verbose=-1, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True):
+	def __init__(self, model, optimizer, train_loader, valid_loader, max_gnorm, label_smoothing, verbose=-1, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True):
 		if checkpoint_path is None:
 			# Save to current directory
 			self.checkpoint_path = os.getcwd()
@@ -27,6 +27,7 @@ class TrainLoop(object):
 		self.pretrain = pretrain
 		self.model = model
 		self.optimizer = optimizer
+		self.max_gnorm = max_gnorm
 		self.train_loader = train_loader
 		self.valid_loader = valid_loader
 		self.total_iters = 0
@@ -37,7 +38,6 @@ class TrainLoop(object):
 		self.device = next(self.model.parameters()).device
 		self.history = {'train_loss': [], 'train_loss_batch': [], 'ce_loss': [], 'ce_loss_batch': [], 'bin_loss': [], 'bin_loss_batch': []}
 		self.disc_label_smoothing = label_smoothing*0.5
-		self.base_lr = self.optimizer.param_groups[0]['lr']
 
 		if label_smoothing>0.0:
 			self.ce_criterion = LabelSmoothingLoss(label_smoothing, lbl_set_size=100)
@@ -60,8 +60,6 @@ class TrainLoop(object):
 			np.random.seed()
 			if isinstance(self.train_loader.dataset, Loader):
 				self.train_loader.dataset.update_lists()
-
-			adjust_learning_rate(self.optimizer, self.cur_epoch, self.base_lr)
 
 			if self.verbose>0:
 				print(' ')
@@ -142,7 +140,7 @@ class TrainLoop(object):
 					print('Current Top 5 Acc, best Top 5 Acc, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['acc_5'][-1], np.max(self.history['acc_5']), 1+np.argmax(self.history['acc_5'])))
 
 			if self.verbose>0:
-				print('Current LR: {}'.format(self.optimizer.param_groups[0]['lr']))
+				print('Current LR: {}'.format(self.optimizer.optimizer.param_groups[0]['lr']))
 
 			self.cur_epoch += 1
 
@@ -205,6 +203,7 @@ class TrainLoop(object):
 
 		loss = ce_loss + loss_bin
 		loss.backward()
+		grad_norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_gnorm)
 		self.optimizer.step()
 
 		return loss.item(), ce_loss.item(), loss_bin.item()
@@ -301,6 +300,7 @@ class TrainLoop(object):
 			self.model.load_state_dict(ckpt['model_state'])
 			# Load optimizer state
 			self.optimizer.load_state_dict(ckpt['optimizer_state'])
+			self.optimizer.step_num = ckpt['total_iters']
 			# Load history
 			self.history = ckpt['history']
 			self.total_iters = ckpt['total_iters']

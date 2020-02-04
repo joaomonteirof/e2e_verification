@@ -92,16 +92,16 @@ if __name__ == '__main__':
 
 			enroll_ex = str(i)
 
-			enroll_emb = embeddings[i].to(device)
+			enroll_emb = embeddings[i].unsqueeze(0).to(device)
 
 			e2e_scores[enroll_ex] = []
 
 			for j in range(0, len(labels), args.batch_size):
 
 				test_emb = embeddings[j:(min(j+args.batch_size, len(embeddings))),:].to(device)
-				enroll_emb.repeat(test_emb.size(0), 1)
+				enroll_emb_repeated = enroll_emb.repeat(test_emb.size(0), 1)
 
-				dist = model.forward_bin(torch.cat([enroll_emb, test_emb], 1)).squeeze()
+				dist = model.forward_bin(torch.cat([enroll_emb_repeated, test_emb], 1)).squeeze()
 				
 				for k in range(dist.size(0)):
 
