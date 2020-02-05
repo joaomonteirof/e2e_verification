@@ -58,11 +58,11 @@ if __name__ == '__main__':
 
 	model.eval()
 
-	iterator = tqdm(enumerate(valid_loader), total=len(valid_loader))
+	iterator = tqdm(valid_loader, total=len(valid_loader))
 
 	with torch.no_grad():
 
-		for i, batch in iterator:
+		for batch in iterator:
 
 			x, y = batch
 
@@ -74,7 +74,6 @@ if __name__ == '__main__':
 			embeddings.append(emb.detach().cpu())
 			labels.append(y)
 
-	n_batches = i+1
 	embeddings = torch.cat(embeddings, 0)
 	labels = list(torch.cat(labels, 0).squeeze().numpy())
 
@@ -94,7 +93,7 @@ if __name__ == '__main__':
 
 	with torch.no_grad():
 
-		iterator = tqdm(range(0, len(labels), args.batch_size), total=n_batches)
+		iterator = tqdm(range(0, len(labels), args.batch_size), total=len(labels)//args.batch_size+1)
 		for i in iterator:
 
 			enroll_ex = idxs_enroll[i:(min(i+args.batch_size, len(labels)))]
@@ -104,7 +103,7 @@ if __name__ == '__main__':
 			test_emb = embeddings[test_ex,:].to(device)
 			cat_emb = torch.cat([enroll_emb, test_emb], 1)
 
-			dist_e2e = model.forward_bin(cat_emb).squeeze()
+			dist_e2e = model.forward_bin(cat_emb).squeeze(1)
 			dist_cos = torch.nn.functional.cosine_similarity(enroll_emb, test_emb)
 				
 			for k in range(dist_e2e.size(0)):
