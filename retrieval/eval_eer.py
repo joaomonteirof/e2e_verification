@@ -58,11 +58,11 @@ if __name__ == '__main__':
 
 	model.eval()
 
-	iterator = tqdm(valid_loader, total=len(valid_loader))
+	iterator = tqdm(enumerate(valid_loader), total=len(valid_loader))
 
 	with torch.no_grad():
 
-		for batch in iterator:
+		for i, batch in iterator:
 
 			x, y = batch
 
@@ -74,6 +74,7 @@ if __name__ == '__main__':
 			embeddings.append(emb.detach().cpu())
 			labels.append(y)
 
+	n_batches = i+1
 	embeddings = torch.cat(embeddings, 0)
 	labels = list(torch.cat(labels, 0).squeeze().numpy())
 
@@ -93,8 +94,8 @@ if __name__ == '__main__':
 
 	with torch.no_grad():
 
-		iterator = tqdm(enumerate(labels), total=len(labels))
-		for i in range(0, len(labels), args.batch_size):
+		iterator = tqdm(range(0, len(labels), args.batch_size), total=n_batches)
+		for i in iterator:
 
 			enroll_ex = idxs_enroll[i:(min(i+args.batch_size, len(labels)))]
 			test_ex = idxs_test[i:(min(i+args.batch_size, len(labels)))]
