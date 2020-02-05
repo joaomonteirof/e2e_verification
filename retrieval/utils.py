@@ -55,7 +55,7 @@ def get_classifier_config_from_cp(ckpt):
 
 	return n_hidden, hidden_size, softmax, n_classes
 
-def create_trials_labels(labels_list, max_n_trials=1e6):
+def create_trials_labels(labels_list, max_n_trials=1e8):
 
 	enroll_ex, test_ex, labels = [], [], []
 
