@@ -23,7 +23,7 @@ class Loader(Dataset):
 
 	def __getitem__(self, index):
 
-		example_1, example_2, example_3, example_4, clss, y = self.example_list[index]
+		example_1, example_2, example_3, example_4, example_5, clss, y = self.example_list[index]
 
 		if not self.open_file: self.open_file = h5py.File(self.hdf5_name, 'r')
 
@@ -31,8 +31,9 @@ class Loader(Dataset):
 		example_2_data = self.transformation( torch.from_numpy(self.open_file[clss][example_2][:,...]) )
 		example_3_data = self.transformation( torch.from_numpy(self.open_file[clss][example_3][:,...]) )
 		example_4_data = self.transformation( torch.from_numpy(self.open_file[clss][example_4][:,...]) )
+		example_5_data = self.transformation( torch.from_numpy(self.open_file[clss][example_5][:,...]) )
 
-		return example_1_data.contiguous(), example_2_data.contiguous(), example_3_data.contiguous(), example_4_data.contiguous(), y
+		return example_1_data.contiguous(), example_2_data.contiguous(), example_3_data.contiguous(), example_4_data.contiguous(), example_5_data.contiguous(), y
 
 	def __len__(self):
 		return len(self.example_list)
@@ -60,10 +61,10 @@ class Loader(Dataset):
 		for i, clss in enumerate(self.class2file):
 			clss_file_list = np.random.permutation(self.class2file[clss])
 
-			idxs = strided_app(np.arange(len(clss_file_list)), 4, 4)
+			idxs = strided_app(np.arange(len(clss_file_list)), 5, 5)
 
 			for idxs_list in idxs:
-				if len(idxs_list)==4:
+				if len(idxs_list)==5:
 					self.example_list.append([clss_file_list[file_idx] for file_idx in idxs_list])
 					self.example_list[-1].append(clss)
 					self.example_list[-1].append(self.clss2label[clss])
@@ -87,8 +88,8 @@ if __name__=='__main__':
 	print('Dataset length: {}, {}'.format(len(loader.dataset), len(loader.dataset.example_list)))
 
 	for batch in loader:
-		utt_1, utt_2, utt_3, utt_4, y = batch
+		utt_1, utt_2, utt_3, utt_4, utt_5, y = batch
 
-	print(utt_1.size(), utt_2.size(), utt_3.size(), utt_4.size(), y.size())
+	print(utt_1.size(), utt_2.size(), utt_3.size(), utt_4.size(), utt_5.size(), y.size())
 
 	print(y)

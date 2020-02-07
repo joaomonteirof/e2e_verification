@@ -169,9 +169,9 @@ class TrainLoop(object):
 		self.optimizer.zero_grad()
 
 		if isinstance(self.train_loader.dataset, Loader):
-			x_1, x_2, x_3, x_4, y = batch
-			x = torch.cat([x_1, x_2, x_3, x_4], dim=0)
-			y = torch.cat(4*[y], dim=0).squeeze().contiguous()
+			x_1, x_2, x_3, x_4, x_5, y = batch
+			x = torch.cat([x_1, x_2, x_3, x_4, x_5], dim=0)
+			y = torch.cat(5*[y], dim=0).squeeze().contiguous()
 		else:
 			x, y = batch
 
@@ -236,9 +236,9 @@ class TrainLoop(object):
 		with torch.no_grad():
 
 			if isinstance(self.valid_loader.dataset, Loader):
-				x_1, x_2, x_3, x_4, y = batch
-				x = torch.cat([x_1, x_2, x_3, x_4], dim=0)
-				y = torch.cat(4*[y], dim=0).squeeze().contiguous()
+				x_1, x_2, x_3, x_4, x_5, y = batch
+				x = torch.cat([x_1, x_2, x_3, x_4, x_5], dim=0)
+				y = torch.cat(5*[y], dim=0).squeeze().contiguous()
 			else:
 				x, y = batch
 
