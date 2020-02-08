@@ -25,24 +25,24 @@ class VGG(nn.Module):
 
 		self.features = self._make_layers(cfg[vgg_name])
 		self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
-		self.lin_proj = nn.Sequential(nn.Linear(512 * 7 * 7, 1024), nn.ReLU(True), nn.Dropout(0.1), nn.Linear(1024, 512))
+		self.lin_proj = nn.Sequential(nn.Linear(512 * 7 * 7, 350))
 
 		if sm_type=='softmax':
-			self.out_proj=Softmax(input_features=512, output_features=self.n_classes)
+			self.out_proj=Softmax(input_features=512 * 7 * 7, output_features=self.n_classes)
 		elif sm_type=='am_softmax':
-			self.out_proj=AMSoftmax(input_features=512, output_features=self.n_classes)
+			self.out_proj=AMSoftmax(input_features=512 * 7 * 7, output_features=self.n_classes)
 		else:
 			raise NotImplementedError
 
-		self.bin_classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
+		self.bin_classifier = self.make_bin_layers(n_in=2*350, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
 
 	def forward(self, x):
 		features = self.avgpool(self.features(x))
 		print(features.size())
-		features = features.view(features.size(0), -1)
-		features = self.lin_proj(features)
+		features_out = features.view(features.size(0), -1)
+		features_emb = self.lin_proj(features_out)
 
-		return features
+		return features_emb, features_out
 
 	def _make_layers(self, cfg):
 		layers = []

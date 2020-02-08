@@ -178,14 +178,12 @@ class TrainLoop(object):
 		x = x.to(self.device, non_blocking=True)
 		y = y.to(self.device, non_blocking=True)
 
-		embeddings = self.model.forward(x)
+		embeddings, out = self.model.forward(x)
 
-		embeddings_norm = F.normalize(embeddings, p=2, dim=1)
-
-		ce_loss = self.ce_criterion(self.model.out_proj(embeddings_norm, y), y)
+		ce_loss = self.ce_criterion(self.model.out_proj(out, y), y)
 
 		# Get all triplets now for bin classifier
-		triplets_idx = self.harvester.get_triplets(embeddings_norm.detach(), y)
+		triplets_idx = self.harvester.get_triplets(embeddings.detach(), y)
 		triplets_idx = triplets_idx.to(self.device, non_blocking=True)
 
 		emb_a = torch.index_select(embeddings, 0, triplets_idx[:, 0])
@@ -219,10 +217,9 @@ class TrainLoop(object):
 
 		x, y = x.to(self.device, non_blocking=True), y.to(self.device, non_blocking=True).squeeze()
 
-		embeddings = self.model.forward(utt)
-		embeddings_norm = F.normalize(embeddings, p=2, dim=1)
+		embeddings, out = self.model.forward(utt)
 
-		loss = F.cross_entropy(self.model.out_proj(embeddings_norm, y), y)
+		loss = F.cross_entropy(self.model.out_proj(out, y), y)
 
 		loss.backward()
 		self.optimizer.step()
@@ -245,17 +242,15 @@ class TrainLoop(object):
 			x = x.to(self.device, non_blocking=True)
 			y = y.to(self.device, non_blocking=True)
 
-			embeddings = self.model.forward(x)
+			embeddings, out = self.model.forward(x)
 
-			embeddings_norm = F.normalize(embeddings, p=2, dim=1)
-
-			out = self.model.out_proj(embeddings_norm, y)
+			out = self.model.out_proj(out, y)
 
 			pred = F.softmax(out, dim=1)
 			(correct_1, correct_5) = correct_topk(pred, y, (1,5))
 
 			# Get all triplets now for bin classifier
-			triplets_idx = self.harvester.get_triplets(embeddings_norm.detach(), y)
+			triplets_idx = self.harvester.get_triplets(embeddings.detach(), y)
 			triplets_idx = triplets_idx.to(self.device, non_blocking=True)
 
 			emb_a = torch.index_select(embeddings, 0, triplets_idx[:, 0])

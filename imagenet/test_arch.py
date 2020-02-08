@@ -23,11 +23,11 @@ elif args.model == 'densenet':
 
 batch = torch.rand(3, 3, 224, 224)
 
-emb = model.forward(batch)
+emb, out = model.forward(batch)
 
-print(emb.size())
+print(emb.size(), out.size())
 
-out_layer = model.out_proj(emb)
+out_layer = model.out_proj(out)
 
 print(out_layer.size())
 
@@ -39,6 +39,4 @@ pred = model.forward_bin(emb)
 
 print(pred.size())
 
-scores_p = model.forward_bin(emb).squeeze()
-
-print(scores_p.size())
+print(pred.squeeze())

@@ -70,7 +70,7 @@ if __name__ == '__main__':
 			if args.cuda:
 				example_data = example_data.cuda(device)
 
-			emb = model.forward(example_data).detach()
+			emb = model.forward(example_data)[0].detach()
 			mem_embeddings[example] = emb
 
 			try:

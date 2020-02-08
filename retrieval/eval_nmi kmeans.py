@@ -73,7 +73,7 @@ if __name__ == '__main__':
 			if args.cuda:
 				x, y = x.to(device), y.to(device)
 
-			emb = model.forward(x).detach()
+			emb = model.forward(x)[0].detach()
 
 			embeddings.append(emb.detach().cpu())
 			labels.append(y)

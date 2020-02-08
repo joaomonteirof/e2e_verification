@@ -73,16 +73,16 @@ class DenseNet(nn.Module):
 
 		self.bn = nn.BatchNorm2d(num_planes)
 
-		self.lin_proj = nn.Sequential(nn.Linear(1024*6*6, 1024), nn.ReLU(True), nn.Dropout(0.1), nn.Linear(1024, 512))
+		self.lin_proj = nn.Sequential(nn.Linear(1024*6*6, 350))
 
 		if sm_type=='softmax':
-			self.out_proj=Softmax(input_features=512, output_features=num_classes)
+			self.out_proj=Softmax(input_features=1024*6*6, output_features=num_classes)
 		elif sm_type=='am_softmax':
-			self.out_proj=AMSoftmax(input_features=512, output_features=num_classes)
+			self.out_proj=AMSoftmax(input_features=1024*6*6, output_features=num_classes)
 		else:
 			raise NotImplementedError
 
-		self.classifier = self.make_bin_layers(n_in=2*512, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
+		self.classifier = self.make_bin_layers(n_in=2*350, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
 
 	def _make_dense_layers(self, block, in_planes, nblock):
 		layers = []
@@ -98,10 +98,10 @@ class DenseNet(nn.Module):
 		out = self.trans3(self.dense3(out))
 		out = self.dense4(out)
 		out = F.avg_pool2d(F.relu(self.bn(out)), 4)
-		out = out.view(out.size(0), -1)
-		out = self.lin_proj(out)
+		out_sm = out.view(out.size(0), -1)
+		out_emb = self.lin_proj(out_sm)
 
-		return out
+		return out_emb, out_sm
 
 	def make_bin_layers(self, n_in, n_h_layers, h_size, dropout_p):
 

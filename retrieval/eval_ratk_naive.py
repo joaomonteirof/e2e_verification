@@ -78,7 +78,7 @@ if __name__ == '__main__':
 				if args.cuda:
 					enroll_ex_data = enroll_ex_data.cuda(device)
 
-				emb_enroll = model.forward(enroll_ex_data).detach()
+				emb_enroll = model.forward(enroll_ex_data)[0].detach()
 				mem_embeddings[enroll_ex] = emb_enroll
 
 			e2e_scores[enroll_ex] = []
