@@ -12,14 +12,15 @@ parser = argparse.ArgumentParser(description='Test new architectures')
 parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
 parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
 parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
+parser.add_argument('--emb-size', type=int, default=256, metavar='N', help='Embedding dimension (default: 256)')
 args = parser.parse_args()
 
 if args.model == 'vgg':
-	model = vgg.VGG('VGG19', nh=args.n_hidden, n_h=args.hidden_size)
+	model = vgg.VGG('VGG19', nh=args.n_hidden, n_h=args.hidden_size, emb_size=args.emb_size)
 elif args.model == 'resnet':
-	model = resnet.ResNet50(nh=args.n_hidden, n_h=args.hidden_size)
+	model = resnet.ResNet50(nh=args.n_hidden, n_h=args.hidden_size, emb_size=args.emb_size)
 elif args.model == 'densenet':
-	model = densenet.DenseNet121(nh=args.n_hidden, n_h=args.hidden_size)
+	model = densenet.DenseNet121(nh=args.n_hidden, n_h=args.hidden_size, emb_size=args.emb_size)
 
 batch = torch.rand(3, 3, 224, 224)
 

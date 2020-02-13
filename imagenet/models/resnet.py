@@ -111,7 +111,7 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-	def __init__(self, block, layers, nh, n_h, sm_type, num_classes=1000, zero_init_residual=False,
+	def __init__(self, block, layers, nh, n_h, z_size, sm_type, num_classes=1000, zero_init_residual=False,
 				 groups=1, width_per_group=64, replace_stride_with_dilation=None,
 				 norm_layer=None, dropout_prob=0.25):
 		super(ResNet, self).__init__()
@@ -124,6 +124,7 @@ class ResNet(nn.Module):
 		self.hidden_size = n_h
 		self.sm_type = sm_type
 		self.n_classes = num_classes
+		self.emb_size = z_size
 
 		self.inplanes = 64
 		self.dilation = 1
@@ -146,7 +147,7 @@ class ResNet(nn.Module):
 		self.layer4 = self._make_layer(block, 512, layers[3], stride=2, dilate=replace_stride_with_dilation[2])
 		self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
 
-		self.lin_proj = nn.Sequential(nn.Linear(512*block.expansion, 350))
+		self.lin_proj = nn.Sequential(nn.Linear(512*block.expansion, self.emb_size))
 
 		if sm_type=='softmax':
 			self.out_proj=Softmax(input_features=512*block.expansion, output_features=num_classes)
@@ -155,7 +156,7 @@ class ResNet(nn.Module):
 		else:
 			raise NotImplementedError
 
-		self.classifier = self.make_bin_layers(n_in=2*350, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
+		self.classifier = self.make_bin_layers(n_in=2*self.emb_size, n_h_layers=nh, h_size=n_h, dropout_p=dropout_prob)
 
 		for m in self.modules():
 			if isinstance(m, nn.Conv2d):
@@ -238,17 +239,17 @@ class ResNet(nn.Module):
 		return z
 
 
-def ResNet18(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
-	return ResNet(BasicBlock, [2,2,2,2], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes)
+def ResNet18(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
+	return ResNet(BasicBlock, [2,2,2,2], nh=nh, n_h=n_h, z_size=emb_size, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes)
 
-def ResNet34(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
-	return ResNet(BasicBlock, [3,4,6,3], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes)
+def ResNet34(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
+	return ResNet(BasicBlock, [3,4,6,3], nh=nh, n_h=n_h, z_size=emb_size, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes)
 
-def ResNet50(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
-	return ResNet(Bottleneck, [3,4,6,3], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes)
+def ResNet50(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
+	return ResNet(Bottleneck, [3,4,6,3], nh=nh, n_h=n_h, z_size=emb_size, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes)
 
-def ResNet101(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
-	return ResNet(Bottleneck, [3,4,23,3], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes)
+def ResNet101(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
+	return ResNet(Bottleneck, [3,4,23,3], nh=nh, n_h=n_h, z_size=emb_size, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes)
 
-def ResNet152(nh=1, n_h=512, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
-	return ResNet(Bottleneck, [3,8,36,3], nh=nh, n_h=n_h, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes)
+def ResNet152(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
+	return ResNet(Bottleneck, [3,8,36,3], nh=nh, n_h=n_h, z_size=emb_size, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes)

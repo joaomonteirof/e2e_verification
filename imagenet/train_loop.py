@@ -278,6 +278,7 @@ class TrainLoop(object):
 		'hidden_size': self.model.hidden_size,
 		'sm_type': self.model.sm_type,
 		'n_classes': self.model.n_classes,
+		'emb_size': self.model.emb_size,
 		'optimizer_state': self.optimizer.state_dict(),
 		'history': self.history,
 		'total_iters': self.total_iters,
