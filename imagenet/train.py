@@ -80,7 +80,7 @@ train_loader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size,
 
 if args.valid_hdf_path:
 	transform_test = transforms.Compose([transforms.ToPILImage(), transforms.CenterCrop(224), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
-	validset = Loader(args.valid_hdf_path, transform_train)
+	validset = Loader(args.valid_hdf_path, transform_test)
 else:
 	transform_test = transforms.Compose([transforms.CenterCrop(224), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
 	validset = datasets.ImageFolder(args.valid_data_path, transform=transform_test)
