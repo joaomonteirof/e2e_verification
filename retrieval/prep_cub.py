@@ -31,7 +31,7 @@ if __name__ == '__main__':
 		if class_id in train_list:
 			train_folders.append(folder)
 		elif class_id in test_list:
-			train_folders.append(folder)
+			test_folders.append(folder)
 
 	for folder in train_folders:
 		source_path = folder
