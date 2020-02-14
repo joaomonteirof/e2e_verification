@@ -8,7 +8,7 @@ import shutil
 
 if __name__ == '__main__':
 
-	parser = argparse.ArgumentParser(description='Train data preparation and storage in .hdf')
+	parser = argparse.ArgumentParser(description='Cars data preparation')
 	parser.add_argument('--path-to-data', type=str, default='./data/', metavar='Path', help='Path to scp files with features')
 	parser.add_argument('--path-to-metadata', type=str, default='./data/metada.mat', metavar='Path', help='Path to metadata')
 	parser.add_argument('--out-path', type=str, default='./', metavar='Path', help='Path to output hdf file')
