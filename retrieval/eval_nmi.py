@@ -16,6 +16,8 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Clustering Evaluation')
 	parser.add_argument('--cp-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
 	parser.add_argument('--data-path', type=str, default='./data/', metavar='Path', help='Path to data')
+	parser.add_argument('--out-path', type=str, default=None, metavar='Path', help='Path to output embeddings.')
+	parser.add_argument('--emb-path', type=str, default=None, metavar='Path', help='Path to precomputed embedding.')
 	parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
 	parser.add_argument('--dropout-prob', type=float, default=0.25, metavar='p', help='Dropout probability (default: 0.25)')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
@@ -59,20 +61,54 @@ if __name__ == '__main__':
 
 	model.eval()
 
+	if args.emb_path:
+
+		emb_labels = torch.load(args.emb_path)
+		embeddings, labels = emb_labels['embeddings'], emb_labels['labels']
+		del emb_labels
+		emb_labels = None
+
+		print('\nEmbeddings loaded')
+
+	else:
+
+		embeddings = []
+		labels = []
+
+		iterator = tqdm(valid_loader, total=len(valid_loader))
+
+		with torch.no_grad():
+
+			for batch in iterator:
+
+				x, y = batch
+
+				if args.cuda:
+					x = x.to(device)
+
+				emb = model.forward(x)[0].detach()
+
+				embeddings.append(emb.detach().cpu())
+				labels.append(y)
+
+		embeddings = torch.cat(embeddings, 0)
+		labels = list(torch.cat(labels, 0).squeeze().numpy())
+
+		if args.out_path:
+			torch.save({'embeddings':embeddings, 'labels':labels}, args.out_path)
+
+		print('\nEmbedding done')
+
+
+
 	with torch.no_grad():
 
-		iterator = tqdm(enumerate(labels_list), total=len(labels_list))
+		iterator = tqdm(enumerate(labels), total=len(labels))
 		for i, label in iterator:
 
 			example = str(i)
 
-			example_data = validset[i][0].unsqueeze(0)
-
-			if args.cuda:
-				example_data = example_data.cuda(device)
-
-			emb = model.forward(example_data)[0].detach()
-			mem_embeddings[example] = emb
+			emb = embeddings[i].unsqueeze(0).to(device)
 
 			try:
 				class_center[label] += emb
@@ -86,9 +122,9 @@ if __name__ == '__main__':
 
 		for i, label in enumerate(labels_list):
 			class_scores = []
-			example = str(i)
+			emb = embeddings[i].unsqueeze(0).to(device)
 			for k in class_center:
-				class_scores.append( [model.forward_bin(torch.cat([class_center[k], mem_embeddings[example]],1)).squeeze().item(), k] )
+				class_scores.append( [model.forward_bin(torch.cat([class_center[k], emb],1)).squeeze().item(), k] )
 
 			pred_list.append(max(class_scores)[1])
 

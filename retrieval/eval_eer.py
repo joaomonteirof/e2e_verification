@@ -17,6 +17,8 @@ if __name__ == '__main__':
 	parser.add_argument('--cp-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
 	parser.add_argument('--data-path', type=str, default='./data/', metavar='Path', help='Path to data')
 	parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
+	parser.add_argument('--out-path', type=str, default=None, metavar='Path', help='Path to output embeddings.')
+	parser.add_argument('--emb-path', type=str, default=None, metavar='Path', help='Path to precomputed embedding.')
 	parser.add_argument('--batch-size', type=int, default=64, metavar='N', help='input batch size for training (default: 64)')
 	parser.add_argument('--n-workers', type=int, default=4, metavar='N', help='Workers for data loading. Default is 4')
 	parser.add_argument('--dropout-prob', type=float, default=0.25, metavar='p', help='Dropout probability (default: 0.25)')
@@ -53,31 +55,43 @@ if __name__ == '__main__':
 	else:
 		device = torch.device('cpu')
 
-	embeddings = []
-	labels = []
-
 	model.eval()
 
-	iterator = tqdm(valid_loader, total=len(valid_loader))
+	if args.emb_path:
 
-	with torch.no_grad():
+		emb_labels = torch.load(args.emb_path)
+		embeddings, labels = emb_labels['embeddings'], emb_labels['labels']
+		del emb_labels
+		emb_labels = None
 
-		for batch in iterator:
+	else:
 
-			x, y = batch
+		embeddings = []
+		labels = []
 
-			if args.cuda:
-				x = x.to(device)
+		iterator = tqdm(valid_loader, total=len(valid_loader))
 
-			emb = model.forward(x)[0].detach()
+		with torch.no_grad():
 
-			embeddings.append(emb.detach().cpu())
-			labels.append(y)
+			for batch in iterator:
 
-	embeddings = torch.cat(embeddings, 0)
-	labels = list(torch.cat(labels, 0).squeeze().numpy())
+				x, y = batch
 
-	print('\nEmbedding done')
+				if args.cuda:
+					x = x.to(device)
+
+				emb = model.forward(x)[0].detach()
+
+				embeddings.append(emb.detach().cpu())
+				labels.append(y)
+
+		embeddings = torch.cat(embeddings, 0)
+		labels = list(torch.cat(labels, 0).squeeze().numpy())
+
+		if args.out_path:
+			torch.save({'embeddings':embeddings, 'labels':labels}, args.out_path)
+
+		print('\nEmbedding done')
 
 	idxs_enroll, idxs_test, labels = create_trials_labels(labels)
 	print('\n{} trials created out of which {} are target trials'.format(len(idxs_enroll), np.sum(labels)))
@@ -86,8 +100,6 @@ if __name__ == '__main__':
 	e2e_scores = []
 	out_e2e = []
 	out_cos = []
-
-	mem_embeddings = {}
 
 	model.eval()
 
