@@ -106,7 +106,7 @@ if __name__ == '__main__':
 	with torch.no_grad():
 
 		iterator = tqdm(enumerate(labels), total=len(labels))
-		for i, label_1 in iterator:
+		for i, label in iterator:
 
 			enroll_emb = embeddings[i].unsqueeze(0).to(device)
 
