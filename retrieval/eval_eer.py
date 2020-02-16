@@ -22,7 +22,7 @@ if __name__ == '__main__':
 	parser.add_argument('--batch-size', type=int, default=64, metavar='N', help='input batch size for training (default: 64)')
 	parser.add_argument('--n-workers', type=int, default=4, metavar='N', help='Workers for data loading. Default is 4')
 	parser.add_argument('--dropout-prob', type=float, default=0.25, metavar='p', help='Dropout probability (default: 0.25)')
-	parser.add_argument('--out-path', type=str, default=None, metavar='Path', help='Path for saving computed scores')
+	parser.add_argument('--scores-out-path', type=str, default=None, metavar='Path', help='Path for saving computed scores')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 	args = parser.parse_args()
 	args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
@@ -126,14 +126,14 @@ if __name__ == '__main__':
 
 	print('\nScoring done')
 
-	if args.out_path:
+	if args.scores_out_path:
 
-		with open(args.out_path+'e2e_scores.out', 'w') as f:
+		with open(args.scores_out_path+'e2e_scores.out', 'w') as f:
 			for el in out_e2e:
 				item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
 				f.write("%s" % item)
 
-		with open(args.out_path+'cos_scores.out', 'w') as f:
+		with open(args.scores_out_path+'cos_scores.out', 'w') as f:
 			for el in out_cos:
 				item = el[0] + ' ' + el[1] + ' ' + str(el[2]) + '\n'
 				f.write("%s" % item)
