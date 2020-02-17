@@ -13,7 +13,7 @@ from data_load import Loader
 
 class TrainLoop(object):
 
-	def __init__(self, model, optimizer, train_loader, valid_loader, label_smoothing, verbose=-1, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True):
+	def __init__(self, model, optimizer, train_loader, valid_loader, patience, label_smoothing, verbose=-1, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True):
 		if checkpoint_path is None:
 			# Save to current directory
 			self.checkpoint_path = os.getcwd()
@@ -27,6 +27,7 @@ class TrainLoop(object):
 		self.pretrain = pretrain
 		self.model = model
 		self.optimizer = optimizer
+		self.patience = patience
 		self.train_loader = train_loader
 		self.valid_loader = valid_loader
 		self.total_iters = 0
@@ -61,7 +62,7 @@ class TrainLoop(object):
 			if isinstance(self.train_loader.dataset, Loader):
 				self.train_loader.dataset.update_lists()
 
-			adjust_learning_rate(self.optimizer, self.cur_epoch, self.base_lr)
+			adjust_learning_rate(self.optimizer, self.cur_epoch, self.base_lr, self.patience)
 
 			if self.verbose>0:
 				print(' ')
