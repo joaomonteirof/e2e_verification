@@ -15,7 +15,7 @@ if __name__ == '__main__':
 	parser.add_argument('--n-workers', type=int, default=4, metavar='N', help='Workers for data loading. Default is 4')
 	args = parser.parse_args()
 
-	transform = transforms.Compose([transforms.ToTensor()])
+	transform = transforms.Compose([transforms.ToTensor(), transforms.Resize(256), transforms.CenterCrop(224)])
 	dataset = datasets.ImageFolder(args.path_to_data, transform=transform)
 	dataloader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.n_workers)
 
