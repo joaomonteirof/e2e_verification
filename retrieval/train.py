@@ -40,6 +40,7 @@ parser.add_argument('--lr', type=float, default=1.0, metavar='LR', help='learnin
 parser.add_argument('--l2', type=float, default=1e-4, metavar='lambda', help='L2 wheight decay coefficient (default: 0.0005)')
 parser.add_argument('--smoothing', type=float, default=0.2, metavar='l', help='Label smoothing (default: 0.2)')
 parser.add_argument('--patience', type=int, default=10, metavar='S', help='Epochs to wait before decreasing LR by a factor of 0.5 (default: 10)')
+parser.add_argument('--lr-factor', type=float, default=0.5, metavar='LRFACTOR', help='Factor to reduce lr after patience epochs with no improvement (default: 0.5)')
 parser.add_argument('--momentum', type=float, default=0.9, metavar='lambda', help='Momentum (default: 0.9)')
 parser.add_argument('--checkpoint-epoch', type=int, default=None, metavar='N', help='epoch to load for checkpointing. If None, training starts from scratch')
 parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
@@ -138,7 +139,7 @@ if args.cuda:
 
 optimizer = optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.l2, momentum=args.momentum)
 
-trainer = TrainLoop(model, optimizer, train_loader, valid_loader, patience=args.patience, label_smoothing=args.smoothing, verbose=args.verbose, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, cuda=args.cuda)
+trainer = TrainLoop(model, optimizer, train_loader, valid_loader, patience=args.patience, lr_factor=args.lr_factor, label_smoothing=args.smoothing, verbose=args.verbose, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, cuda=args.cuda)
 
 if args.verbose >0:
 	print('\nCuda Mode is: {}'.format(args.cuda))
@@ -149,9 +150,12 @@ if args.verbose >0:
 	print('l2: {}'.format(args.l2))
 	print('Label smoothing: {}'.format(args.smoothing))
 	print('Patience: {}'.format(args.patience))
+	print('LR reduction factor'.format(args.lr_factor))
 	print('Dropout rate: {}'.format(args.dropout_prob))
 	print('Softmax Mode is: {}'.format(args.softmax))
 	print('Embedding dimension: {}'.format(args.emb_size))
+	print('Number of hidden layers: {}'.format(args.n_hidden))
+	print('Size of hidden layers: {}'.format(args.hidden_size))
 	print('Stats: {}'.format(args.stats))
 
 trainer.train(n_epochs=args.epochs, save_every=args.save_every)
