@@ -15,10 +15,6 @@ if __name__ == '__main__':
 	parser.add_argument('--n-workers', type=int, default=4, metavar='N', help='Workers for data loading. Default is 4')
 	args = parser.parse_args()
 
-	if os.path.isfile(args.out_path+args.out_name):
-		os.remove(args.out_path+args.out_name)
-		print(args.out_path+args.out_name+' Removed')
-
 	transform = transforms.Compose([transforms.ToTensor()])
 	dataset = datasets.ImageFolder(args.path_to_data, transform=transform)
 	dataloader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.n_workers)
