@@ -24,6 +24,7 @@ if __name__ == '__main__':
 	parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
 	parser.add_argument('--dropout-prob', type=float, default=0.25, metavar='p', help='Dropout probability (default: 0.25)')
 	parser.add_argument('--k-list', nargs='+', required=True, help='List of k values for R@K computation')
+	parser.add_argument('--stats', choices=['cars', 'cub', 'sop', 'imagenet'], default='imagenet')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 	args = parser.parse_args()
 	args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
@@ -32,7 +33,16 @@ if __name__ == '__main__':
 
 	print(args)
 
-	transform_test = transforms.Compose([transforms.Resize(256), transforms.CenterCrop(224), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+	if args.stats=='cars':
+		mean, std = [0.4461, 0.4329, 0.4345], [0.2888, 0.2873, 0.2946]
+	elif args.stats=='cub':
+		mean, std = [0.4782, 0.4925, 0.4418], [0.2330, 0.2296, 0.2647]
+	elif args.stats=='sop':
+		mean, std = [0.5603, 0.5155, 0.4796], [0.2939, 0.2991, 0.3085]
+	elif args.stats=='imagenet':
+		mean, std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
+
+	transform_test = transforms.Compose([transforms.Resize(256), transforms.CenterCrop(224), transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])
 	validset = datasets.ImageFolder(args.data_path, transform=transform_test)
 	valid_loader = torch.utils.data.DataLoader(validset, batch_size=args.batch_size, shuffle=False, num_workers=args.n_workers)
 

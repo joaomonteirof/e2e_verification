@@ -18,6 +18,7 @@ if __name__ == '__main__':
 	parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
 	parser.add_argument('--dropout-prob', type=float, default=0.25, metavar='p', help='Dropout probability (default: 0.25)')
 	parser.add_argument('--k-list', nargs='+', required=True, help='List of k values for R@K computation')
+	parser.add_argument('--stats', choices=['cars', 'cub', 'sop', 'imagenet'], default='imagenet')
 	parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 	args = parser.parse_args()
 	args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
@@ -26,7 +27,7 @@ if __name__ == '__main__':
 
 	print(args)
 
-	transform_test = transforms.Compose([transforms.Resize(256), transforms.CenterCrop(224), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+	transform_test = transforms.Compose([transforms.Resize(256), transforms.CenterCrop(224), transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])
 	validset = datasets.ImageFolder(args.data_path, transform=transform_test)
 
 	labels_list = [x[1] for x in validset]

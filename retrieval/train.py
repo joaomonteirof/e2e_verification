@@ -47,6 +47,7 @@ parser.add_argument('--data-path', type=str, default='./data_train', metavar='Pa
 parser.add_argument('--hdf-path', type=str, default=None, metavar='Path', help='Path to data stored in hdf. Has priority over data path if set')
 parser.add_argument('--valid-data-path', type=str, default='./data_val', metavar='Path', help='Path to data')
 parser.add_argument('--valid-hdf-path', type=str, default=None, metavar='Path', help='Path to valid data stored in hdf. Has priority over valid data path if set')
+parser.add_argument('--stats', choices=['cars', 'cub', 'sop', 'imagenet'], default='imagenet')
 parser.add_argument('--seed', type=int, default=42, metavar='S', help='random seed (default: 42)')
 parser.add_argument('--n-workers', type=int, default=4, metavar='N', help='Workers for data loading. Default is 4')
 parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
@@ -65,25 +66,34 @@ parser.add_argument('--verbose', type=int, default=1, metavar='N', help='Verbose
 args = parser.parse_args()
 args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
+if args.stats=='cars':
+	mean, std = [0.4461, 0.4329, 0.4345], [0.2888, 0.2873, 0.2946]
+elif args.stats=='cub':
+	mean, std = [0.4782, 0.4925, 0.4418], [0.2330, 0.2296, 0.2647]
+elif args.stats=='sop':
+	mean, std = [0.5603, 0.5155, 0.4796], [0.2939, 0.2991, 0.3085]
+elif args.stats=='imagenet':
+	mean, std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
+
 print(args, '\n')
 
 if args.cuda:
 	torch.backends.cudnn.benchmark=True
 
 if args.hdf_path:
-	transform_train = transforms.Compose([transforms.ToPILImage(), transforms.Resize(256), transforms.RandomCrop(224, padding=4), transforms.RandomHorizontalFlip(), transforms.RandomRotation(30), transforms.RandomGrayscale(), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])	
+	transform_train = transforms.Compose([transforms.ToPILImage(), transforms.Resize(256), transforms.RandomCrop(224, padding=2), transforms.RandomHorizontalFlip(), transforms.RandomRotation(30), transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])	
 	trainset = Loader(args.hdf_path, transform_train)
 else:
-	transform_train = transforms.Compose([transforms.Resize(256), transforms.RandomCrop(224, padding=4), transforms.RandomHorizontalFlip(), transforms.RandomRotation(30), transforms.ColorJitter(brightness=2), transforms.RandomGrayscale(), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])	
+	transform_train = transforms.Compose([transforms.Resize(256), transforms.RandomCrop(224, padding=2), transforms.RandomHorizontalFlip(), transforms.RandomRotation(30), transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])	
 	trainset = datasets.ImageFolder(args.data_path, transform=transform_train)
 
 train_loader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=args.n_workers, worker_init_fn=set_np_randomseed, pin_memory=True)
 
 if args.valid_hdf_path:
-	transform_test = transforms.Compose([transforms.ToPILImage(), transforms.Resize(256), transforms.CenterCrop(224), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+	transform_test = transforms.Compose([transforms.ToPILImage(), transforms.Resize(256), transforms.CenterCrop(224), transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])
 	validset = Loader(args.valid_hdf_path, transform_test)
 else:
-	transform_test = transforms.Compose([transforms.Resize(256), transforms.CenterCrop(224), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+	transform_test = transforms.Compose([transforms.Resize(256), transforms.CenterCrop(224), transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])
 	validset = datasets.ImageFolder(args.valid_data_path, transform=transform_test)
 	
 valid_loader = torch.utils.data.DataLoader(validset, batch_size=args.valid_batch_size, shuffle=True, num_workers=args.n_workers, pin_memory=True)
@@ -142,5 +152,6 @@ if args.verbose >0:
 	print('Dropout rate: {}'.format(args.dropout_prob))
 	print('Softmax Mode is: {}'.format(args.softmax))
 	print('Embedding dimension: {}'.format(args.emb_size))
+	print('Stats: {}'.format(args.stats))
 
 trainer.train(n_epochs=args.epochs, save_every=args.save_every)
