@@ -42,6 +42,7 @@ parser.add_argument('--smoothing', type=float, default=0.2, metavar='l', help='L
 parser.add_argument('--patience', type=int, default=10, metavar='S', help='Epochs to wait before decreasing LR by a factor of 0.5 (default: 10)')
 parser.add_argument('--lr-factor', type=float, default=0.5, metavar='LRFACTOR', help='Factor to reduce lr after patience epochs with no improvement (default: 0.5)')
 parser.add_argument('--momentum', type=float, default=0.9, metavar='lambda', help='Momentum (default: 0.9)')
+parser.add_argument('--max-gnorm', type=float, default=10., metavar='clip', help='Max gradient norm (default: 10.0)')
 parser.add_argument('--checkpoint-epoch', type=int, default=None, metavar='N', help='epoch to load for checkpointing. If None, training starts from scratch')
 parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
 parser.add_argument('--data-path', type=str, default='./data_train', metavar='Path', help='Path to data')
@@ -139,7 +140,7 @@ if args.cuda:
 
 optimizer = optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.l2, momentum=args.momentum)
 
-trainer = TrainLoop(model, optimizer, train_loader, valid_loader, patience=args.patience, lr_factor=args.lr_factor, label_smoothing=args.smoothing, verbose=args.verbose, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, cuda=args.cuda)
+trainer = TrainLoop(model, optimizer, train_loader, valid_loader, max_gnorm=args.max_gnorm, patience=args.patience, lr_factor=args.lr_factor, label_smoothing=args.smoothing, verbose=args.verbose, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, cuda=args.cuda)
 
 if args.verbose >0:
 	print('\nCuda Mode is: {}'.format(args.cuda))
@@ -151,6 +152,7 @@ if args.verbose >0:
 	print('Label smoothing: {}'.format(args.smoothing))
 	print('Patience: {}'.format(args.patience))
 	print('LR reduction factor'.format(args.lr_factor))
+	print('Max. grad norm: {}'.format(args.max_gnorm))
 	print('Dropout rate: {}'.format(args.dropout_prob))
 	print('Softmax Mode is: {}'.format(args.softmax))
 	print('Embedding dimension: {}'.format(args.emb_size))

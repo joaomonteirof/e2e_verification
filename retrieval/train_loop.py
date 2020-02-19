@@ -13,7 +13,7 @@ from data_load import Loader
 
 class TrainLoop(object):
 
-	def __init__(self, model, optimizer, train_loader, valid_loader, patience, lr_factor, label_smoothing, verbose=-1, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True):
+	def __init__(self, model, optimizer, train_loader, valid_loader, max_gnorm, patience, lr_factor, label_smoothing, verbose=-1, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True):
 		if checkpoint_path is None:
 			# Save to current directory
 			self.checkpoint_path = os.getcwd()
@@ -27,6 +27,7 @@ class TrainLoop(object):
 		self.pretrain = pretrain
 		self.model = model
 		self.optimizer = optimizer
+		self.max_gnorm = max_gnorm
 		self.train_loader = train_loader
 		self.valid_loader = valid_loader
 		self.total_iters = 0
@@ -197,6 +198,7 @@ class TrainLoop(object):
 
 		loss = ce_loss + loss_bin
 		loss.backward()
+		grad_norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_gnorm)
 		self.optimizer.step()
 
 		return loss.item(), ce_loss.item(), loss_bin.item()
@@ -216,6 +218,7 @@ class TrainLoop(object):
 		loss = F.cross_entropy(self.model.out_proj(out, y), y)
 
 		loss.backward()
+		grad_norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_gnorm)
 		self.optimizer.step()
 		return loss.item()
 
