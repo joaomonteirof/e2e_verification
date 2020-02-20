@@ -126,8 +126,11 @@ elif args.pretrained:
 	elif args.model == 'densenet':
 		model_pretrained = torchvision.models.densenet121(pretrained=True)
 
-	print(model.load_state_dict(model_pretrained.state_dict(), strict=False))
-	print('\n')
+	out_load = model.load_state_dict(model_pretrained.state_dict(), strict=False)
+
+	if args.verbose >0:
+		print(out_load)
+		print('\n')
 
 if args.verbose >0:
 	print(model)
