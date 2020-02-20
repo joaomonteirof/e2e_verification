@@ -59,7 +59,7 @@ args=parser.parse_args()
 
 args.cuda=True if not args.no_cuda else False
 
-def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, hdf_path, valid_data_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained):
+def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, hdf_path, valid_data_path, valid_hdf_path, submission_file, checkpoint_path, softmax, n_classes, pretrained):
 
 	file_name = get_file_name(tmp_dir)
 	np.random.seed()
@@ -128,6 +128,7 @@ data_path = args.data_path if args.data_path else 'none'
 hdf_path = args.hdf_path if args.hdf_path else 'none'
 valid_data_path = args.valid_data_path if args.valid_data_path else 'none'
 valid_hdf_path = args.valid_hdf_path if args.valid_hdf_path else 'none'
+sub_file=args.sub_file
 checkpoint_path=args.checkpoint_path
 softmax=instru.var.OrderedDiscrete(['softmax', 'am_softmax'])
 n_classes = args.nclasses
@@ -138,7 +139,7 @@ tmp_dir = os.getcwd() + '/' + args.temp_folder + '/'
 if not os.path.isdir(tmp_dir):
 	os.mkdir(tmp_dir)
 
-instrum = instru.Instrumentation(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained)
+instrum = instru.Instrumentation(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, sub_file, checkpoint_path, softmax, n_classes, pretrained)
 
 hp_optimizer = optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget)
 
