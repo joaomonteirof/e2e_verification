@@ -61,12 +61,13 @@ parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximu
 parser.add_argument('--dropout-prob', type=float, default=0.25, metavar='p', help='Dropout probability (default: 0.25)')
 parser.add_argument('--save-every', type=int, default=1, metavar='N', help='how many epochs to wait before logging training status. Default is 1')
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
+parser.add_argument('--cuda', type=str, default=None)
 parser.add_argument('--no-cp', action='store_true', default=False, help='Disables checkpointing')
 parser.add_argument('--verbose', type=int, default=1, metavar='N', help='Verbose is activated if > 0')
 parser.add_argument('--out-file', type=str, default=None)
 parser.add_argument('--cp-name', type=str, default=None)
 args = parser.parse_args()
-args.cuda = True if (args.cuda is True or args.cuda=='True') and torch.cuda.is_available() else False
+args.cuda = True if (args.cuda=='True' or (args.cuda is None and not args.cuda)) and torch.cuda.is_available() else False
 
 print(args, '\n')
 
