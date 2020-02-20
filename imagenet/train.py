@@ -68,6 +68,10 @@ parser.add_argument('--out-file', type=str, default=None)
 parser.add_argument('--cp-name', type=str, default=None)
 args = parser.parse_args()
 args.cuda = True if (args.cuda=='True' or (args.cuda is None and not args.cuda)) and torch.cuda.is_available() else False
+if args.data_path=='none': args.data_path=None
+if args.hdf_path=='none': args.hdf_path=None
+if args.valid_data_path=='none': args.valid_data_path=None
+if args.valid_hdf_path=='none': args.valid_hdf_path=None
 
 print(args, '\n')
 
