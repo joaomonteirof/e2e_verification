@@ -64,7 +64,7 @@ parser.add_argument('--save-every', type=int, default=1, metavar='N', help='how 
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 parser.add_argument('--cuda', type=str, default=None)
 parser.add_argument('--no-cp', action='store_true', default=False, help='Disables checkpointing')
-parser.add_argument('--verbose', type=int, default=1, metavar='N', help='Verbose is activated if > 0')
+parser.add_argument('--verbose', type=int, default=2, metavar='N', help='Verbose is activated if > 0')
 parser.add_argument('--out-file', type=str, default=None)
 parser.add_argument('--cp-name', type=str, default=None)
 args = parser.parse_args()

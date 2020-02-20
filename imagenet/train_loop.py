@@ -64,7 +64,7 @@ class TrainLoop(object):
 
 			adjust_learning_rate(self.optimizer, self.cur_epoch, self.base_lr, self.patience)
 
-			if self.verbose>0:
+			if self.verbose>1:
 				print(' ')
 				print('Epoch {}/{}'.format(self.cur_epoch+1, n_epochs))
 				train_iter = tqdm(enumerate(self.train_loader))
@@ -82,7 +82,7 @@ class TrainLoop(object):
 
 				self.history['train_loss'].append(ce_epoch/(t+1))
 
-				if self.verbose>0:
+				if self.verbose>1:
 					print('Train loss: {:0.4f}'.format(self.history['train_loss'][-1]))
 
 			else:
@@ -104,7 +104,7 @@ class TrainLoop(object):
 				self.history['ce_loss'].append(ce_loss_epoch/(t+1))
 				self.history['bin_loss'].append(bin_loss_epoch/(t+1))
 
-				if self.verbose>0:
+				if self.verbose>1:
 					print(' ')
 					print('Total train loss: {:0.4f}'.format(self.history['train_loss'][-1]))
 					print('CE loss: {:0.4f}'.format(self.history['ce_loss'][-1]))
@@ -135,14 +135,14 @@ class TrainLoop(object):
 				self.history['acc_1'].append(float(tot_correct_1)/tot_)
 				self.history['acc_5'].append(float(tot_correct_5)/tot_)
 
-				if self.verbose>0:
+				if self.verbose>1:
 					print(' ')
 					print('Current e2e EER, best e2e EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['e2e_eer'][-1], np.min(self.history['e2e_eer']), 1+np.argmin(self.history['e2e_eer'])))
 					print('Current cos EER, best cos EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['cos_eer'][-1], np.min(self.history['cos_eer']), 1+np.argmin(self.history['cos_eer'])))
 					print('Current Top 1 Acc, best Top 1 Acc, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['acc_1'][-1], np.max(self.history['acc_1']), 1+np.argmax(self.history['acc_1'])))
 					print('Current Top 5 Acc, best Top 5 Acc, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['acc_5'][-1], np.max(self.history['acc_5']), 1+np.argmax(self.history['acc_5'])))
 
-			if self.verbose>0:
+			if self.verbose>1:
 				print('Current LR: {}'.format(self.optimizer.param_groups[0]['lr']))
 
 			self.cur_epoch += 1
@@ -152,11 +152,11 @@ class TrainLoop(object):
 			elif self.save_cp and self.cur_epoch % save_every == 0:
 					self.checkpointing()
 
-		if self.verbose>0:
+		if self.verbose>1:
 			print('Training done!')
 
 		if self.valid_loader is not None:
-			if self.verbose>0:
+			if self.verbose>1:
 				print('Best e2e eer and corresponding epoch: {:0.4f}, {}'.format(np.min(self.history['e2e_eer']), 1+np.argmin(self.history['e2e_eer'])))
 				print('Best cos eer and corresponding epoch: {:0.4f}, {}'.format(np.min(self.history['cos_eer']), 1+np.argmin(self.history['cos_eer'])))
 
@@ -271,7 +271,7 @@ class TrainLoop(object):
 	def checkpointing(self):
 
 		# Checkpointing
-		if self.verbose>0:
+		if self.verbose>1:
 			print('Checkpointing...')
 		ckpt = {'model_state': self.model.state_dict(),
 		'dropout_prob': self.model.dropout_prob,

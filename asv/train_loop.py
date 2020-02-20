@@ -59,7 +59,7 @@ class TrainLoop(object):
 			np.random.seed()
 			self.train_loader.dataset.update_lists()
 
-			if self.verbose>0:
+			if self.verbose>1:
 				print(' ')
 				print('Epoch {}/{}'.format(self.cur_epoch+1, n_epochs))
 				print('Number of training examples given new list: {}'.format(len(self.train_loader.dataset)))
@@ -82,7 +82,7 @@ class TrainLoop(object):
 
 				self.history['train_loss'].append(ce_epoch/(t+1))
 
-				if self.verbose>0:
+				if self.verbose>1:
 					print('Train loss: {:0.4f}'.format(self.history['train_loss'][-1]))
 
 			else:
@@ -110,7 +110,7 @@ class TrainLoop(object):
 				self.history['ce_loss'].append(ce_loss_epoch/(t+1))
 				self.history['bin_loss'].append(bin_loss_epoch/(t+1))
 
-				if self.verbose>0:
+				if self.verbose>1:
 					print(' ')
 					print('Total train loss: {:0.4f}'.format(self.history['train_loss'][-1]))
 					print('CE loss: {:0.4f}'.format(self.history['ce_loss'][-1]))
@@ -163,13 +163,13 @@ class TrainLoop(object):
 					if self.verbose>1:
 						self.logger.add_embedding(mat=emb, metadata=list(y_), global_step=self.total_iters-1)
 
-				if self.verbose>0:
+				if self.verbose>1:
 					print(' ')
 					print('Current e2e EER, best e2e EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['e2e_eer'][-1], np.min(self.history['e2e_eer']), 1+np.argmin(self.history['e2e_eer'])))
 					print('Current cos EER, best cos EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['cos_eer'][-1], np.min(self.history['cos_eer']), 1+np.argmin(self.history['cos_eer'])))
 					print('Current fus EER, best fus EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['fus_eer'][-1], np.min(self.history['fus_eer']), 1+np.argmin(self.history['fus_eer'])))
 
-			if self.verbose>0:
+			if self.verbose>1:
 				print('Current LR: {}'.format(self.optimizer.optimizer.param_groups[0]['lr']))
 
 			self.cur_epoch += 1
@@ -179,11 +179,11 @@ class TrainLoop(object):
 			elif self.save_cp and self.cur_epoch % save_every == 0:
 					self.checkpointing()
 
-		if self.verbose>0:
+		if self.verbose>1:
 			print('Training done!')
 
 		if self.valid_loader is not None:
-			if self.verbose>0:
+			if self.verbose>1:
 				print('Best e2e eer and corresponding epoch: {:0.4f}, {}'.format(np.min(self.history['e2e_eer']), 1+np.argmin(self.history['e2e_eer'])))
 				print('Best cos eer and corresponding epoch: {:0.4f}, {}'.format(np.min(self.history['cos_eer']), 1+np.argmin(self.history['cos_eer'])))
 				print('Best fus eer and corresponding epoch: {:0.4f}, {}'.format(np.min(self.history['fus_eer']), 1+np.argmin(self.history['fus_eer'])))
@@ -337,7 +337,7 @@ class TrainLoop(object):
 	def checkpointing(self):
 
 		# Checkpointing
-		if self.verbose>0:
+		if self.verbose>1:
 			print('Checkpointing...')
 		ckpt = {'model_state': self.model.state_dict(),
 		'optimizer_state': self.optimizer.state_dict(),

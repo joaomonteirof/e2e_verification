@@ -43,6 +43,7 @@ parser.add_argument('--out-file', type=str, default='./eer.p')
 parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
 parser.add_argument('--logdir', type=str, default=None, metavar='Path', help='Path for checkpointing')
 parser.add_argument('--cp-name', type=str, default=None)
+parser.add_argument('--verbose', type=int, default=2, metavar='N', help='Verbose is activated if > 0')
 args = parser.parse_args()
 args.cuda = True if args.cuda=='True' and torch.cuda.is_available() else False
 args.logdir = None if args.logdir=='None' else args.logdir

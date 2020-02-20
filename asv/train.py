@@ -47,7 +47,7 @@ parser.add_argument('--pretrain', action='store_true', default=False, help='Mult
 parser.add_argument('--ablation', action='store_true', default=False, help='Drops the multi class classification loss')
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 parser.add_argument('--no-cp', action='store_true', default=False, help='Disables checkpointing')
-parser.add_argument('--verbose', type=int, default=1, metavar='N', help='Verbose is activated if > 0')
+parser.add_argument('--verbose', type=int, default=2, metavar='N', help='Verbose is activated if > 0')
 args = parser.parse_args()
 args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
