@@ -160,6 +160,9 @@ if args.verbose >0:
 
 best_eer = trainer.train(n_epochs=args.epochs, save_every=args.epochs+10)
 
+if args.verbose >0:
+	print('Best EER: {}'.format(best_eer))
+
 if args.out_file:
 	out_file = open(args.out_file, 'wb')
 	pickle.dump(best_eer[0], out_file)
