@@ -64,11 +64,6 @@ def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidd
 	file_name = get_file_name(tmp_dir)
 	np.random.seed()
 
-	if rproj_size>0:
-		rproj_size = int(rproj_size*latent_size*2)
-	else:
-		rproj_size = -1
-
 	command = 'sbatch' + ' ' + submission_file + ' ' + str(lr) + ' ' + str(l2) + ' ' + str(momentum) + ' ' + str(smoothing) + ' ' + str(int(patience)) + ' ' + str(model) + ' ' + str(int(emb_size)) + ' ' + str(int(n_hidden)) + ' ' + str(int(hidden_size)) + ' ' + str(dropout_prob) + ' ' + str(epochs) + ' ' + str(batch_size) + ' ' + str(valid_batch_size) + ' ' + str(n_workers) + ' ' + str(cuda) + ' ' + str(data_path) + ' ' + str(valid_data_path) + ' ' + str(hdf_path) + ' ' + str(valid_hdf_path) + ' ' + str(file_name) + ' ' + str(cp_path) + ' ' + str(file_name.split('/')[-1]+'t')+ ' ' + str(softmax) + ' ' + str(n_classes) + ' ' + str(pretrained)
 
 	for j in range(10):
