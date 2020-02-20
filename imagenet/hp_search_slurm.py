@@ -135,7 +135,7 @@ valid_data_path = args.valid_data_path if args.valid_data_path else 'none'
 valid_hdf_path = args.valid_hdf_path if args.valid_hdf_path else 'none'
 checkpoint_path=args.checkpoint_path
 softmax=instru.var.OrderedDiscrete(['softmax', 'am_softmax'])
-n_classes = args.n_classes
+n_classes = args.nclasses
 pretrained = args.pretrained
 
 tmp_dir = os.getcwd() + '/' + args.temp_folder + '/'
