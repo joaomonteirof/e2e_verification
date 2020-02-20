@@ -55,6 +55,7 @@ parser.add_argument('--softmax', choices=['softmax', 'am_softmax'], default='sof
 parser.add_argument('--nclasses', type=int, default=1000, metavar='N', help='number of classes (default: 1000)')
 parser.add_argument('--emb-size', type=int, default=256, metavar='N', help='Embedding dimension (default: 256)')
 parser.add_argument('--pretrained', action='store_true', default=False, help='Get pretrained weights on imagenet. Encoder only')
+parser.add_argument('--pretrained-str', type=str, default=None, help='Get pretrained weights on imagenet. Encoder only')
 parser.add_argument('--pretrained-path', type=str, default=None, metavar='Path', help='Path to trained model. Discards outpu layer')
 parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
 parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
@@ -72,6 +73,7 @@ if args.data_path=='none': args.data_path=None
 if args.hdf_path=='none': args.hdf_path=None
 if args.valid_data_path=='none': args.valid_data_path=None
 if args.valid_hdf_path=='none': args.valid_hdf_path=None
+if args.pretrained_str=='True': args.pretrain=True
 
 print(args, '\n')
 
