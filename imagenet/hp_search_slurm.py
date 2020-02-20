@@ -141,7 +141,7 @@ if not os.path.isdir(tmp_dir):
 
 instrum = instru.Instrumentation(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, sub_file, checkpoint_path, softmax, n_classes, pretrained)
 
-hp_optimizer = optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget)
+hp_optimizer = optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget, num_workers=args.hp_workers)
 
 with futures.ThreadPoolExecutor(max_workers=args.hp_workers) as executor:
 	print(hp_optimizer.optimize(train, executor=executor, verbosity=2))
