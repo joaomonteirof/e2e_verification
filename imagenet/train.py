@@ -73,7 +73,7 @@ if args.data_path=='none': args.data_path=None
 if args.hdf_path=='none': args.hdf_path=None
 if args.valid_data_path=='none': args.valid_data_path=None
 if args.valid_hdf_path=='none': args.valid_hdf_path=None
-if args.pretrained_str=='True': args.pretrain=True
+if args.pretrained_str=='True': args.pretrained=True
 
 print(args, '\n')
 
