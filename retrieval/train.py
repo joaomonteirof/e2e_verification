@@ -68,6 +68,10 @@ parser.add_argument('--verbose', type=int, default=1, metavar='N', help='Verbose
 args = parser.parse_args()
 args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
+if args.pretrained_path:
+	print('\nLoading pretrained model from: {}\n'.format(args.pretrained_path))
+	ckpt=torch.load(args.pretrained_path, map_location = lambda storage, loc: storage)
+
 if args.stats=='cars':
 	mean, std = [0.4461, 0.4329, 0.4345], [0.2888, 0.2873, 0.2946]
 elif args.stats=='cub':
@@ -100,6 +104,12 @@ else:
 	
 valid_loader = torch.utils.data.DataLoader(validset, batch_size=args.valid_batch_size, shuffle=True, num_workers=args.n_workers, pin_memory=True)
 
+if args.pretrained_path:
+	print('\nLoading pretrained model from: {}\n'.format(args.pretrained_path))
+	ckpt=torch.load(args.pretrained_path, map_location = lambda storage, loc: storage)
+	args.dropout_prob, args.n_hidden, args.hidden_size, args.emb_size = ckpt['dropout_prob'], ckpt['n_hidden'], ckpt['hidden_size'], ckpt['emb_size']
+	print('\nUsing pretrained config for discriminator. Ignoring args.')
+
 if args.model == 'vgg':
 	model = vgg.VGG('VGG19', nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax, n_classes=args.nclasses, emb_size=args.emb_size)
 elif args.model == 'resnet':
@@ -108,8 +118,6 @@ elif args.model == 'densenet':
 	model = densenet.DenseNet121(nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax, n_classes=args.nclasses, emb_size=args.emb_size)
 
 if args.pretrained_path:
-	print('\nLoading pretrained model from: {}\n'.format(args.pretrained_path))
-	ckpt=torch.load(args.pretrained_path, map_location = lambda storage, loc: storage)
 	if ckpt['sm_type'] == 'am_softmax':
 		del(ckpt['model_state']['out_proj.w'])
 	elif ckpt['sm_type'] == 'softmax':

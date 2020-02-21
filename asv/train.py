@@ -79,6 +79,12 @@ if args.valid_hdf_file is not None:
 else:
 	valid_loader=None
 
+if args.pretrained_path is not None:
+	print('\nLoading pretrained model from: {}\n'.format(args.pretrained_path))
+	ckpt=torch.load(args.pretrained_path, map_location = lambda storage, loc: storage)
+	args.dropout_prob, args.n_hidden, args.hidden_size, args.latent_size, args.ndiscriminators, args.rproj_size = ckpt['dropout_prob'], ckpt['n_hidden'], ckpt['hidden_size'], ckpt['latent_size'], ckpt['ndiscriminators'], ckpt['r_proj_size']
+	print('\nUsing pretrained config for discriminator. Ignoring args.')
+
 if args.model == 'resnet_stats':
 	model = model_.ResNet_stats(n_z=args.latent_size, nh=args.n_hidden, n_h=args.hidden_size, proj_size=train_dataset.n_speakers, ncoef=args.ncoef, dropout_prob=args.dropout_prob, sm_type=args.softmax, ndiscriminators=args.ndiscriminators, r_proj_size=args.rproj_size)
 elif args.model == 'resnet_mfcc':
@@ -96,7 +102,6 @@ if args.verbose > 0:
 	print(model)
 
 if args.pretrained_path is not None:
-	ckpt = torch.load(args.pretrained_path, map_location = lambda storage, loc: storage)
 
 	try:
 		model.load_state_dict(ckpt['model_state'], strict=True)

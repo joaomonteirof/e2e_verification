@@ -95,10 +95,10 @@ else:
 	writer = None
 
 if args.hdf_path:
-	transform_train = transforms.Compose([transforms.ToPILImage(), transforms.Resize(256), transforms.RandomCrop(224, padding=4), transforms.RandomHorizontalFlip(), transforms.RandomRotation(30), transforms.ColorJitter(brightness=2), transforms.RandomGrayscale(), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])	
+	transform_train = transforms.Compose([transforms.ToPILImage(), transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transforms.RandomRotation(30), transforms.RandomPerspective(p=0.2), transforms.ColorJitter(brightness=2), transforms.RandomGrayscale(), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])	
 	trainset = Loader(args.hdf_path, transform_train)
 else:
-	transform_train = transforms.Compose([transforms.Resize(256), transforms.RandomCrop(224, padding=4), transforms.RandomHorizontalFlip(), transforms.RandomRotation(30), transforms.ColorJitter(brightness=2), transforms.RandomGrayscale(), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])	
+	transform_train = transforms.Compose([transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transforms.RandomRotation(30), transforms.RandomPerspective(p=0.2), transforms.ColorJitter(brightness=2), transforms.RandomGrayscale(), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])	
 	trainset = datasets.ImageFolder(args.data_path, transform=transform_train)
 
 train_loader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=args.n_workers, worker_init_fn=set_np_randomseed, pin_memory=True)
@@ -112,6 +112,12 @@ else:
 	
 valid_loader = torch.utils.data.DataLoader(validset, batch_size=args.valid_batch_size, shuffle=True, num_workers=args.n_workers, pin_memory=True)
 
+if args.pretrained_path:
+	print('\nLoading pretrained model from: {}\n'.format(args.pretrained_path))
+	ckpt=torch.load(args.pretrained_path, map_location = lambda storage, loc: storage)
+	args.dropout_prob, args.n_hidden, args.hidden_size, args.emb_size = ckpt['dropout_prob'], ckpt['n_hidden'], ckpt['hidden_size'], ckpt['emb_size']
+	print('\nUsing pretrained config for discriminator. Ignoring args.')
+
 if args.model == 'vgg':
 	model = vgg.VGG('VGG19', nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax, n_classes=args.nclasses, emb_size=args.emb_size)
 elif args.model == 'resnet':
@@ -120,8 +126,6 @@ elif args.model == 'densenet':
 	model = densenet.DenseNet121(nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax, n_classes=args.nclasses, emb_size=args.emb_size)
 
 if args.pretrained_path:
-	print('\nLoading pretrained model from: {}\n'.format(args.pretrained_path))
-	ckpt=torch.load(args.pretrained_path, map_location = lambda storage, loc: storage)
 	if ckpt['sm_type'] == 'am_softmax':
 		del(ckpt['model_state']['out_proj.w'])
 	elif ckpt['sm_type'] == 'softmax':
