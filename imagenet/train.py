@@ -40,8 +40,10 @@ parser.add_argument('--epochs', type=int, default=500, metavar='N', help='number
 parser.add_argument('--lr', type=float, default=0.1, metavar='LR', help='learning rate (default: 0.1)')
 parser.add_argument('--l2', type=float, default=5e-4, metavar='lambda', help='L2 wheight decay coefficient (default: 0.0005)')
 parser.add_argument('--smoothing', type=float, default=0.2, metavar='l', help='Label smoothing (default: 0.2)')
+parser.add_argument('--max-gnorm', type=float, default=10., metavar='clip', help='Max gradient norm (default: 10.0)')
 parser.add_argument('--momentum', type=float, default=0.9, metavar='lambda', help='Momentum (default: 0.9)')
 parser.add_argument('--patience', type=int, default=30, metavar='S', help='Epochs to wait prior to reducing lr (default: 30)')
+parser.add_argument('--lr-factor', type=float, default=0.5, metavar='LRFACTOR', help='Factor to reduce lr after patience epochs with no improvement (default: 0.5)')
 parser.add_argument('--checkpoint-epoch', type=int, default=None, metavar='N', help='epoch to load for checkpointing. If None, training starts from scratch')
 parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
 parser.add_argument('--data-path', type=str, default=None, metavar='Path', help='Path to data')
@@ -67,6 +69,7 @@ parser.add_argument('--no-cp', action='store_true', default=False, help='Disable
 parser.add_argument('--verbose', type=int, default=2, metavar='N', help='Verbose is activated if > 0')
 parser.add_argument('--out-file', type=str, default=None)
 parser.add_argument('--cp-name', type=str, default=None)
+parser.add_argument('--logdir', type=str, default=None, metavar='Path', help='Path for checkpointing')
 args = parser.parse_args()
 args.cuda = True if (args.cuda=='True' or (args.cuda is None and not args.cuda)) and torch.cuda.is_available() else False
 if args.data_path=='none': args.data_path=None
@@ -79,6 +82,13 @@ print(args, '\n')
 
 if args.cuda:
 	torch.backends.cudnn.benchmark=True
+
+if args.logdir:
+	writer = SummaryWriter(log_dir=args.logdir, comment=args.model, purge_step=True if args.checkpoint_epoch is None else False)
+	args_dict = parse_args_for_log(args)
+	writer.add_hparams(hparam_dict=args_dict, metric_dict={'best_eer':0.0})
+else:
+	writer = None
 
 if args.hdf_path:
 	transform_train = transforms.Compose([transforms.ToPILImage(), transforms.Resize(256), transforms.RandomCrop(224, padding=4), transforms.RandomHorizontalFlip(), transforms.RandomRotation(30), transforms.ColorJitter(brightness=2), transforms.RandomGrayscale(), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])	
@@ -141,7 +151,7 @@ if args.cuda:
 
 optimizer = optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.l2, momentum=args.momentum)
 
-trainer = TrainLoop(model, optimizer, train_loader, valid_loader, patience=args.patience, label_smoothing=args.smoothing, verbose=args.verbose, cp_name=args.cp_name, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, cuda=args.cuda)
+trainer = TrainLoop(model, optimizer, train_loader, valid_loader, max_gnorm=args.max_gnorm, patience=args.patience, lr_factor=args.lr_factor, label_smoothing=args.smoothing, verbose=args.verbose, cp_name=args.cp_name, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, cuda=args.cuda, logger=writer)
 
 if args.verbose >0:
 	print('\nCuda Mode is: {}'.format(args.cuda))
@@ -150,6 +160,8 @@ if args.verbose >0:
 	print('LR: {}'.format(args.lr))
 	print('Momentum: {}'.format(args.momentum))
 	print('l2: {}'.format(args.l2))
+	print('LR reduction factor: {}'.format(args.lr_factor))
+	print('Clipping norm for gradients: {}'.format(args.max_gnorm))
 	print('Patience: {}'.format(args.patience))
 	print('Label smoothing: {}'.format(args.smoothing))
 	print('Dropout rate: {}'.format(args.dropout_prob))
@@ -159,6 +171,9 @@ if args.verbose >0:
 
 
 best_eer = trainer.train(n_epochs=args.epochs, save_every=args.epochs+10)
+
+if args.logdir:
+	writer.add_hparams(hparam_dict=args_dict, metric_dict={'best_eer':best_eer})
 
 if args.verbose >0:
 	print('Best EER: {}'.format(best_eer))

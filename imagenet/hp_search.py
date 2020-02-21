@@ -44,7 +44,7 @@ parser.add_argument('--checkpoint-path', type=str, default='./', metavar='Path',
 args = parser.parse_args()
 args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
-def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, hdf_path, valid_data_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained):
+def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, hdf_path, valid_data_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, max_gnorm, lr_factor):
 
 	cp_name = get_cp_name(checkpoint_path)
 
@@ -92,7 +92,7 @@ if pretrained:
 
 	optimizer = optim.SGD(model_.parameters(), lr=lr, weight_decay=l2, momentum=momentum)
 
-	trainer = TrainLoop(model_, optimizer, train_loader, valid_loader, patience=int(patience), label_smoothing=smoothing, verbose=-1, cp_name=cp_name, save_cp=True, checkpoint_path=checkpoint_path, cuda=cuda)
+	trainer = TrainLoop(model_, optimizer, train_loader, valid_loader, max_gnorm=max_gnorm, patience=int(patience), lr_factor=lr_factor, label_smoothing=smoothing, verbose=-1, cp_name=cp_name, save_cp=True, checkpoint_path=checkpoint_path, cuda=cuda)
 	for i in range(5):
 
 		print(' ')
@@ -156,8 +156,10 @@ checkpoint_path=args.checkpoint_path
 softmax=instru.var.OrderedDiscrete(['softmax', 'am_softmax'])
 n_classes = args.n_classes
 pretrained = args.pretrained
+max_gnorm = instru.var.OrderedDiscrete([10, 30, 100])
+lr_factor = instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.8])
 
-instrum = instru.Instrumentation(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained)
+instrum = instru.Instrumentation(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, max_gnorm, lr_factor)
 
 hp_optimizer = optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget)
 

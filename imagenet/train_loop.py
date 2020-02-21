@@ -13,7 +13,7 @@ from data_load import Loader
 
 class TrainLoop(object):
 
-	def __init__(self, model, optimizer, train_loader, valid_loader, patience, label_smoothing, verbose=-1, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True):
+	def __init__(self, model, optimizer, train_loader, valid_loader, max_gnorm, patience, lr_factor, label_smoothing, verbose=-1, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True, logger=None):
 		if checkpoint_path is None:
 			# Save to current directory
 			self.checkpoint_path = os.getcwd()
@@ -28,6 +28,8 @@ class TrainLoop(object):
 		self.model = model
 		self.optimizer = optimizer
 		self.patience = patience
+		self.max_gnorm = max_gnorm
+		self.lr_factor = lr_factor
 		self.train_loader = train_loader
 		self.valid_loader = valid_loader
 		self.total_iters = 0
@@ -39,6 +41,7 @@ class TrainLoop(object):
 		self.history = {'train_loss': [], 'train_loss_batch': [], 'ce_loss': [], 'ce_loss_batch': [], 'bin_loss': [], 'bin_loss_batch': []}
 		self.disc_label_smoothing = label_smoothing*0.5
 		self.base_lr = self.optimizer.param_groups[0]['lr']
+		self.logger = logger
 
 		if label_smoothing>0.0:
 			self.ce_criterion = LabelSmoothingLoss(label_smoothing, lbl_set_size=100)
@@ -62,7 +65,7 @@ class TrainLoop(object):
 			if isinstance(self.train_loader.dataset, Loader):
 				self.train_loader.dataset.update_lists()
 
-			adjust_learning_rate(self.optimizer, self.cur_epoch, self.base_lr, self.patience)
+			adjust_learning_rate(self.optimizer, self.cur_epoch, self.base_lr, self.patience, self.lr_factor)
 
 			if self.verbose>1:
 				print(' ')
@@ -78,6 +81,8 @@ class TrainLoop(object):
 					ce = self.pretrain_step(batch)
 					self.history['train_loss_batch'].append(ce)
 					ce_epoch+=ce
+					self.logger.add_scalar('Train/Cross entropy', ce, self.total_iters)
+					self.logger.add_scalar('Info/LR', self.optimizer.param_groups[0]['lr'], self.total_iters)
 					self.total_iters += 1
 
 				self.history['train_loss'].append(ce_epoch/(t+1))
@@ -98,6 +103,11 @@ class TrainLoop(object):
 					train_loss_epoch+=train_loss
 					ce_loss_epoch+=ce_loss
 					bin_loss_epoch+=bin_loss
+					if self.logger:
+						self.logger.add_scalar('Train/Total train Loss', train_loss, self.total_iters)
+						self.logger.add_scalar('Train/Binary class. Loss', bin_loss, self.total_iters)
+						self.logger.add_scalar('Train/Cross enropy', ce_loss, self.total_iters)
+						self.logger.add_scalar('Info/LR', self.optimizer.param_groups[0]['lr'], self.total_iters)
 					self.total_iters += 1
 
 				self.history['train_loss'].append(train_loss_epoch/(t+1))
@@ -134,6 +144,20 @@ class TrainLoop(object):
 				self.history['cos_eer'].append(compute_eer(labels, cos_scores))
 				self.history['acc_1'].append(float(tot_correct_1)/tot_)
 				self.history['acc_5'].append(float(tot_correct_5)/tot_)
+				if self.logger:
+					self.logger.add_scalar('Valid/E2E EER', self.history['e2e_eer'][-1], self.total_iters-1)
+					self.logger.add_scalar('Valid/Best E2E EER', np.min(self.history['e2e_eer']), self.total_iters-1)
+					self.logger.add_scalar('Valid/Cosine EER', self.history['cos_eer'][-1], self.total_iters-1)
+					self.logger.add_scalar('Valid/Best Cosine EER', np.min(self.history['cos_eer']), self.total_iters-1)
+					self.logger.add_scalar('Valid/ACC-1', np.min(self.history['acc_1']), self.total_iters-1)
+					self.logger.add_scalar('Valid/Best ACC-1', np.max(self.history['acc_1']), self.total_iters-1)
+					self.logger.add_scalar('Valid/ACC-5', np.min(self.history['acc_5']), self.total_iters-1)
+					self.logger.add_scalar('Valid/Best ACC-5', np.max(self.history['acc_5']), self.total_iters-1)
+					self.logger.add_pr_curve('E2E ROC', labels=labels, predictions=e2e_scores, global_step=self.total_iters-1)
+					self.logger.add_pr_curve('Cosine ROC', labels=labels, predictions=cos_scores, global_step=self.total_iters-1)
+					self.logger.add_histogram('Valid/COS_Scores', values=cos_scores, global_step=self.total_iters-1)
+					self.logger.add_histogram('Valid/E2E_Scores', values=e2e_scores, global_step=self.total_iters-1)
+					self.logger.add_histogram('Valid/Labels', values=labels, global_step=self.total_iters-1)
 
 				if self.verbose>1:
 					print(' ')
@@ -204,7 +228,11 @@ class TrainLoop(object):
 
 		loss = ce_loss + loss_bin
 		loss.backward()
+		grad_norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_gnorm)
 		self.optimizer.step()
+
+		if self.logger:
+			self.logger.add_scalar('Info/Grad_norm', grad_norm, self.total_iters)
 
 		return loss.item(), ce_loss.item(), loss_bin.item()
 
@@ -224,6 +252,11 @@ class TrainLoop(object):
 
 		loss.backward()
 		self.optimizer.step()
+		grad_norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_gnorm)
+
+		if self.logger:
+			self.logger.add_scalar('Info/Grad_norm', grad_norm, self.total_iters)
+
 		return loss.item()
 
 
