@@ -13,6 +13,7 @@ from time import sleep
 import os
 import sys
 import pickle
+from torch.utils.tensorboard import SummaryWriter
 
 def set_np_randomseed(worker_id):
 	np.random.seed(np.random.get_state()[1][0]+worker_id)
