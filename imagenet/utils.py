@@ -9,6 +9,14 @@ import sys
 import pickle
 from time import sleep
 
+def parse_args_for_log(args):
+	args_dict = dict(vars(args))
+	for arg_key in args_dict:
+		if args_dict[arg_key] is None:
+			args_dict[arg_key] = 'None'
+
+	return args_dict
+
 def adjust_learning_rate(optimizer, epoch, base_lr, n_epochs, lr_factor):
 	"""Sets the learning rate to the initial LR decayed by 10 every n_epochs epochs"""
 	lr = base_lr * (lr_factor ** (epoch // n_epochs))
