@@ -26,7 +26,7 @@ def get_cp_name(dir_):
 	return fname.split('/')[-1]
 
 # Training settings
-parser = argparse.ArgumentParser(description='Imagenet Verification')
+parser = argparse.ArgumentParser(description='Image retrieval')
 parser.add_argument('--batch-size', type=int, default=24, metavar='N', help='input batch size for training (default: 24)')
 parser.add_argument('--valid-batch-size', type=int, default=16, metavar='N', help='input batch size for testing (default: 16)')
 parser.add_argument('--epochs', type=int, default=200, metavar='N', help='number of epochs to train (default: 200)')
@@ -34,34 +34,52 @@ parser.add_argument('--data-path', type=str, default='./data_train', metavar='Pa
 parser.add_argument('--hdf-path', type=str, default=None, metavar='Path', help='Path to data stored in hdf. Has priority over data path if set')
 parser.add_argument('--valid-data-path', type=str, default='./data_val', metavar='Path', help='Path to data')
 parser.add_argument('--valid-hdf-path', type=str, default=None, metavar='Path', help='Path to valid data stored in hdf. Has priority over valid data path if set')
+parser.add_argument('--stats', choices=['cars', 'cub', 'sop', 'imagenet'], default='imagenet')
 parser.add_argument('--n-workers', type=int, default=4, metavar='N', help='Workers for data loading. Default is 4')
 parser.add_argument('--budget', type=int, default=100, metavar='N', help='Maximum training runs')
 parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
+parser.add_argument('--stats', choices=['cars', 'cub', 'sop', 'imagenet'], default='imagenet')
 parser.add_argument('--nclasses', type=int, default=1000, metavar='N', help='number of classes (default: 1000)')
 parser.add_argument('--pretrained', action='store_true', default=False, help='Get pretrained weights on imagenet. Encoder only')
+parser.add_argument('--pretrained-path', type=str, default=None, metavar='Path', help='Path to trained model. Discards outpu layer')
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 parser.add_argument('--checkpoint-path', type=str, default='./', metavar='Path', help='Path for checkpointing')
+parser.add_argument('--logdir', type=str, default=None, metavar='Path', help='Path for logs')
 args = parser.parse_args()
 args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
-def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, hdf_path, valid_data_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, max_gnorm, lr_factor):
+def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, hdf_path, valid_data_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, pretrained_path, max_gnorm, lr_factor, log_dir):
+
+	args_dict = locals()
 
 	cp_name = get_cp_name(checkpoint_path)
 
+	if log_dir != 'none':
+		writer = SummaryWriter(log_dir=log_dir, comment=model, purge_step=True)
+		writer.add_hparams(hparam_dict=args_dict, metric_dict={'best_eer':0.0})
+	else:
+		writer = None
+
+	if pretrained_path != 'none':
+		print('\nLoading pretrained model from: {}\n'.format(args.pretrained_path))
+		ckpt=torch.load(pretrained_path, map_location = lambda storage, loc: storage)
+		dropout_prob, n_hidden, hidden_size, emb_size = ckpt['dropout_prob'], ckpt['n_hidden'], ckpt['hidden_size'], ckpt['emb_size']
+		print('\nUsing pretrained config for discriminator. Ignoring args.')
+
 	if hdf_path != 'none':
-		transform_train = transforms.Compose([transforms.ToPILImage(), transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transforms.RandomRotation(30), transforms.RandomPerspective(p=0.2), transforms.ColorJitter(brightness=2), transforms.RandomGrayscale(), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])	
+		transform_train = transforms.Compose([transforms.ToPILImage(), transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transforms.RandomRotation(30), transforms.RandomPerspective(p=0.2), transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])	
 		trainset = Loader(hdf_path, transform_train)
 	else:
-		transform_train = transforms.Compose([transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transforms.RandomRotation(30), transforms.RandomPerspective(p=0.2), transforms.ColorJitter(brightness=2), transforms.RandomGrayscale(), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])	
+		transform_train = transforms.Compose([transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transforms.RandomRotation(30), transforms.RandomPerspective(p=0.2), transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])
 		trainset = datasets.ImageFolder(data_path, transform=transform_train)
 
 	train_loader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=n_workers, worker_init_fn=set_np_randomseed, pin_memory=True)
 
 	if valid_hdf_path != 'none':
-		transform_test = transforms.Compose([transforms.ToPILImage(), transforms.CenterCrop(224), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+		transform_test = transforms.Compose([transforms.ToPILImage(), transforms.Resize(256), transforms.CenterCrop(224), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
 		validset = Loader(args.valid_hdf_path, transform_test)
 	else:
-		transform_test = transforms.Compose([transforms.CenterCrop(224), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+		transform_test = transforms.Compose([transforms.Resize(256), transforms.CenterCrop(224), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
 		validset = datasets.ImageFolder(args.valid_data_path, transform=transform_test)
 		
 	valid_loader = torch.utils.data.DataLoader(validset, batch_size=valid_batch_size, shuffle=True, num_workers=n_workers, pin_memory=True)
@@ -72,6 +90,16 @@ def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidd
 		model_ = resnet.ResNet50(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes, emb_size=emb_size)
 	elif model == 'densenet':
 		model_ = densenet.DenseNet121(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes, emb_size=emb_size)
+
+	if pretrained_path != 'none':
+		if ckpt['sm_type'] == 'am_softmax':
+			del(ckpt['model_state']['out_proj.w'])
+		elif ckpt['sm_type'] == 'softmax':
+			del(ckpt['model_state']['out_proj.w.weight'])
+			del(ckpt['model_state']['out_proj.w.bias'])
+
+		print(model_.load_state_dict(ckpt['model_state'], strict=False))
+		print('\n')
 
 	if pretrained:
 		print('\nLoading pretrained encoder from torchvision\n')
@@ -92,7 +120,8 @@ def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidd
 
 	optimizer = optim.SGD(model_.parameters(), lr=lr, weight_decay=l2, momentum=momentum)
 
-	trainer = TrainLoop(model_, optimizer, train_loader, valid_loader, max_gnorm=max_gnorm, patience=int(patience), lr_factor=lr_factor, label_smoothing=smoothing, verbose=-1, cp_name=cp_name, save_cp=True, checkpoint_path=checkpoint_path, cuda=cuda)
+	trainer = TrainLoop(model_, optimizer, train_loader, valid_loader, max_gnorm=max_gnorm, patience=int(patience), lr_factor=lr_factor, label_smoothing=smoothing, verbose=-1, cp_name=cp_name, save_cp=True, checkpoint_path=checkpoint_path, cuda=cuda, logger=writer)
+
 	for i in range(5):
 
 		print(' ')
@@ -156,10 +185,12 @@ checkpoint_path=args.checkpoint_path
 softmax=instru.var.OrderedDiscrete(['softmax', 'am_softmax'])
 n_classes = args.n_classes
 pretrained = args.pretrained
+pretrained_path = args.pretrained_path if args.pretrained_path else 'none'
 max_gnorm = instru.var.OrderedDiscrete([10, 30, 100])
 lr_factor = instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.8])
+log_dir = args.logdir if args.logdir else 'none'
 
-instrum = instru.Instrumentation(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, max_gnorm, lr_factor)
+instrum = instru.Instrumentation(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, pretrained_path, max_gnorm, lr_factor, log_dir)
 
 hp_optimizer = optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget)
 

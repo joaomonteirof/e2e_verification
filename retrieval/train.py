@@ -65,12 +65,20 @@ parser.add_argument('--save-every', type=int, default=1, metavar='N', help='how 
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 parser.add_argument('--no-cp', action='store_true', default=False, help='Disables checkpointing')
 parser.add_argument('--verbose', type=int, default=1, metavar='N', help='Verbose is activated if > 0')
+parser.add_argument('--logdir', type=str, default=None, metavar='Path', help='Path for checkpointing')
 args = parser.parse_args()
 args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
 if args.pretrained_path:
 	print('\nLoading pretrained model from: {}\n'.format(args.pretrained_path))
 	ckpt=torch.load(args.pretrained_path, map_location = lambda storage, loc: storage)
+
+if args.logdir:
+	writer = SummaryWriter(log_dir=args.logdir, comment=args.model, purge_step=True if args.checkpoint_epoch is None else False)
+	args_dict = parse_args_for_log(args)
+	writer.add_hparams(hparam_dict=args_dict, metric_dict={'best_eer':0.0})
+else:
+	writer = None
 
 if args.stats=='cars':
 	mean, std = [0.4461, 0.4329, 0.4345], [0.2888, 0.2873, 0.2946]
@@ -148,7 +156,7 @@ if args.cuda:
 
 optimizer = optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.l2, momentum=args.momentum)
 
-trainer = TrainLoop(model, optimizer, train_loader, valid_loader, max_gnorm=args.max_gnorm, patience=args.patience, lr_factor=args.lr_factor, label_smoothing=args.smoothing, verbose=args.verbose, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, cuda=args.cuda)
+trainer = TrainLoop(model, optimizer, train_loader, valid_loader, max_gnorm=args.max_gnorm, patience=args.patience, lr_factor=args.lr_factor, label_smoothing=args.smoothing, verbose=args.verbose, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, cuda=args.cuda, logger=writer)
 
 if args.verbose >0:
 	print('\nCuda Mode is: {}'.format(args.cuda))
