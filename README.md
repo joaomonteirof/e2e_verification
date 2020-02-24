@@ -1,6 +1,6 @@
 # E2E verification
 
-Joint metric learning and distance metric learning for end-to-end verification.
+Joint metric learning and distance metric learning for end-to-end verification. Part of the code for: [An end-to-end approach for the verification problem: learning the right distance](https://arxiv.org/abs/2002.09469)
 
 ## Requirements
 
