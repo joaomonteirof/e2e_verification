@@ -184,7 +184,7 @@ if args.logdir:
 	writer.add_hparams(hparam_dict=args_dict, metric_dict={'best_eer':best_eer[0]})
 
 if args.verbose >0:
-	print('Best EER: {}'.format(best_eer))
+	print('Best EER: {}'.format(best_eer[0]))
 
 if args.out_file:
 	out_file = open(args.out_file, 'wb')
