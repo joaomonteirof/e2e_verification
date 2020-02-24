@@ -17,7 +17,9 @@ tensorboard
 
 ## Cifar-10 and Mini-ImageNet
 
-### Cifar will be downloaded automatticaly by Torchvision. Mini-Imagenet can be downloaded from: https://mtl.yyliu.net/download/
+### Prepare data
+
+Cifar will be downloaded automatticaly by Torchvision. Mini-Imagenet can be downloaded from: https://mtl.yyliu.net/download/
 
 ### Example for running the train script:
 
