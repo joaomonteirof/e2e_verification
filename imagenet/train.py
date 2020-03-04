@@ -14,6 +14,7 @@ import os
 import sys
 import pickle
 from utils import *
+from models.losses import AMSoftmax, Softmax
 from torch.utils.tensorboard import SummaryWriter
 
 def set_np_randomseed(worker_id):
@@ -145,6 +146,12 @@ elif args.pretrained:
 		model_pretrained = torchvision.models.densenet121(pretrained=True)
 
 	out_load = model.load_state_dict(model_pretrained.state_dict(), strict=False)
+
+	if isinstance(model.out_proj, AMSoftmax):
+		model.out_proj.w.data = model_pretrained.fc.weight.data.clone()
+	elif isinstance(model.out_proj, Softmax):
+		model.out_proj.w.weight.data = model_pretrained.fc.weight.data.clone()
+		model.out_proj.w.bias.data = model_pretrained.fc.bias.data.clone()
 
 	if args.verbose >0:
 		print(out_load)
