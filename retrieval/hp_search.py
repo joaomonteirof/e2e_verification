@@ -38,7 +38,6 @@ parser.add_argument('--stats', choices=['cars', 'cub', 'sop', 'imagenet'], defau
 parser.add_argument('--n-workers', type=int, default=4, metavar='N', help='Workers for data loading. Default is 4')
 parser.add_argument('--budget', type=int, default=100, metavar='N', help='Maximum training runs')
 parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
-parser.add_argument('--stats', choices=['cars', 'cub', 'sop', 'imagenet'], default='imagenet')
 parser.add_argument('--nclasses', type=int, default=1000, metavar='N', help='number of classes (default: 1000)')
 parser.add_argument('--pretrained', action='store_true', default=False, help='Get pretrained weights on imagenet. Encoder only')
 parser.add_argument('--pretrained-path', type=str, default=None, metavar='Path', help='Path to trained model. Discards outpu layer')
