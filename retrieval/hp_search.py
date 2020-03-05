@@ -3,6 +3,7 @@ from nevergrad import instrumentation as instru
 import argparse
 import torch
 from torch.utils.data import DataLoader
+from data_load import Loader
 from train_loop import TrainLoop
 import torch.optim as optim
 from torchvision import datasets, transforms
