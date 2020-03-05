@@ -85,9 +85,7 @@ def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidd
 		print(model_.load_state_dict(model_pretrained.state_dict(), strict=False))
 		print('\n')
 
-		if isinstance(model.out_proj, AMSoftmax):
-			model_.out_proj.w.data = model_pretrained.fc.weight.data.clone()
-		elif isinstance(model.out_proj, Softmax):
+		if isinstance(model.out_proj, Softmax):
 			model_.out_proj.w.weight.data = model_pretrained.fc.weight.data.clone()
 			model_.out_proj.w.bias.data = model_pretrained.fc.bias.data.clone()
 
