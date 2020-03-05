@@ -47,7 +47,7 @@ parser.add_argument('--logdir', type=str, default=None, metavar='Path', help='Pa
 args = parser.parse_args()
 args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
-def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, hdf_path, valid_data_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, pretrained_path, max_gnorm, lr_factor, log_dir):
+def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, hdf_path, valid_data_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, pretrained_path, max_gnorm, lr_factor, stats, log_dir):
 
 	args_dict = locals()
 
@@ -64,6 +64,15 @@ def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidd
 		ckpt=torch.load(pretrained_path, map_location = lambda storage, loc: storage)
 		dropout_prob, n_hidden, hidden_size, emb_size = ckpt['dropout_prob'], ckpt['n_hidden'], ckpt['hidden_size'], ckpt['emb_size']
 		print('\nUsing pretrained config for discriminator. Ignoring args.')
+
+	if stats=='cars':
+		mean, std = [0.4461, 0.4329, 0.4345], [0.2888, 0.2873, 0.2946]
+	elif stats=='cub':
+		mean, std = [0.4782, 0.4925, 0.4418], [0.2330, 0.2296, 0.2647]
+	elif stats=='sop':
+		mean, std = [0.5603, 0.5155, 0.4796], [0.2939, 0.2991, 0.3085]
+	elif stats=='imagenet':
+		mean, std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
 
 	if hdf_path != 'none':
 		transform_train = transforms.Compose([transforms.ToPILImage(), transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transforms.RandomRotation(30), transforms.RandomPerspective(p=0.2), transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])	
@@ -187,9 +196,10 @@ pretrained = args.pretrained
 pretrained_path = args.pretrained_path if args.pretrained_path else 'none'
 max_gnorm = instru.var.OrderedDiscrete([10, 30, 100])
 lr_factor = instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.8])
+stats = args.stats
 log_dir = args.logdir if args.logdir else 'none'
 
-instrum = instru.Instrumentation(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, pretrained_path, max_gnorm, lr_factor, log_dir)
+instrum = instru.Instrumentation(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, pretrained_path, max_gnorm, lr_factor, stats, log_dir)
 
 hp_optimizer = optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget)
 
