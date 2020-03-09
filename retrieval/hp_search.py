@@ -57,7 +57,7 @@ def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidd
 	cp_name = get_cp_name(checkpoint_path)
 
 	if log_dir != 'none':
-		writer = SummaryWriter(log_dir=log_dir, comment=model, purge_step=True)
+		writer = SummaryWriter(log_dir=os.path.join(log_dir, cp_name), comment=model, purge_step=True)
 		writer.add_hparams(hparam_dict=args_dict, metric_dict={'best_eer':0.0})
 	else:
 		writer = None
