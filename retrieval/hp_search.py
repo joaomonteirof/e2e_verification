@@ -78,10 +78,10 @@ def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidd
 		mean, std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
 
 	if hdf_path != 'none':
-		transform_train = transforms.Compose([transforms.ToPILImage(), transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])	
+		transform_train = transforms.Compose([transforms.ToPILImage(), transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transforms.RandomRotation(30), transforms.RandomPerspective(p=0.2), transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])	
 		trainset = Loader(hdf_path, transform_train)
 	else:
-		transform_train = transforms.Compose([transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])
+		transform_train = transforms.Compose([transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transforms.RandomRotation(30), transforms.RandomPerspective(p=0.2), transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])
 		trainset = datasets.ImageFolder(data_path, transform=transform_train)
 
 	train_loader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=n_workers, worker_init_fn=set_np_randomseed, pin_memory=True)
@@ -181,7 +181,7 @@ lr = instru.var.OrderedDiscrete([1e-2, 1e-3, 1e-4, 1e-5])
 l2 = instru.var.OrderedDiscrete([1e-2, 1e-3, 1e-4, 1e-5])
 momentum = instru.var.OrderedDiscrete([0.1, 0.5, 0.9])
 smoothing=instru.var.OrderedDiscrete([0.0, 0.05, 0.1, 0.2])
-patience = instru.var.OrderedDiscrete([3, 5, 10, 20])
+patience = instru.var.OrderedDiscrete([3, 5, 10, 25, 50, 100])
 model = args.model
 emb_size = instru.var.OrderedDiscrete([128, 256, 350, 512])
 n_hidden=instru.var.OrderedDiscrete([2, 3, 4, 5])
