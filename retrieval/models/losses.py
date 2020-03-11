@@ -8,7 +8,7 @@ class AMSoftmax(nn.Module):
 
 	## adapted from https://github.com/Joker316701882/Additive-Margin-Softmax/blob/master/AM_softmax.py
 
-	def __init__(self, input_features, output_features, m=0.35, s=30.0):
+	def __init__(self, input_features, output_features, m=0.4, s=30.0):
 		super().__init__()
 		self.input_dim = input_features  # number of input features
 		self.output_dim = output_features  # number of classes
