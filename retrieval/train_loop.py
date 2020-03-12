@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from harvester import HardestNegativeTripletSelector, AllTripletSelector
 from models.losses import LabelSmoothingLoss
-from utils import compute_eer
+from utils import compute_eer, adjust_learning_rate
 from data_load import Loader
 
 class TrainLoop(object):
@@ -27,7 +27,9 @@ class TrainLoop(object):
 		self.pretrain = pretrain
 		self.model = model
 		self.optimizer = optimizer
+		self.patience = patience
 		self.max_gnorm = max_gnorm
+		self.lr_factor = lr_factor
 		self.train_loader = train_loader
 		self.valid_loader = valid_loader
 		self.total_iters = 0
@@ -48,9 +50,6 @@ class TrainLoop(object):
 		if self.valid_loader is not None:
 			self.history['e2e_eer'] = []
 			self.history['cos_eer'] = []
-			self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, factor=lr_factor, patience=patience, verbose=True if self.verbose>0 else False, threshold=1e-4, min_lr=1e-7)
-		else:
-			self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[20, 100, 200, 300, 400], gamma=0.1)
 
 		if checkpoint_epoch is not None:
 			self.load_checkpoint(self.save_epoch_fmt.format(checkpoint_epoch))
@@ -62,6 +61,8 @@ class TrainLoop(object):
 			np.random.seed()
 			if isinstance(self.train_loader.dataset, Loader):
 				self.train_loader.dataset.update_lists()
+
+			adjust_learning_rate(self.optimizer, self.cur_epoch, self.base_lr, self.patience, self.lr_factor)
 
 			if self.verbose>0:
 				print(' ')
@@ -152,11 +153,6 @@ class TrainLoop(object):
 					print(' ')
 					print('Current e2e EER, best e2e EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['e2e_eer'][-1], np.min(self.history['e2e_eer']), 1+np.argmin(self.history['e2e_eer'])))
 					print('Current cos EER, best cos EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['cos_eer'][-1], np.min(self.history['cos_eer']), 1+np.argmin(self.history['cos_eer'])))
-
-				self.scheduler.step(np.min([self.history['e2e_eer'][-1], self.history['cos_eer'][-1]]))
-
-			else:
-				self.scheduler.step()
 
 			if self.verbose>0:
 				print('Current LR: {}'.format(self.optimizer.param_groups[0]['lr']))
@@ -297,7 +293,6 @@ class TrainLoop(object):
 		'n_classes': self.model.n_classes,
 		'emb_size': self.model.emb_size,
 		'optimizer_state': self.optimizer.state_dict(),
-		'scheduler_state': self.scheduler.state_dict(),
 		'history': self.history,
 		'total_iters': self.total_iters,
 		'cur_epoch': self.cur_epoch}
@@ -315,8 +310,6 @@ class TrainLoop(object):
 			self.model.load_state_dict(ckpt['model_state'])
 			# Load optimizer state
 			self.optimizer.load_state_dict(ckpt['optimizer_state'])
-			# Load scheduler state
-			self.scheduler.load_state_dict(ckpt['scheduler_state'])
 			# Load history
 			self.history = ckpt['history']
 			self.total_iters = ckpt['total_iters']
