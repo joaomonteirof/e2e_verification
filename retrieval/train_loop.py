@@ -27,6 +27,7 @@ class TrainLoop(object):
 		self.pretrain = pretrain
 		self.model = model
 		self.optimizer = optimizer
+		self.base_lr = self.optimizer.param_groups[0]['lr']
 		self.patience = patience
 		self.max_gnorm = max_gnorm
 		self.lr_factor = lr_factor
