@@ -47,6 +47,8 @@ if __name__ == '__main__':
 	valid_loader = torch.utils.data.DataLoader(validset, batch_size=args.batch_size, shuffle=False, num_workers=args.n_workers)
 
 	r_at_k_e2e = {'R@'+str(x):0 for x in args.k_list}
+	r_at_k_cos = {'R@'+str(x):0 for x in args.k_list}
+	r_at_k_fus = {'R@'+str(x):0 for x in args.k_list}
 
 	ckpt = torch.load(args.cp_path, map_location = lambda storage, loc: storage)
 	try :
@@ -121,32 +123,50 @@ if __name__ == '__main__':
 			enroll_emb = embeddings[i].unsqueeze(0).to(device)
 
 			e2e_scores = []
+			cos_scores = []
+			fus_scores = []
 
 			for j in range(0, len(labels), args.batch_size):
 
 				test_emb = embeddings[j:(min(j+args.batch_size, len(embeddings))),:].to(device)
 				enroll_emb_repeated = enroll_emb.repeat(test_emb.size(0), 1)
 
-				dist = model.forward_bin(torch.cat([enroll_emb_repeated, test_emb], 1)).squeeze()
+				dist_e2e = model.forward_bin(torch.cat([enroll_emb_repeated, test_emb], 1)).squeeze(-1)
+				dist_cos = torch.nn.functional.cosine_similarity(enroll_emb, test_emb)
+				dist_fus = (dist_e2e + 0.5*(dist_cos+1.))*0.5
 				
 				for k in range(dist.size(0)):
 
 					if i==(j+k): continue ## skip same example
 
-					e2e_scores.append( [dist[k].item(), labels[j+k]] )
+					e2e_scores.append( [dist_e2e[k].item(), labels[j+k]] )
+					cos_scores.append( [dist_cos[k].item(), labels[j+k]] )
+					fus_scores.append( [dist_fus[k].item(), labels[j+k]] )
 
 			sorted_e2e_classes = np.array(sorted(e2e_scores, reverse=True))[:,1]
+			sorted_cos_classes = np.array(sorted(cos_scores, reverse=True))[:,1]
+			sorted_fus_classes = np.array(sorted(fus_scores, reverse=True))[:,1]
 
 			for k in args.k_list:
 				if label in sorted_e2e_classes[:k]:
 					r_at_k_e2e['R@'+str(k)]+=1
+				if label in sorted_cos_classes[:k]:
+					r_at_k_cos['R@'+str(k)]+=1
+				if label in sorted_fus_classes[:k]:
+					r_at_k_fus['R@'+str(k)]+=1
 
 
 	print('\nScoring done')
 
 for k in args.k_list:
 	r_at_k_e2e['R@'+str(k)]/=len(labels)
+	r_at_k_cos['R@'+str(k)]/=len(labels)
+	r_at_k_fus['R@'+str(k)]/=len(labels)
 
-print('\nR@k:')
+print('\nE2E R@k:')
 print(r_at_k_e2e)
+print('\nCOS R@k:')
+print(r_at_k_cos)
+print('\nFUS R@k:')
+print(r_at_k_fus)
 print('\n')
