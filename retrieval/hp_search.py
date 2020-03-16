@@ -177,11 +177,11 @@ def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidd
 	print('Returning dummy cost due to failures while training.')
 	return 0.99
 
-lr = instru.var.OrderedDiscrete([1e-2, 1e-3, 1e-4, 1e-5])
-l2 = instru.var.OrderedDiscrete([1e-2, 1e-3, 1e-4, 1e-5])
+lr = instru.var.Array(1).asfloat().bounded(1e-3, 1e-4)
+l2 = instru.var.Array(1).asfloat().bounded(1e-3, 1e-5)
 momentum = instru.var.OrderedDiscrete([0.1, 0.5, 0.9])
 smoothing=instru.var.OrderedDiscrete([0.0, 0.05, 0.1, 0.2])
-patience = instru.var.OrderedDiscrete([3, 5, 10, 25, 50, 100])
+patience = instru.var.OrderedDiscrete([5, 10, 50, 100, 150])
 model = args.model
 emb_size = instru.var.OrderedDiscrete([128, 256, 350, 512])
 n_hidden=instru.var.OrderedDiscrete([2, 3, 4, 5])

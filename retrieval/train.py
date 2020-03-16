@@ -70,9 +70,6 @@ parser.add_argument('--logdir', type=str, default=None, metavar='Path', help='Pa
 args = parser.parse_args()
 args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
-if args.pretrained_path:
-	print('\nLoading pretrained model from: {}\n'.format(args.pretrained_path))
-	ckpt=torch.load(args.pretrained_path, map_location = lambda storage, loc: storage)
 
 if args.logdir:
 	writer = SummaryWriter(log_dir=args.logdir, comment=args.model, purge_step=True if args.checkpoint_epoch is None else False)
