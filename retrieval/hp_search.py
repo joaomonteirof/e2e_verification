@@ -50,7 +50,7 @@ args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
 print(args,'\n')
 
-def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, pretrained_path, max_gnorm, lr_factor, stats, log_dir):
+def train(lr, l2, beta1, beta2, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, pretrained_path, max_gnorm, lr_factor, stats, log_dir):
 
 	args_dict = locals()
 
@@ -129,7 +129,7 @@ def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidd
 		model_ = model_.cuda(device)
 		torch.backends.cudnn.benchmark=True
 
-	optimizer = optim.SGD(model_.parameters(), lr=lr, weight_decay=l2, momentum=momentum)
+	optimizer = optim.Adam(model_.parameters(), lr=lr, weight_decay=l2, betas=(beta1, beta2))
 
 	trainer = TrainLoop(model_, optimizer, train_loader, valid_loader, max_gnorm=max_gnorm, patience=int(patience), lr_factor=lr_factor, label_smoothing=smoothing, verbose=-1, cp_name=cp_name, save_cp=True, checkpoint_path=checkpoint_path, cuda=cuda, logger=writer)
 
@@ -144,7 +144,7 @@ def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidd
 		print('Dropout rate: {}'.format(dropout_prob))
 		print('Batch size: {}'.format(batch_size))
 		print('LR: {}'.format(lr))
-		print('Momentum: {}'.format(momentum))
+		print('Adam params: {}, {}'.format(beta1, beta2))
 		print('l2: {}'.format(l2))
 		print('Label smoothing: {}'.format(smoothing))
 		print('Patience: {}'.format(patience))
@@ -179,7 +179,8 @@ def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidd
 
 lr = instru.var.Array(1).asfloat().bounded(1e-4, 1e-3)
 l2 = instru.var.Array(1).asfloat().bounded(1e-5, 1e-3)
-momentum = instru.var.OrderedDiscrete([0.1, 0.5, 0.9])
+beta1 = instru.var.OrderedDiscrete([0.1, 0.5, 0.9])
+beta2 = instru.var.Array(1).asfloat().bounded(0.9, 0.999)
 smoothing=instru.var.OrderedDiscrete([0.0, 0.05, 0.1, 0.2])
 patience = instru.var.OrderedDiscrete([5, 10, 50, 100, 150])
 model = args.model
@@ -206,7 +207,7 @@ lr_factor = instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.8])
 stats = args.stats
 log_dir = args.logdir if args.logdir else 'none'
 
-instrum = instru.Instrumentation(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, pretrained_path, max_gnorm, lr_factor, stats, log_dir)
+instrum = instru.Instrumentation(lr, l2, beta1, beta2, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, pretrained_path, max_gnorm, lr_factor, stats, log_dir)
 
 hp_optimizer = optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget)
 

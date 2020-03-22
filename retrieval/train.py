@@ -42,7 +42,8 @@ parser.add_argument('--l2', type=float, default=1e-4, metavar='lambda', help='L2
 parser.add_argument('--smoothing', type=float, default=0.2, metavar='l', help='Label smoothing (default: 0.2)')
 parser.add_argument('--patience', type=int, default=10, metavar='S', help='Epochs to wait before decreasing LR by a factor of 0.5 (default: 10)')
 parser.add_argument('--lr-factor', type=float, default=0.5, metavar='LRFACTOR', help='Factor to reduce lr after patience epochs with no improvement (default: 0.5)')
-parser.add_argument('--momentum', type=float, default=0.9, metavar='lambda', help='Momentum (default: 0.9)')
+parser.add_argument('--beta1', type=float, default=0.5, metavar='lambda', help='Adam beta param (default: 0.5)')
+parser.add_argument('--beta2', type=float, default=0.999, metavar='lambda', help='Adam beta param (default: 0.999)')
 parser.add_argument('--max-gnorm', type=float, default=10., metavar='clip', help='Max gradient norm (default: 10.0)')
 parser.add_argument('--checkpoint-epoch', type=int, default=None, metavar='N', help='epoch to load for checkpointing. If None, training starts from scratch')
 parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
@@ -152,7 +153,7 @@ if args.cuda:
 	device = get_freer_gpu()
 	model = model.to(device)
 
-optimizer = optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.l2, momentum=args.momentum)
+optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.l2, betas=(args.beta1, args.beta2))
 
 trainer = TrainLoop(model, optimizer, train_loader, valid_loader, max_gnorm=args.max_gnorm, patience=args.patience, lr_factor=args.lr_factor, label_smoothing=args.smoothing, verbose=args.verbose, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, cuda=args.cuda, logger=writer)
 
@@ -161,7 +162,7 @@ if args.verbose >0:
 	print('Selected model: {}'.format(args.model))
 	print('Batch size: {}'.format(args.batch_size))
 	print('LR: {}'.format(args.lr))
-	print('Momentum: {}'.format(args.momentum))
+	print('Adam params: {}, {}'.format(args.beta1, args.beta2))
 	print('l2: {}'.format(args.l2))
 	print('Label smoothing: {}'.format(args.smoothing))
 	print('Patience: {}'.format(args.patience))
