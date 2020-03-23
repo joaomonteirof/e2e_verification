@@ -69,6 +69,7 @@ if __name__ == '__main__':
 
 	mem_embeddings = {}
 
+	model.classifier = model.classifier[:-1]
 	model.eval()
 
 	with torch.no_grad():
@@ -126,7 +127,7 @@ if __name__ == '__main__':
 
 	e2e_scores = np.asarray(e2e_scores)
 	cos_scores = np.asarray(cos_scores)
-	all_scores = (e2e_scores + 0.5*(cos_scores+1.))*0.5
+	all_scores = ((torch.sigmoid(torch.from_numpy(e2e_scores).float()) + 0.5*(torch.from_numpy(cos_scores)+1.))*0.5).numpy()
 	labels = np.asarray(labels)
 
 	eer, auc, avg_precision, acc, threshold = compute_metrics(labels, e2e_scores)

@@ -65,6 +65,7 @@ if __name__ == '__main__':
 	else:
 		device = torch.device('cpu')
 
+	model.classifier = model.classifier[:-1]
 	model.eval()
 
 	if args.emb_path:

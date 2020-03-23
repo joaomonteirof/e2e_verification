@@ -75,6 +75,7 @@ if __name__ == '__main__':
 	else:
 		device = torch.device('cpu')
 
+	model.classifier = model.classifier[:-1]
 	model.eval()
 
 	if args.emb_path:
@@ -133,7 +134,7 @@ if __name__ == '__main__':
 
 				dist_e2e = model.forward_bin(torch.cat([enroll_emb_repeated, test_emb], 1)).squeeze(-1)
 				dist_cos = torch.nn.functional.cosine_similarity(enroll_emb, test_emb)
-				dist_fus = (dist_e2e + 0.5*(dist_cos+1.))*0.5
+				dist_fus = (torch.sigmoid(dist_e2e) + 0.5*(dist_cos+1.))*0.5
 				
 				for k in range(dist_e2e.size(0)):
 

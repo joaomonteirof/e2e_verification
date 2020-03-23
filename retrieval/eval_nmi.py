@@ -69,6 +69,7 @@ if __name__ == '__main__':
 	class_count = {}
 	mem_embeddings = {}
 
+	model.classifier = model.classifier[:-1]
 	model.eval()
 
 	if args.emb_path:

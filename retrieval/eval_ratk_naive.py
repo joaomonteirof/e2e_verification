@@ -61,6 +61,7 @@ if __name__ == '__main__':
 	e2e_scores = {}
 	mem_embeddings = {}
 
+	model.classifier = model.classifier[:-1]
 	model.eval()
 
 	with torch.no_grad():

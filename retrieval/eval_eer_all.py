@@ -62,6 +62,9 @@ if __name__ == '__main__':
 
 		print(model.load_state_dict(ckpt['model_state'], strict=False))
 
+		model.classifier = model.classifier[:-1]
+		model.eval()
+
 		if args.cuda:
 			device = get_freer_gpu()
 			model = model.cuda(device)
@@ -115,7 +118,7 @@ if __name__ == '__main__':
 
 		e2e_scores = np.asarray(e2e_scores)
 		cos_scores = np.asarray(cos_scores)
-		all_scores = (e2e_scores + 0.5*(cos_scores+1.))*0.5
+		all_scores = ((torch.sigmoid(torch.from_numpy(e2e_scores).float()) + 0.5*(torch.from_numpy(cos_scores)+1.))*0.5).numpy()
 		labels = np.asarray(labels)
 		model_id = cp.split('/')[-1]
 
