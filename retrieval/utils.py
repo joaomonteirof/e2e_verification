@@ -9,9 +9,9 @@ import sys
 import pickle
 from time import sleep
 
-def adjust_learning_rate(optimizer, epoch, base_lr, n_epochs, lr_factor):
+def adjust_learning_rate(optimizer, epoch, base_lr, n_epochs, lr_factor, min_lr=1e-8):
 	"""Sets the learning rate to the initial LR decayed by 10 every n_epochs epochs"""
-	lr = base_lr * (lr_factor ** (epoch // n_epochs))
+	lr = max( base_lr * (lr_factor ** (epoch // n_epochs)), min_lr)
 	for param_group in optimizer.param_groups:
 		param_group['lr'] = lr
 
