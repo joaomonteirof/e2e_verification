@@ -177,12 +177,12 @@ def train(lr, l2, beta1, beta2, smoothing, patience, model, emb_size, n_hidden, 
 	print('Returning dummy cost due to failures while training.')
 	return 0.99
 
-lr = instru.var.Array(1).asfloat().bounded(1e-4, 1e-3)
+lr = instru.var.Array(1).asfloat().bounded(1e-5, 1e-3)
 l2 = instru.var.Array(1).asfloat().bounded(1e-5, 1e-3)
-beta1 = instru.var.OrderedDiscrete([0.1, 0.5, 0.9])
+beta1 = instru.var.Array(1).asfloat().bounded(0.01, 0.999)
 beta2 = instru.var.Array(1).asfloat().bounded(0.9, 0.999)
 smoothing=instru.var.OrderedDiscrete([0.0, 0.05, 0.1, 0.2])
-patience = instru.var.OrderedDiscrete([5, 10, 50, 100, 150])
+patience = instru.var.OrderedDiscrete([10, 20, 50, 100, 150])
 model = args.model
 emb_size = instru.var.OrderedDiscrete([128, 256, 350, 512])
 n_hidden=instru.var.OrderedDiscrete([2, 3, 4, 5])
@@ -202,7 +202,7 @@ softmax=instru.var.OrderedDiscrete(['softmax', 'am_softmax'])
 n_classes = args.nclasses
 pretrained = args.pretrained
 pretrained_path = args.pretrained_path if args.pretrained_path is not None else 'none'
-max_gnorm = instru.var.OrderedDiscrete([10, 30, 100])
+max_gnorm = instru.var.OrderedDiscrete([10, 50, 100])
 lr_factor = instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.8])
 stats = args.stats
 log_dir = args.logdir if args.logdir else 'none'
