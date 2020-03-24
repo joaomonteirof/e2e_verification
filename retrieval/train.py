@@ -166,7 +166,7 @@ if args.verbose >0:
 	print('l2: {}'.format(args.l2))
 	print('Label smoothing: {}'.format(args.smoothing))
 	print('Patience: {}'.format(args.patience))
-	print('LR reduction factor'.format(args.lr_factor))
+	print('LR reduction factor: {}'.format(args.lr_factor))
 	print('Max. grad norm: {}'.format(args.max_gnorm))
 	print('Dropout rate: {}'.format(args.dropout_prob))
 	print('Softmax Mode is: {}'.format(args.softmax))
