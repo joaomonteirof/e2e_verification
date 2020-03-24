@@ -13,6 +13,7 @@ import os
 import sys
 from time import sleep
 from torch.utils.tensorboard import SummaryWriter
+from optimizer import TransformerOptimizer
 from utils import *
 
 def get_cp_name(dir_):
@@ -50,23 +51,25 @@ args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
 print(args,'\n')
 
-def train(lr, l2, beta1, beta2, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, pretrained_path, max_gnorm, lr_factor, stats, log_dir):
+def train(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, pretrained_path, max_gnorm, stats, log_dir):
 
 	args_dict = locals()
 
 	cp_name = get_cp_name(checkpoint_path)
-
-	if log_dir != 'none':
-		writer = SummaryWriter(log_dir=os.path.join(log_dir, cp_name), comment=model, purge_step=True)
-		writer.add_hparams(hparam_dict=args_dict, metric_dict={'best_eer':0.0})
-	else:
-		writer = None
 
 	if pretrained_path != 'none':
 		print('\nLoading pretrained model from: {}\n'.format(args.pretrained_path))
 		ckpt=torch.load(pretrained_path, map_location = lambda storage, loc: storage)
 		dropout_prob, n_hidden, hidden_size, emb_size = ckpt['dropout_prob'], ckpt['n_hidden'], ckpt['hidden_size'], ckpt['emb_size']
 		print('\nUsing pretrained config for discriminator. Ignoring args.')
+
+	args_dict['dropout_prob'], args_dict['n_hidden'], args_dict['hidden_size'], args_dict['emb_size'] = dropout_prob, n_hidden, hidden_size, emb_size
+
+	if log_dir != 'none':
+		writer = SummaryWriter(log_dir=os.path.join(log_dir, cp_name), comment=model, purge_step=True)
+		writer.add_hparams(hparam_dict=args_dict, metric_dict={'best_eer':0.0})
+	else:
+		writer = None
 
 	if stats=='cars':
 		mean, std = [0.4461, 0.4329, 0.4345], [0.2888, 0.2873, 0.2946]
@@ -129,9 +132,9 @@ def train(lr, l2, beta1, beta2, smoothing, patience, model, emb_size, n_hidden, 
 		model_ = model_.cuda(device)
 		torch.backends.cudnn.benchmark=True
 
-	optimizer = optim.Adam(model_.parameters(), lr=lr, weight_decay=l2, betas=(beta1, beta2))
+	optimizer = TransformerOptimizer(optim.SGD(model_.parameters(), lr=lr, momentum=momentum, weight_decay=l2, nesterov=True), lr=lr, warmup_steps=warmup)
 
-	trainer = TrainLoop(model_, optimizer, train_loader, valid_loader, max_gnorm=max_gnorm, patience=int(patience), lr_factor=lr_factor, label_smoothing=smoothing, verbose=-1, cp_name=cp_name, save_cp=True, checkpoint_path=checkpoint_path, cuda=cuda, logger=writer)
+	trainer = TrainLoop(model_, optimizer, train_loader, valid_loader, max_gnorm=max_gnorm, label_smoothing=smoothing, verbose=-1, cp_name=cp_name, save_cp=True, checkpoint_path=checkpoint_path, cuda=cuda, logger=writer)
 
 	for i in range(5):
 
@@ -144,10 +147,10 @@ def train(lr, l2, beta1, beta2, smoothing, patience, model, emb_size, n_hidden, 
 		print('Dropout rate: {}'.format(dropout_prob))
 		print('Batch size: {}'.format(batch_size))
 		print('LR: {}'.format(lr))
-		print('Adam params: {}, {}'.format(beta1, beta2))
+		print('Momentum: {}'.format(momentum))
 		print('l2: {}'.format(l2))
 		print('Label smoothing: {}'.format(smoothing))
-		print('Patience: {}'.format(patience))
+		print('Warmup iterations: {}'.format(warmup))
 		print('Softmax Mode is: {}'.format(softmax))
 		print('Pretrained: {}'.format(pretrained))
 		print('Pretrained path: {}'.format(pretrained_path))
@@ -177,17 +180,16 @@ def train(lr, l2, beta1, beta2, smoothing, patience, model, emb_size, n_hidden, 
 	print('Returning dummy cost due to failures while training.')
 	return 0.99
 
-lr = instru.var.Array(1).asfloat().bounded(1e-5, 1e-3)
+lr = instru.var.Array(1).asfloat().bounded(1e-2, 1.00)
 l2 = instru.var.Array(1).asfloat().bounded(1e-5, 1e-3)
-beta1 = instru.var.Array(1).asfloat().bounded(0.01, 0.999)
-beta2 = instru.var.Array(1).asfloat().bounded(0.9, 0.999)
+momentum = instru.var.Array(1).asfloat().bounded(0.01, 0.999)
 smoothing=instru.var.OrderedDiscrete([0.0, 0.05, 0.1, 0.2])
-patience = instru.var.OrderedDiscrete([10, 20, 50, 100, 150])
+warmup = instru.var.OrderedDiscrete([1, 100, 1000, 5000])
 model = args.model
-emb_size = instru.var.OrderedDiscrete([128, 256, 350, 512])
-n_hidden=instru.var.OrderedDiscrete([2, 3, 4, 5])
-hidden_size=instru.var.OrderedDiscrete([128, 256, 350, 512])
-dropout_prob=instru.var.OrderedDiscrete([0.01, 0.1, 0.2, 0.3])
+emb_size = instru.var.OrderedDiscrete([128, 256, 350, 512]) if args.pretrained_path is not None else 1
+n_hidden=instru.var.OrderedDiscrete([2, 3, 4, 5])if args.pretrained_path is not None else 1
+hidden_size=instru.var.OrderedDiscrete([128, 256, 350, 512]) if args.pretrained_path is not None else 1
+dropout_prob=instru.var.OrderedDiscrete([0.01, 0.1, 0.2, 0.3])if args.pretrained_path is not None else 1
 epochs = args.epochs
 batch_size = args.batch_size
 valid_batch_size = args.valid_batch_size
@@ -203,11 +205,10 @@ n_classes = args.nclasses
 pretrained = args.pretrained
 pretrained_path = args.pretrained_path if args.pretrained_path is not None else 'none'
 max_gnorm = instru.var.OrderedDiscrete([10, 50, 100])
-lr_factor = instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.8])
 stats = args.stats
 log_dir = args.logdir if args.logdir else 'none'
 
-instrum = instru.Instrumentation(lr, l2, beta1, beta2, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, pretrained_path, max_gnorm, lr_factor, stats, log_dir)
+instrum = instru.Instrumentation(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, pretrained_path, max_gnorm, stats, log_dir)
 
 hp_optimizer = optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget)
 

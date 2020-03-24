@@ -13,7 +13,7 @@ from data_load import Loader
 
 class TrainLoop(object):
 
-	def __init__(self, model, optimizer, train_loader, valid_loader, max_gnorm, patience, lr_factor, label_smoothing, verbose=-1, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True, logger=None):
+	def __init__(self, model, optimizer, train_loader, valid_loader, max_gnorm, label_smoothing, verbose=-1, cp_name=None, save_cp=False, checkpoint_path=None, checkpoint_epoch=None, pretrain=False, cuda=True, logger=None):
 		if checkpoint_path is None:
 			# Save to current directory
 			self.checkpoint_path = os.getcwd()
@@ -27,10 +27,7 @@ class TrainLoop(object):
 		self.pretrain = pretrain
 		self.model = model
 		self.optimizer = optimizer
-		self.base_lr = self.optimizer.param_groups[0]['lr']
-		self.patience = patience
 		self.max_gnorm = max_gnorm
-		self.lr_factor = lr_factor
 		self.train_loader = train_loader
 		self.valid_loader = valid_loader
 		self.total_iters = 0
@@ -63,8 +60,6 @@ class TrainLoop(object):
 			if isinstance(self.train_loader.dataset, Loader):
 				self.train_loader.dataset.update_lists()
 
-			adjust_learning_rate(self.optimizer, self.cur_epoch, self.base_lr, self.patience, self.lr_factor)
-
 			if self.verbose>0:
 				print(' ')
 				print('Epoch {}/{}'.format(self.cur_epoch+1, n_epochs))
@@ -81,7 +76,7 @@ class TrainLoop(object):
 					ce_epoch+=ce
 					if self.logger:
 						self.logger.add_scalar('Train/Cross entropy', ce, self.total_iters)
-						self.logger.add_scalar('Info/LR', self.optimizer.param_groups[0]['lr'], self.total_iters)
+						self.logger.add_scalar('Info/LR', self.optimizer.optimizer.param_groups[0]['lr'], self.total_iters)
 
 					self.total_iters += 1
 
@@ -107,7 +102,7 @@ class TrainLoop(object):
 						self.logger.add_scalar('Train/Total train Loss', train_loss, self.total_iters)
 						self.logger.add_scalar('Train/Binary class. Loss', bin_loss, self.total_iters)
 						self.logger.add_scalar('Train/Cross enropy', ce_loss, self.total_iters)
-						self.logger.add_scalar('Info/LR', self.optimizer.param_groups[0]['lr'], self.total_iters)
+						self.logger.add_scalar('Info/LR', self.optimizer.optimizer.param_groups[0]['lr'], self.total_iters)
 
 					self.total_iters += 1
 
@@ -156,7 +151,7 @@ class TrainLoop(object):
 					print('Current cos EER, best cos EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['cos_eer'][-1], np.min(self.history['cos_eer']), 1+np.argmin(self.history['cos_eer'])))
 
 			if self.verbose>0:
-				print('Current LR: {}'.format(self.optimizer.param_groups[0]['lr']))
+				print('Current LR: {}'.format(self.optimizer.optimizer.param_groups[0]['lr']))
 
 			self.cur_epoch += 1
 

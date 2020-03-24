@@ -12,6 +12,7 @@ import numpy as np
 from time import sleep
 import os
 import sys
+from optimizer import TransformerOptimizer
 from torch.utils.tensorboard import SummaryWriter
 
 def set_np_randomseed(worker_id):
@@ -40,10 +41,8 @@ parser.add_argument('--epochs', type=int, default=500, metavar='N', help='number
 parser.add_argument('--lr', type=float, default=1.0, metavar='LR', help='learning rate (default: 0.1)')
 parser.add_argument('--l2', type=float, default=1e-4, metavar='lambda', help='L2 wheight decay coefficient (default: 0.0005)')
 parser.add_argument('--smoothing', type=float, default=0.2, metavar='l', help='Label smoothing (default: 0.2)')
-parser.add_argument('--patience', type=int, default=10, metavar='S', help='Epochs to wait before decreasing LR by a factor of 0.5 (default: 10)')
-parser.add_argument('--lr-factor', type=float, default=0.5, metavar='LRFACTOR', help='Factor to reduce lr after patience epochs with no improvement (default: 0.5)')
-parser.add_argument('--beta1', type=float, default=0.5, metavar='lambda', help='Adam beta param (default: 0.5)')
-parser.add_argument('--beta2', type=float, default=0.999, metavar='lambda', help='Adam beta param (default: 0.999)')
+parser.add_argument('--warmup', type=int, default=4000, metavar='N', help='Iterations until reach lr (default: 4000)')
+parser.add_argument('--momentum', type=float, default=0.9, metavar='m', help='Momentum paprameter (default: 0.9)')
 parser.add_argument('--max-gnorm', type=float, default=10., metavar='clip', help='Max gradient norm (default: 10.0)')
 parser.add_argument('--checkpoint-epoch', type=int, default=None, metavar='N', help='epoch to load for checkpointing. If None, training starts from scratch')
 parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
@@ -70,14 +69,6 @@ parser.add_argument('--verbose', type=int, default=1, metavar='N', help='Verbose
 parser.add_argument('--logdir', type=str, default=None, metavar='Path', help='Path for checkpointing')
 args = parser.parse_args()
 args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
-
-
-if args.logdir:
-	writer = SummaryWriter(log_dir=args.logdir, comment=args.model, purge_step=True if args.checkpoint_epoch is None else False)
-	args_dict = parse_args_for_log(args)
-	writer.add_hparams(hparam_dict=args_dict, metric_dict={'best_eer':0.0})
-else:
-	writer = None
 
 if args.stats=='cars':
 	mean, std = [0.4461, 0.4329, 0.4345], [0.2888, 0.2873, 0.2946]
@@ -153,20 +144,26 @@ if args.cuda:
 	device = get_freer_gpu()
 	model = model.to(device)
 
-optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.l2, betas=(args.beta1, args.beta2))
+if args.logdir:
+	writer = SummaryWriter(log_dir=args.logdir, comment=args.model, purge_step=True if args.checkpoint_epoch is None else False)
+	args_dict = parse_args_for_log(args)
+	writer.add_hparams(hparam_dict=args_dict, metric_dict={'best_eer':0.0})
+else:
+	writer = None
 
-trainer = TrainLoop(model, optimizer, train_loader, valid_loader, max_gnorm=args.max_gnorm, patience=args.patience, lr_factor=args.lr_factor, label_smoothing=args.smoothing, verbose=args.verbose, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, cuda=args.cuda, logger=writer)
+optimizer = TransformerOptimizer(optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.l2, nesterov=True), lr=args.lr, warmup_steps=args.warmup)
+
+trainer = TrainLoop(model, optimizer, train_loader, valid_loader, max_gnorm=args.max_gnorm, label_smoothing=args.smoothing, verbose=args.verbose, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, cuda=args.cuda, logger=writer)
 
 if args.verbose >0:
 	print('\nCuda Mode is: {}'.format(args.cuda))
 	print('Selected model: {}'.format(args.model))
 	print('Batch size: {}'.format(args.batch_size))
 	print('LR: {}'.format(args.lr))
-	print('Adam params: {}, {}'.format(args.beta1, args.beta2))
+	print('Momentum: {}'.format(args.momentum))
 	print('l2: {}'.format(args.l2))
 	print('Label smoothing: {}'.format(args.smoothing))
-	print('Patience: {}'.format(args.patience))
-	print('LR reduction factor: {}'.format(args.lr_factor))
+	print('Warmup iterations: {}'.format(args.warmup))
 	print('Max. grad norm: {}'.format(args.max_gnorm))
 	print('Dropout rate: {}'.format(args.dropout_prob))
 	print('Softmax Mode is: {}'.format(args.softmax))
