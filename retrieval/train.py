@@ -94,7 +94,7 @@ if args.cuda:
 	torch.backends.cudnn.benchmark=True
 
 if args.hdf_path:
-	transform_train = transforms.Compose([transforms.ToPILImage(), transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transforms.RandomChoice((transforms.RandomRotation(30), transforms.RandomPerspective(p=0.5), transforms.RandomGrayscale(p=0.5))), transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])	
+	transform_train = transforms.Compose([transforms.ToPILImage(), transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transforms.RandomChoice((transforms.RandomRotation(30), transforms.RandomPerspective(p=0.5), transforms.RandomGrayscale(p=0.5))), transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])
 	trainset = Loader(args.hdf_path, transform_train)
 else:
 	transform_train = transforms.Compose([transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transforms.RandomChoice((transforms.RandomRotation(30), transforms.RandomPerspective(p=0.5), transforms.RandomGrayscale(p=0.5))), transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])	
