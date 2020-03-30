@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 
 import numpy as np
+import random
 
 import os
 from tqdm import tqdm
@@ -198,6 +199,11 @@ class TrainLoop(object):
 		emb_a = torch.index_select(embeddings, 0, triplets_idx[:, 0])
 		emb_p = torch.index_select(embeddings, 0, triplets_idx[:, 1])
 		emb_n = torch.index_select(embeddings, 0, triplets_idx[:, 2])
+
+		if random.random() > 0.5:
+			emb_a += torch.randn_like(emb_a)*random.choice([1e-2, 1e-3, 1e-4, 1e-5])
+			emb_p += torch.randn_like(emb_p)*random.choice([1e-2, 1e-3, 1e-4, 1e-5])
+			emb_n += torch.randn_like(emb_n)*random.choice([1e-2, 1e-3, 1e-4, 1e-5])
 
 		emb_ap = torch.cat([emb_a, emb_p],1)
 		emb_an = torch.cat([emb_a, emb_n],1)
