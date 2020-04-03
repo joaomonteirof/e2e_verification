@@ -136,13 +136,13 @@ if __name__ == '__main__':
 				dist_cos = torch.nn.functional.cosine_similarity(enroll_emb, test_emb)
 				dist_fus = (torch.sigmoid(dist_e2e) + 0.5*(dist_cos+1.))*0.5
 				
-				for k in range(dist_e2e.size(0)):
+				for l in range(dist_e2e.size(0)):
 
-					if i==(j+k): continue ## skip same example
+					if i==(j+l): continue ## skip same example
 
-					e2e_scores.append( [dist_e2e[k].item(), labels[j+k]] )
-					cos_scores.append( [dist_cos[k].item(), labels[j+k]] )
-					fus_scores.append( [dist_fus[k].item(), labels[j+k]] )
+					e2e_scores.append( [dist_e2e[l].item(), labels[j+l]] )
+					cos_scores.append( [dist_cos[l].item(), labels[j+l]] )
+					fus_scores.append( [dist_fus[l].item(), labels[j+l]] )
 
 			sorted_e2e_classes = np.array(sorted(e2e_scores, reverse=True))[:,1]
 			sorted_cos_classes = np.array(sorted(cos_scores, reverse=True))[:,1]
@@ -160,9 +160,9 @@ if __name__ == '__main__':
 	print('\nScoring done')
 
 for k in args.k_list:
-	r_at_k_e2e['R@'+str(k)]/=len(labels)
-	r_at_k_cos['R@'+str(k)]/=len(labels)
-	r_at_k_fus['R@'+str(k)]/=len(labels)
+	r_at_k_e2e['R@'+str(k)]/=(len(labels)-1)
+	r_at_k_cos['R@'+str(k)]/=(len(labels)-1)
+	r_at_k_fus['R@'+str(k)]/=(len(labels)-1)
 
 print('\nE2E R@k:')
 print(r_at_k_e2e)
