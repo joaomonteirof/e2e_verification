@@ -186,10 +186,10 @@ momentum = instru.var.Array(1).asfloat().bounded(0.01, 0.999)
 smoothing=instru.var.OrderedDiscrete([0.0, 0.05, 0.1, 0.2])
 warmup = instru.var.OrderedDiscrete([1, 1000, 5000, 10000])
 model = args.model
-emb_size = instru.var.OrderedDiscrete([128, 256, 350, 512]) if args.pretrained_path is not None else 1
-n_hidden=instru.var.OrderedDiscrete([2, 3, 4, 5])if args.pretrained_path is not None else 1
-hidden_size=instru.var.OrderedDiscrete([128, 256, 350, 512]) if args.pretrained_path is not None else 1
-dropout_prob=instru.var.OrderedDiscrete([0.01, 0.1, 0.2, 0.3])if args.pretrained_path is not None else 1
+emb_size = instru.var.OrderedDiscrete([128, 256, 350, 512]) if len(args.pretrained_path) == 0 else 1
+n_hidden=instru.var.OrderedDiscrete([2, 3, 4, 5]) if len(args.pretrained_path) == 0 else 1
+hidden_size=instru.var.OrderedDiscrete([128, 256, 350, 512]) if len(args.pretrained_path) == 0 else 1
+dropout_prob=instru.var.OrderedDiscrete([0.01, 0.1, 0.2, 0.3]) if len(args.pretrained_path) == 0 else 1
 epochs = args.epochs
 batch_size = args.batch_size
 valid_batch_size = args.valid_batch_size
