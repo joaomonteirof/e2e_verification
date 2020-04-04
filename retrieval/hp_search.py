@@ -42,13 +42,12 @@ parser.add_argument('--budget', type=int, default=100, metavar='N', help='Maximu
 parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
 parser.add_argument('--nclasses', type=int, default=1000, metavar='N', help='number of classes (default: 1000)')
 parser.add_argument('--pretrained', action='store_true', default=False, help='Get pretrained weights on imagenet. Encoder only')
-parser.add_argument('--pretrained-path', type=str, default=None, metavar='Path', help='Path to trained model. Discards outpu layer')
+parser.add_argument('--pretrained-path', type=str, nargs='+', default=[], metavar='Path', help='Paths to trained model. Discards output layers')
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
-parser.add_argument('--checkpoint-path', type=str, nargs='+', default=[], metavar='Path', help='Path for checkpointing')
+parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
 parser.add_argument('--logdir', type=str, default=None, metavar='Path', help='Path for logs')
 args = parser.parse_args()
 args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
-assert len(args.checkpoint_path)>0, 'At least 1 cp path has to be given!!!'
 
 print(args,'\n')
 
@@ -200,11 +199,11 @@ data_path = args.data_path if args.data_path is not None else 'none'
 hdf_path = args.hdf_path if args.hdf_path is not None else 'none'
 valid_data_path = args.valid_data_path if args.valid_data_path is not None else 'none'
 valid_hdf_path = args.valid_hdf_path if args.valid_hdf_path is not None else 'none'
-checkpoint_path=instru.var.OrderedDiscrete(args.checkpoint_path)
+checkpoint_path=args.checkpoint_path
 softmax=instru.var.OrderedDiscrete(['softmax', 'am_softmax'])
 n_classes = args.nclasses
 pretrained = args.pretrained
-pretrained_path = args.pretrained_path if args.pretrained_path is not None else 'none'
+pretrained_path = instru.var.OrderedDiscrete(args.pretrained_path) if len(args.pretrained_path) > 0 else 'none'
 max_gnorm = instru.var.OrderedDiscrete([10, 50, 100])
 stats = args.stats
 log_dir = args.logdir if args.logdir else 'none'
