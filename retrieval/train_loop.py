@@ -103,6 +103,9 @@ class TrainLoop(object):
 					train_loss_epoch+=train_loss
 					ce_loss_epoch+=ce_loss
 					bin_loss_epoch+=bin_loss
+
+					self.total_iters += 1
+
 					if self.logger:
 						self.logger.add_scalar('Train/Total train Loss', train_loss, self.total_iters)
 						self.logger.add_scalar('Train/Binary class. Loss', bin_loss, self.total_iters)
@@ -114,8 +117,6 @@ class TrainLoop(object):
 						if self.save_cp and ( self.history['e2e_eer'][-1] < np.min([np.inf]+self.history['e2e_eer'][:-1]) or self.history['cos_eer'][-1] < np.min([np.inf]+self.history['cos_eer'][:-1]) ):
 								self.checkpointing()
 								self.save_epoch_cp = True
-
-					self.total_iters += 1
 
 				self.history['train_loss'].append(train_loss_epoch/(t+1))
 				self.history['ce_loss'].append(ce_loss_epoch/(t+1))
