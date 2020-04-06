@@ -112,7 +112,7 @@ class TrainLoop(object):
 						self.logger.add_scalar('Train/Cross enropy', ce_loss, self.total_iters)
 						self.logger.add_scalar('Info/LR', self.optimizer.optimizer.param_groups[0]['lr'], self.total_iters)
 
-					if eval_every % self.total_iters == 0:
+					if self.total_iters % eval_every == 0:
 						self.evaluate()
 						if self.save_cp and ( self.history['e2e_eer'][-1] < np.min([np.inf]+self.history['e2e_eer'][:-1]) or self.history['cos_eer'][-1] < np.min([np.inf]+self.history['cos_eer'][:-1]) ):
 								self.checkpointing()
