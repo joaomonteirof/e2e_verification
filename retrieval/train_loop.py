@@ -257,7 +257,7 @@ class TrainLoop(object):
 	def evaluate(self):
 
 		if self.verbose>0:
-			print('\nIteration - Epoch {} - {}'.format(self.total_iters, self.cur_epoch))
+			print('\nIteration - Epoch: {} - {}'.format(self.total_iters, self.cur_epoch))
 
 		e2e_scores, cos_scores, labels = None, None, None
 
