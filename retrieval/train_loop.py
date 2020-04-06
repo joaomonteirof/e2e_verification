@@ -40,6 +40,7 @@ class TrainLoop(object):
 		self.logger = logger
 		self.history = {'train_loss': [], 'train_loss_batch': [], 'ce_loss': [], 'ce_loss_batch': [], 'bin_loss': [], 'bin_loss_batch': []}
 		self.disc_label_smoothing = label_smoothing
+		self.best_e2e_eer, self.best_cos_eer = np.inf, np.inf
 
 		if label_smoothing>0.0:
 			n_classes = self.train_loader.dataset.n_classes if isinstance(self.train_loader.dataset, Loader) else len(self.train_loader.dataset.classes)
@@ -66,7 +67,7 @@ class TrainLoop(object):
 
 			if self.verbose>0:
 				print(' ')
-				print('Epoch {}/{}'.format(self.cur_epoch+1, n_epochs))
+				print('Epoch {}/{}'.format(self.cur_epoch, n_epochs))
 				train_iter = tqdm(enumerate(self.train_loader))
 			else:
 				train_iter = enumerate(self.train_loader)
@@ -108,13 +109,13 @@ class TrainLoop(object):
 						self.logger.add_scalar('Train/Cross enropy', ce_loss, self.total_iters)
 						self.logger.add_scalar('Info/LR', self.optimizer.optimizer.param_groups[0]['lr'], self.total_iters)
 
-					self.total_iters += 1
-
-					if eval_every%self.total_iters==0:
+					if eval_every % self.total_iters == 0:
 						self.evaluate()
 						if self.save_cp and ( self.history['e2e_eer'][-1] < np.min([np.inf]+self.history['e2e_eer'][:-1]) or self.history['cos_eer'][-1] < np.min([np.inf]+self.history['cos_eer'][:-1]) ):
 								self.checkpointing()
 								self.save_epoch_cp = True
+
+					self.total_iters += 1
 
 				self.history['train_loss'].append(train_loss_epoch/(t+1))
 				self.history['ce_loss'].append(ce_loss_epoch/(t+1))
@@ -253,6 +254,10 @@ class TrainLoop(object):
 		return np.concatenate([e2e_scores_p.detach().cpu().numpy(), e2e_scores_n.detach().cpu().numpy()], 0), np.concatenate([cos_scores_p.detach().cpu().numpy(), cos_scores_n.detach().cpu().numpy()], 0), np.concatenate([np.ones(e2e_scores_p.size(0)), np.zeros(e2e_scores_n.size(0))], 0)
 
 	def evaluate(self):
+
+		if self.verbose>0:
+			print('\nIteration - Epoch {} - {}'.format(self.total_iters, self.cur_epoch))
+
 		e2e_scores, cos_scores, labels = None, None, None
 
 		for t, batch in enumerate(self.valid_loader):
@@ -268,21 +273,29 @@ class TrainLoop(object):
 		self.history['e2e_eer'].append(compute_eer(labels, e2e_scores))
 		self.history['cos_eer'].append(compute_eer(labels, cos_scores))
 
+		if self.history['e2e_eer'][-1]<self.best_e2e_eer:
+			self.best_e2e_eer = self.history['e2e_eer'][-1]
+			self.best_e2e_eer_epoch = self.cur_epoch
+
+		if self.history['cos_eer'][-1]<self.best_cos_eer:
+			self.best_cos_eer = self.history['cos_eer'][-1]
+			self.best_cos_eer_epoch = self.cur_epoch
+
 		if self.logger:
-			self.logger.add_scalar('Valid/E2E EER', self.history['e2e_eer'][-1], self.total_iters-1)
-			self.logger.add_scalar('Valid/Best E2E EER', np.min(self.history['e2e_eer']), self.total_iters-1)
-			self.logger.add_scalar('Valid/Cosine EER', self.history['cos_eer'][-1], self.total_iters-1)
-			self.logger.add_scalar('Valid/Best Cosine EER', np.min(self.history['cos_eer']), self.total_iters-1)
-			self.logger.add_pr_curve('E2E ROC', labels=labels, predictions=e2e_scores, global_step=self.total_iters-1)
-			self.logger.add_pr_curve('Cosine ROC', labels=labels, predictions=cos_scores, global_step=self.total_iters-1)
-			self.logger.add_histogram('Valid/COS_Scores', values=cos_scores, global_step=self.total_iters-1)
-			self.logger.add_histogram('Valid/E2E_Scores', values=e2e_scores, global_step=self.total_iters-1)
-			self.logger.add_histogram('Valid/Labels', values=labels, global_step=self.total_iters-1)
+			self.logger.add_scalar('Valid/E2E EER', self.history['e2e_eer'][-1], self.total_iters)
+			self.logger.add_scalar('Valid/Best E2E EER', np.min(self.history['e2e_eer']), self.total_iters)
+			self.logger.add_scalar('Valid/Cosine EER', self.history['cos_eer'][-1], self.total_iters)
+			self.logger.add_scalar('Valid/Best Cosine EER', np.min(self.history['cos_eer']), self.total_iters)
+			self.logger.add_pr_curve('E2E ROC', labels=labels, predictions=e2e_scores, global_step=self.total_iters)
+			self.logger.add_pr_curve('Cosine ROC', labels=labels, predictions=cos_scores, global_step=self.total_iters)
+			self.logger.add_histogram('Valid/COS_Scores', values=cos_scores, global_step=self.total_iters)
+			self.logger.add_histogram('Valid/E2E_Scores', values=e2e_scores, global_step=self.total_iters)
+			self.logger.add_histogram('Valid/Labels', values=labels, global_step=self.total_iters)
 
 		if self.verbose>0:
 			print(' ')
-			print('Current e2e EER, best e2e EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['e2e_eer'][-1], np.min(self.history['e2e_eer']), 1+np.argmin(self.history['e2e_eer'])))
-			print('Current cos EER, best cos EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['cos_eer'][-1], np.min(self.history['cos_eer']), 1+np.argmin(self.history['cos_eer'])))
+			print('Current e2e EER, best e2e EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['e2e_eer'][-1], np.min(self.history['e2e_eer']), self.best_e2e_eer))
+			print('Current cos EER, best cos EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['cos_eer'][-1], np.min(self.history['cos_eer']), self.best_cos_eer))
 
 	def checkpointing(self):
 
