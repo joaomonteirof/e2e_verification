@@ -46,12 +46,13 @@ parser.add_argument('--pretrained-path', type=str, nargs='+', default=[], metava
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
 parser.add_argument('--logdir', type=str, default=None, metavar='Path', help='Path for logs')
+parser.add_argument('--eval-every', type=int, default=1000, metavar='N', help='how many iterations to wait before evaluatiing models. Default is 1000')
 args = parser.parse_args()
 args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
 print(args,'\n')
 
-def train(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, pretrained_path, max_gnorm, stats, log_dir):
+def train(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, pretrained_path, max_gnorm, stats, log_dir, eval_every):
 
 	args_dict = locals()
 
@@ -154,6 +155,7 @@ def train(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden
 		print('Softmax Mode is: {}'.format(softmax))
 		print('Pretrained: {}'.format(pretrained))
 		print('Pretrained path: {}'.format(pretrained_path))
+		print('Evaluate every {} iterations.'.format(eval_every))
 		print(' ')
 
 		if i>0:
@@ -162,7 +164,7 @@ def train(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden
 			print(' ')
 
 		try:
-			cost = trainer.train(n_epochs=epochs, save_every=epochs+10)
+			cost = trainer.train(n_epochs=epochs, save_every=epochs+10, eval_every=eval_every)
 
 			print(' ')
 			print('Best e2e EER in file ' + cp_name + ' was: {}'.format(cost[0]))
@@ -207,8 +209,9 @@ pretrained_path = instru.var.OrderedDiscrete(args.pretrained_path) if len(args.p
 max_gnorm = instru.var.OrderedDiscrete([10, 50, 100])
 stats = args.stats
 log_dir = args.logdir if args.logdir else 'none'
+eval_every = args.eval_every
 
-instrum = instru.Instrumentation(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, pretrained_path, max_gnorm, stats, log_dir)
+instrum = instru.Instrumentation(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, pretrained_path, max_gnorm, stats, log_dir, eval_every)
 
 hp_optimizer = optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget)
 

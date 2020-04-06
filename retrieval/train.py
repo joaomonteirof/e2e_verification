@@ -62,7 +62,8 @@ parser.add_argument('--pretrained-path', type=str, default=None, metavar='Path',
 parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
 parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
 parser.add_argument('--dropout-prob', type=float, default=0.25, metavar='p', help='Dropout probability (default: 0.25)')
-parser.add_argument('--save-every', type=int, default=1, metavar='N', help='how many epochs to wait before logging training status. Default is 1')
+parser.add_argument('--save-every', type=int, default=1, metavar='N', help='how many epochs to wait before saving checkpoints. Default is 1')
+parser.add_argument('--eval-every', type=int, default=1000, metavar='N', help='how many iterations to wait before evaluatiing models. Default is 1000')
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
 parser.add_argument('--no-cp', action='store_true', default=False, help='Disables checkpointing')
 parser.add_argument('--verbose', type=int, default=1, metavar='N', help='Verbose is activated if > 0')
@@ -172,4 +173,4 @@ if args.verbose >0:
 	print('Size of hidden layers: {}'.format(args.hidden_size))
 	print('Stats: {}'.format(args.stats))
 
-trainer.train(n_epochs=args.epochs, save_every=args.save_every)
+trainer.train(n_epochs=args.epochs, save_every=args.save_every, eval_every=args.eval_every)

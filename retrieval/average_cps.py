@@ -67,9 +67,9 @@ def last_n_checkpoints(paths, n, update_based, upper_bound=None):
 	assert len(paths) == 1
 	path = paths[0]
 	if update_based:
-		pt_regexp = re.compile(r'checkpoint_\d+_(\d+)\ep.pt')
+		pt_regexp = re.compile(r'checkpoint_(\d+)it_(\d+)ep.pt')
 	else:
-		pt_regexp = re.compile(r'checkpoint(\d+)\ep.pt')
+		pt_regexp = re.compile(r'checkpoint_(\d+)ep.pt')
 	files = os.listdir(path)
 
 	entries = []
@@ -92,7 +92,7 @@ def main():
 	num_group = parser.add_mutually_exclusive_group()
 	num_group.add_argument('--num-epoch-checkpoints', type=int, help='if set, will try to find checkpoints with names checkpoint_xx.pt in the path specified by input, and average last this many of them.')
 	num_group.add_argument('--num-update-checkpoints', type=int, help='if set, will try to find checkpoints with names checkpoint_ee_xx.pt in the path specified by input, and average last this many of them.')
-	parser.add_argument('--checkpoint-upper-bound', type=int, help='when using --num-epoch-checkpoints, this will set an upper bound on which checkpoint to use, e.g., with --num-epoch-checkpoints=10 --checkpoint-upper-bound=50, checkpoints 41-50 would be averaged.')
+	parser.add_argument('--checkpoint-upper-bound', type=int, help='this will set an upper bound on which checkpoint to use, e.g., with --num-epoch-checkpoints=10 --checkpoint-upper-bound=50, checkpoints 41-50 would be averaged.')
 	# fmt: on
 	args = parser.parse_args()
 	print(args)
@@ -105,8 +105,6 @@ def main():
 	elif args.num_epoch_checkpoints is not None:
 		num = args.num_epoch_checkpoints
 
-	assert args.checkpoint_upper_bound is None or args.num_epoch_checkpoints is not None, \
-		'--checkpoint-upper-bound requires --num-epoch-checkpoints'
 	assert args.num_epoch_checkpoints is None or args.num_update_checkpoints is None, \
 		'Cannot combine --num-epoch-checkpoints and --num-update-checkpoints'
 
