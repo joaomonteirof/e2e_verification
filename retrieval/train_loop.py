@@ -295,8 +295,8 @@ class TrainLoop(object):
 
 		if self.verbose>0:
 			print(' ')
-			print('Current e2e EER, best e2e EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['e2e_eer'][-1], np.min(self.history['e2e_eer']), self.best_e2e_eer))
-			print('Current cos EER, best cos EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['cos_eer'][-1], np.min(self.history['cos_eer']), self.best_cos_eer))
+			print('Current e2e EER, best e2e EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['e2e_eer'][-1], np.min(self.history['e2e_eer']), self.best_e2e_eer_epoch))
+			print('Current cos EER, best cos EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['cos_eer'][-1], np.min(self.history['cos_eer']), self.best_cos_eer_epoch))
 
 	def checkpointing(self):
 
