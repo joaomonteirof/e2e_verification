@@ -34,7 +34,7 @@ def average_checkpoints(inputs):
 		if new_state is None:
 			new_state = state
 
-		model_params = state['model']
+		model_params = state['model_state']
 
 		model_params_keys = list(model_params.keys())
 		if params_keys is None:
