@@ -82,10 +82,10 @@ def train(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden
 		mean, std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
 
 	if hdf_path != 'none':
-		transform_train = transforms.Compose([transforms.ToPILImage(), transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transforms.RandomChoice((transforms.RandomRotation(30), transforms.RandomPerspective(p=0.5), transforms.RandomGrayscale(p=0.5))), transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])
+		transform_train = transforms.Compose([transforms.ToPILImage(), transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transforms.RandomRotation(10), transforms.RandomPerspective(p=0.1), transforms.RandomGrayscale(p=0.1), transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])
 		trainset = Loader(hdf_path, transform_train)
 	else:
-		transform_train = transforms.Compose([transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transforms.RandomChoice((transforms.RandomRotation(30), transforms.RandomPerspective(p=0.5), transforms.RandomGrayscale(p=0.5))), transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])	
+		transform_train = transforms.Compose([transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transforms.RandomRotation(10), transforms.RandomPerspective(p=0.1), transforms.RandomGrayscale(p=0.1), transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])	
 		trainset = datasets.ImageFolder(data_path, transform=transform_train)
 
 	train_loader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=n_workers, worker_init_fn=set_np_randomseed, pin_memory=True)

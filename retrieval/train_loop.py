@@ -160,6 +160,9 @@ class TrainLoop(object):
 		x = x.to(self.device, non_blocking=True)
 		y = y.to(self.device, non_blocking=True)
 
+		if random.random() > 0.5:
+			x += torch.randn_like(x)*random.choice([1e-4, 1e-5])
+
 		embeddings, out = self.model.forward(x)
 
 		ce_loss = self.ce_criterion(self.model.out_proj(out, y), y)
@@ -173,9 +176,9 @@ class TrainLoop(object):
 		emb_n = torch.index_select(embeddings, 0, triplets_idx[:, 2])
 
 		if random.random() > 0.5:
-			emb_a += torch.randn_like(emb_a)*random.choice([1e-2, 1e-3, 1e-4, 1e-5])
-			emb_p += torch.randn_like(emb_p)*random.choice([1e-2, 1e-3, 1e-4, 1e-5])
-			emb_n += torch.randn_like(emb_n)*random.choice([1e-2, 1e-3, 1e-4, 1e-5])
+			emb_a += torch.randn_like(emb_a)*random.choice([1e-3, 1e-4, 1e-5])
+			emb_p += torch.randn_like(emb_p)*random.choice([1e-3, 1e-4, 1e-5])
+			emb_n += torch.randn_like(emb_n)*random.choice([1e-3, 1e-4, 1e-5])
 
 		emb_ap = torch.cat([emb_a, emb_p],1)
 		emb_an = torch.cat([emb_a, emb_n],1)
