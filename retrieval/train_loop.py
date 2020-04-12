@@ -138,8 +138,8 @@ class TrainLoop(object):
 
 		if self.valid_loader is not None:
 			if self.verbose>0:
-				print('Best e2e eer and corresponding epoch: {:0.4f}, {}'.format(np.min(self.history['e2e_eer']), 1+np.argmin(self.history['e2e_eer'])))
-				print('Best cos eer and corresponding epoch: {:0.4f}, {}'.format(np.min(self.history['cos_eer']), 1+np.argmin(self.history['cos_eer'])))
+				print('Best e2e eer and corresponding epoch and iteration: {:0.4f}, {}, {}'.format(np.min(self.history['e2e_eer']), self.best_e2e_eer_epoch, self.best_e2e_eer_iteration))
+				print('Best cos eer and corresponding epoch and iteration: {:0.4f}, {}, {}'.format(np.min(self.history['cos_eer']), self.best_cos_eer_epoch, self.best_cos_eer_iteration))
 
 			return [np.min(self.history['e2e_eer']), np.min(self.history['cos_eer'])]
 		else:
@@ -280,10 +280,12 @@ class TrainLoop(object):
 		if self.history['e2e_eer'][-1]<self.best_e2e_eer:
 			self.best_e2e_eer = self.history['e2e_eer'][-1]
 			self.best_e2e_eer_epoch = self.cur_epoch
+			self.best_e2e_eer_iteration = self.total_iters
 
 		if self.history['cos_eer'][-1]<self.best_cos_eer:
 			self.best_cos_eer = self.history['cos_eer'][-1]
 			self.best_cos_eer_epoch = self.cur_epoch
+			self.best_cos_eer_iteration = self.total_iters
 
 		if self.logger:
 			self.logger.add_scalar('Valid/E2E EER', self.history['e2e_eer'][-1], self.total_iters)
@@ -298,8 +300,8 @@ class TrainLoop(object):
 
 		if self.verbose>0:
 			print(' ')
-			print('Current e2e EER, best e2e EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['e2e_eer'][-1], np.min(self.history['e2e_eer']), self.best_e2e_eer_epoch))
-			print('Current cos EER, best cos EER, and epoch: {:0.4f}, {:0.4f}, {}'.format(self.history['cos_eer'][-1], np.min(self.history['cos_eer']), self.best_cos_eer_epoch))
+			print('Current e2e EER, best e2e EER, and epoch - iteration: {:0.4f}, {:0.4f}, {}, {}'.format(self.history['e2e_eer'][-1], np.min(self.history['e2e_eer']), self.best_e2e_eer_epoch, self.best_e2e_eer_iteration))
+			print('Current cos EER, best cos EER, and epoch - iteration: {:0.4f}, {:0.4f}, {}, {}'.format(self.history['cos_eer'][-1], np.min(self.history['cos_eer']), self.best_cos_eer_epoch, self.best_cos_eer_iteration))
 
 	def checkpointing(self):
 
