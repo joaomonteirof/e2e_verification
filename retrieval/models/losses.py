@@ -25,7 +25,7 @@ class AMSoftmax(nn.Module):
 
 	def forward(self, embeddings, target):
 
-		embeddings = F.normalize(embeddings, p=2, dim=1)
+		#embeddings = F.normalize(embeddings, p=2, dim=1)
 
 		self.w.to(embeddings.device)
 
