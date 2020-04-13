@@ -106,6 +106,9 @@ if __name__ == '__main__':
 		labels = list(torch.cat(labels, 0).squeeze().numpy())
 
 		if args.out_path:
+			if os.path.isfile(args.out_path):
+				os.remove(args.out_path)
+				print(args.out_path+' Removed')
 			torch.save({'embeddings':embeddings, 'labels':labels}, args.out_path)
 
 		print('\nEmbedding done')
