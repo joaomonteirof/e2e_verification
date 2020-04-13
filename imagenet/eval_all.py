@@ -41,31 +41,26 @@ if __name__ == '__main__':
 
 		ckpt = torch.load(cp, map_location = lambda storage, loc: storage)
 		try :
-			dropout_prob, n_hidden, hidden_size, softmax, emb_size = ckpt['dropout_prob'], ckpt['n_hidden'], ckpt['hidden_size'], ckpt['sm_type'], ckpt['emb_size']
+			dropout_prob, n_hidden, hidden_size, softmax, n_classes, emb_size = ckpt['dropout_prob'], ckpt['n_hidden'], ckpt['hidden_size'], ckpt['sm_type'], ckpt['n_classes'], ckpt['emb_size']
 		except KeyError as err:
 			print("Key Error: {0}".format(err))
 			print('\nProbably old cp has no info regarding classifiers arch!\n')
 			try:
-				n_hidden, hidden_size, softmax = get_classifier_config_from_cp(ckpt)
+				n_hidden, hidden_size, softmax, n_classes = get_classifier_config_from_cp(ckpt)
 				dropout_prob = args.dropout_prob
+				emb_size = 350
 			except:
 				print('\nSkipping cp {}. Could not load it.'.format(cp))
 				continue
 
 		if args.model == 'vgg':
-			model = vgg.VGG('VGG16', nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, emb_size=emb_size)
+			model = vgg.VGG('VGG19', nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes, emb_size=emb_size)
 		elif args.model == 'resnet':
-			model = resnet.ResNet18(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, emb_size=emb_size)
+			model = resnet.ResNet50(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes, emb_size=emb_size)
 		elif args.model == 'densenet':
-			model = densenet.densenet_cifar(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, emb_size=emb_size)
+			model = densenet.DenseNet121(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes, emb_size=emb_size)
 
-		try:
-			model.load_state_dict(ckpt['model_state'], strict=True)
-		except RuntimeError as err:
-			print("Runtime Error: {0}".format(err))
-		except:
-			print("Unexpected error:", sys.exc_info()[0])
-			raise
+		print(model.load_state_dict(ckpt['model_state'], strict=False))
 
 		if args.cuda:
 			device = get_freer_gpu()
