@@ -29,9 +29,6 @@ if __name__ == '__main__':
 	validset = datasets.ImageFolder(args.data_path, transform=transform_test)
 	valid_loader = torch.utils.data.DataLoader(validset, batch_size=args.batch_size, shuffle=False, num_workers=args.n_workers)
 
-	idxs_enroll, idxs_test, labels = create_trials_labels(labels_list)
-	print('\n{} trials created out of which {} are target trials'.format(len(idxs_enroll), np.sum(labels)))
-
 	if args.cp_path is not None:
 		cp_list = glob.glob(args.cp_path+'*.pt')
 	elif len(args.cp_list) > 0:
