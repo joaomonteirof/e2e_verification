@@ -95,7 +95,7 @@ if __name__ == '__main__':
 					if args.cuda:
 						enroll_ex_data = enroll_ex_data.cuda(device)
 
-					emb_enroll = model.forward(enroll_ex_data).detach()
+					emb_enroll = model.forward(enroll_ex_data)[0].detach()
 					mem_embeddings[str(idxs_enroll[i])] = emb_enroll
 
 				test_ex = str(idxs_test[i])
@@ -109,7 +109,7 @@ if __name__ == '__main__':
 					if args.cuda:
 						test_ex_data = test_ex_data.cuda(device)
 
-					emb_test = model.forward(test_ex_data).detach()
+					emb_test = model.forward(test_ex_data)[0].detach()
 					mem_embeddings[str(idxs_test[i])] = emb_test
 
 				e2e_scores.append( model.forward_bin(torch.cat([emb_enroll, emb_test],1)).squeeze().item() )
