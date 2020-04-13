@@ -7,7 +7,7 @@ import numpy as np
 import os
 import sys
 import glob
-import tqdm
+from tqdm import tqdm
 from utils import *
 
 if __name__ == '__main__':
