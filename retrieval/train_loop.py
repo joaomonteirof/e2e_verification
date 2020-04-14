@@ -44,8 +44,7 @@ class TrainLoop(object):
 		self.best_e2e_eer, self.best_cos_eer = np.inf, np.inf
 
 		if label_smoothing>0.0:
-			n_classes = self.train_loader.dataset.n_classes if isinstance(self.train_loader.dataset, Loader) else len(self.train_loader.dataset.classes)
-			self.ce_criterion = LabelSmoothingLoss(label_smoothing, lbl_set_size=n_classes)
+			self.ce_criterion = LabelSmoothingLoss(label_smoothing, lbl_set_size=self.model.n_classes)
 		else:
 			self.ce_criterion = torch.nn.CrossEntropyLoss()
 

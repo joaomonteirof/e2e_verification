@@ -55,7 +55,6 @@ parser.add_argument('--seed', type=int, default=42, metavar='S', help='random se
 parser.add_argument('--n-workers', type=int, default=4, metavar='N', help='Workers for data loading. Default is 4')
 parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
 parser.add_argument('--softmax', choices=['softmax', 'am_softmax'], default='softmax', help='Softmax type')
-parser.add_argument('--nclasses', type=int, default=1000, metavar='N', help='number of classes (default: 1000)')
 parser.add_argument('--emb-size', type=int, default=256, metavar='N', help='Embedding dimension (default: 256)')
 parser.add_argument('--pretrained', action='store_true', default=False, help='Get pretrained weights on imagenet. Encoder only')
 parser.add_argument('--pretrained-path', type=str, default=None, metavar='Path', help='Path to trained model. Discards outpu layer')
@@ -81,8 +80,6 @@ elif args.stats=='sop':
 elif args.stats=='imagenet':
 	mean, std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
 
-print(args, '\n')
-
 if args.cuda:
 	torch.backends.cudnn.benchmark=True
 
@@ -103,6 +100,10 @@ else:
 	validset = datasets.ImageFolder(args.valid_data_path, transform=transform_test)
 	
 valid_loader = torch.utils.data.DataLoader(validset, batch_size=args.valid_batch_size, shuffle=True, num_workers=args.n_workers, pin_memory=True)
+
+args.nclasses = trainset.n_classes if isinstance(trainset, Loader) else len(trainset.classes)
+
+print(args, '\n')
 
 if args.pretrained_path:
 	print('\nLoading pretrained model from: {}\n'.format(args.pretrained_path))

@@ -40,7 +40,6 @@ parser.add_argument('--stats', choices=['cars', 'cub', 'sop', 'imagenet'], defau
 parser.add_argument('--n-workers', type=int, default=4, metavar='N', help='Workers for data loading. Default is 4')
 parser.add_argument('--budget', type=int, default=100, metavar='N', help='Maximum training runs')
 parser.add_argument('--model', choices=['vgg', 'resnet', 'densenet'], default='resnet')
-parser.add_argument('--nclasses', type=int, default=1000, metavar='N', help='number of classes (default: 1000)')
 parser.add_argument('--pretrained', action='store_true', default=False, help='Get pretrained weights on imagenet. Encoder only')
 parser.add_argument('--pretrained-path', type=str, nargs='+', default=[], metavar='Path', help='Paths to trained model. Discards output layers')
 parser.add_argument('--no-cuda', action='store_true', default=False, help='Disables GPU use')
@@ -52,7 +51,7 @@ args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
 print(args,'\n')
 
-def train(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, pretrained_path, max_gnorm, stats, log_dir, eval_every):
+def train(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, pretrained, pretrained_path, max_gnorm, stats, log_dir, eval_every):
 
 	args_dict = locals()
 
@@ -98,6 +97,8 @@ def train(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden
 		validset = datasets.ImageFolder(args.valid_data_path, transform=transform_test)
 		
 	valid_loader = torch.utils.data.DataLoader(validset, batch_size=valid_batch_size, shuffle=True, num_workers=n_workers, pin_memory=True)
+
+	nclasses = trainset.n_classes if isinstance(trainset, Loader) else len(trainset.classes)
 
 	if model == 'vgg':
 		model_ = vgg.VGG('VGG19', nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes, emb_size=emb_size)
@@ -203,7 +204,6 @@ valid_data_path = args.valid_data_path if args.valid_data_path is not None else 
 valid_hdf_path = args.valid_hdf_path if args.valid_hdf_path is not None else 'none'
 checkpoint_path=args.checkpoint_path
 softmax=instru.var.OrderedDiscrete(['softmax', 'am_softmax'])
-n_classes = args.nclasses
 pretrained = args.pretrained
 pretrained_path = instru.var.OrderedDiscrete(args.pretrained_path) if len(args.pretrained_path) > 0 else 'none'
 max_gnorm = instru.var.OrderedDiscrete([10, 50, 100])
@@ -211,7 +211,7 @@ stats = args.stats
 log_dir = args.logdir if args.logdir else 'none'
 eval_every = args.eval_every
 
-instrum = instru.Instrumentation(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, n_classes, pretrained, pretrained_path, max_gnorm, stats, log_dir, eval_every)
+instrum = instru.Instrumentation(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, pretrained, pretrained_path, max_gnorm, stats, log_dir, eval_every)
 
 hp_optimizer = optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget)
 
