@@ -101,11 +101,11 @@ def train(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden
 	nclasses = trainset.n_classes if isinstance(trainset, Loader) else len(trainset.classes)
 
 	if model == 'vgg':
-		model_ = vgg.VGG('VGG19', nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes, emb_size=emb_size)
+		model_ = vgg.VGG('VGG19', nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=nclasses, emb_size=emb_size)
 	elif model == 'resnet':
-		model_ = resnet.ResNet50(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes, emb_size=emb_size)
+		model_ = resnet.ResNet50(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=nclasses, emb_size=emb_size)
 	elif model == 'densenet':
-		model_ = densenet.DenseNet121(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes, emb_size=emb_size)
+		model_ = densenet.DenseNet121(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=nclasses, emb_size=emb_size)
 
 	if pretrained_path != 'none':
 		if ckpt['sm_type'] == 'am_softmax':
