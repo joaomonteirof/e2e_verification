@@ -164,9 +164,10 @@ class TrainLoop(object):
 			x += torch.randn_like(x)*random.choice([1e-4, 1e-5])
 
 		embeddings, out = self.model.forward(x)
+		embeddings_norm = F.normalize(embeddings, p=2, dim=1)
 
 		if not self.ablation:
-			ce_loss = self.ce_criterion(self.model.out_proj(out, y), y)
+			ce_loss = self.ce_criterion(self.model.out_proj(embeddings_norm, y), y)
 		else:
 			ce_loss = 0.0
 
