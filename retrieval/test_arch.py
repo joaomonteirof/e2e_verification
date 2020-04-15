@@ -28,7 +28,7 @@ emb, out = model.forward(batch)
 
 print(emb.size(), out.size())
 
-out_layer = model.out_proj(out)
+out_layer = model.out_proj(emb)
 
 print(out_layer.size())
 
