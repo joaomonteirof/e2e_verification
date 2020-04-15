@@ -59,6 +59,12 @@ if __name__ == '__main__':
 	elif args.model == 'densenet':
 		model = densenet.DenseNet121(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes, emb_size=emb_size)
 
+	if ckpt['sm_type'] == 'am_softmax':
+		del(ckpt['model_state']['out_proj.w'])
+	elif ckpt['sm_type'] == 'softmax':
+		del(ckpt['model_state']['out_proj.w.weight'])
+		del(ckpt['model_state']['out_proj.w.bias'])
+
 	print(model.load_state_dict(ckpt['model_state'], strict=False))
 
 	if args.cuda:
