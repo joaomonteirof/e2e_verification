@@ -46,12 +46,13 @@ parser.add_argument('--no-cuda', action='store_true', default=False, help='Disab
 parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
 parser.add_argument('--logdir', type=str, default=None, metavar='Path', help='Path for logs')
 parser.add_argument('--eval-every', type=int, default=1000, metavar='N', help='how many iterations to wait before evaluatiing models. Default is 1000')
+parser.add_argument('--ablation', action='store_true', default=False, help='Drops the multi class classification loss')
 args = parser.parse_args()
 args.cuda = True if not args.no_cuda and torch.cuda.is_available() else False
 
 print(args,'\n')
 
-def train(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, pretrained, pretrained_path, max_gnorm, stats, log_dir, eval_every):
+def train(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, pretrained, pretrained_path, max_gnorm, stats, log_dir, eval_every, ablation):
 
 	args_dict = locals()
 
@@ -136,7 +137,7 @@ def train(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden
 
 	optimizer = TransformerOptimizer(optim.SGD(model_.parameters(), lr=lr, momentum=momentum, weight_decay=l2, nesterov=True), lr=lr, warmup_steps=warmup)
 
-	trainer = TrainLoop(model_, optimizer, train_loader, valid_loader, max_gnorm=max_gnorm, label_smoothing=smoothing, verbose=-1, cp_name=cp_name, save_cp=True, checkpoint_path=checkpoint_path, cuda=cuda, logger=writer)
+	trainer = TrainLoop(model_, optimizer, train_loader, valid_loader, max_gnorm=max_gnorm, label_smoothing=smoothing, verbose=-1, cp_name=cp_name, save_cp=True, checkpoint_path=checkpoint_path, ablation=ablation, cuda=cuda, logger=writer)
 
 	for i in range(5):
 
@@ -157,6 +158,7 @@ def train(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden
 		print('Pretrained: {}'.format(pretrained))
 		print('Pretrained path: {}'.format(pretrained_path))
 		print('Evaluate every {} iterations.'.format(eval_every))
+		print('Ablation Mode: {}'.format(ablation))
 		print(' ')
 
 		if i>0:
@@ -210,8 +212,9 @@ max_gnorm = instru.var.OrderedDiscrete([10, 50, 100])
 stats = args.stats
 log_dir = args.logdir if args.logdir else 'none'
 eval_every = args.eval_every
+ablation = args.ablation
 
-instrum = instru.Instrumentation(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, pretrained, pretrained_path, max_gnorm, stats, log_dir, eval_every)
+instrum = instru.Instrumentation(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, checkpoint_path, softmax, pretrained, pretrained_path, max_gnorm, stats, log_dir, eval_every, ablation)
 
 hp_optimizer = optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget)
 
