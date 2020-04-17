@@ -10,6 +10,7 @@ from tqdm import tqdm
 from utils import *
 from sklearn.metrics.cluster import normalized_mutual_info_score
 
+
 if __name__ == '__main__':
 
 
@@ -73,7 +74,6 @@ if __name__ == '__main__':
 
 	class_center = {}
 	class_count = {}
-	mem_embeddings = {}
 
 	model.classifier = model.classifier[:-1]
 	model.eval()

@@ -132,9 +132,9 @@ if __name__ == '__main__':
 
 			enroll_emb = embeddings[i].unsqueeze(0).to(device)
 
-			e2e_scores = []
-			cos_scores = []
-			fus_scores = []
+			e2e_scores = torch.zeros(len(labels))
+			cos_scores = torch.zeros(len(labels))
+			fus_scores = torch.zeros(len(labels))
 
 			for j in range(0, len(labels), args.batch_size):
 
@@ -149,13 +149,17 @@ if __name__ == '__main__':
 
 					if i==(j+l): continue ## skip same example
 
-					e2e_scores.append( [dist_e2e[l].item(), labels[j+l]] )
-					cos_scores.append( [dist_cos[l].item(), labels[j+l]] )
-					fus_scores.append( [dist_fus[l].item(), labels[j+l]] )
+					e2e_scores[j+l] = dist_e2e[l].item()
+					cos_scores[j+l] = dist_cos[l].item()
+					fus_scores[j+l] = dist_fus[l].item()
 
-			sorted_e2e_classes = np.array(sorted(e2e_scores, reverse=True))[:,1]
-			sorted_cos_classes = np.array(sorted(cos_scores, reverse=True))[:,1]
-			sorted_fus_classes = np.array(sorted(fus_scores, reverse=True))[:,1]
+			_, topk_e2e_idx = torch.topk(torch.Tensor(e2e_scores), max(args.k_list)+1)
+			_, topk_cos_idx = torch.topk(torch.Tensor(cos_scores), max(args.k_list)+1)
+			_, topk_fus_idx = torch.topk(torch.Tensor(fus_scores), max(args.k_list)+1)
+
+			sorted_e2e_classes = labels[topk_e2e_idx]
+			sorted_cos_classes = labels[topk_cos_idx]
+			sorted_fus_classes = labels[topk_fus_idx]
 
 			for k in args.k_list:
 				if label in sorted_e2e_classes[:k]:
@@ -169,9 +173,9 @@ if __name__ == '__main__':
 	print('\nScoring done')
 
 for k in args.k_list:
-	r_at_k_e2e['R@'+str(k)]/=(len(labels)-1)
-	r_at_k_cos['R@'+str(k)]/=(len(labels)-1)
-	r_at_k_fus['R@'+str(k)]/=(len(labels)-1)
+	r_at_k_e2e['R@'+str(k)]/=len(labels)
+	r_at_k_cos['R@'+str(k)]/=len(labels)
+	r_at_k_fus['R@'+str(k)]/=len(labels)
 
 print('\nE2E R@k:')
 print(r_at_k_e2e)
