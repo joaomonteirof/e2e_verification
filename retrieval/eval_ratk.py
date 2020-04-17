@@ -115,7 +115,7 @@ if __name__ == '__main__':
 				labels.append(y)
 
 		embeddings = torch.cat(embeddings, 0)
-		labels = list(torch.cat(labels, 0).squeeze().numpy())
+		labels = torch.cat(labels, 0)
 
 		if args.out_path:
 			if os.path.isfile(args.out_path):
