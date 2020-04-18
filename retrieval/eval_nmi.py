@@ -44,7 +44,7 @@ if __name__ == '__main__':
 	valid_loader = torch.utils.data.DataLoader(validset, batch_size=args.batch_size, shuffle=False, num_workers=args.n_workers)
 
 	labels_list = [x[1] for x in validset]
-	pred_list = []
+	pred_list_e2e, pred_list_cos = [], []
 
 	ckpt = torch.load(args.cp_path, map_location = lambda storage, loc: storage)
 	try :
@@ -144,13 +144,17 @@ if __name__ == '__main__':
 			class_center[k] /= class_count[k]
 
 		for i, label in enumerate(labels_list):
-			class_scores = []
+			class_scores_e2e = []
+			class_scores_cos = []
 			emb = embeddings[i].unsqueeze(0).to(device)
 			for k in class_center:
-				class_scores.append( [model.forward_bin(torch.cat([class_center[k], emb],1)).squeeze().item(), k] )
+				class_scores_e2e.append( [model.forward_bin(torch.cat([class_center[k], emb],1)).squeeze().item(), k] )
+				class_scores_cos.append( [torch.nn.functional.cosine_similarity(class_center[k], emb).squeeze().item(), k] )
 
-			pred_list.append(max(class_scores)[1])
+			pred_list_e2e.append(max(class_scores_e2e)[1])
+			pred_list_cos.append(max(class_scores_cos)[1])
 
 	print('\nScoring done')
 
-	print('\n NMI: {}'.format(normalized_mutual_info_score(labels_list, pred_list)))
+	print('\n NMI - E2E: {}'.format(normalized_mutual_info_score(labels_list, pred_list_e2e)))
+	print('\n NMI - COS: {}'.format(normalized_mutual_info_score(labels_list, pred_list_cos)))
