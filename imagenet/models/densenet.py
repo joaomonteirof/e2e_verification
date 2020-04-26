@@ -36,7 +36,7 @@ class Transition(nn.Module):
 
 
 class DenseNet(nn.Module):
-	def __init__(self, block, nblocks, nh, n_h, emb_size, sm_type, growth_rate=12, reduction=0.5, num_classes=1000, dropout_prob=0.25):
+	def __init__(self, block, nblocks, nh, n_h, emb_size, sm_type, growth_rate=12, reduction=0.5, num_classes=1000, dropout_prob=0.25, rproj_size=0):
 		super(DenseNet, self).__init__()
 
 		self.dropout_prob = dropout_prob
@@ -45,7 +45,7 @@ class DenseNet(nn.Module):
 		self.sm_type = sm_type
 		self.n_classes = num_classes
 		self.emb_size = emb_size
-
+		self.r_proj_size = rproj_size
 		self.growth_rate = growth_rate
 
 		num_planes = 2*growth_rate
@@ -106,7 +106,17 @@ class DenseNet(nn.Module):
 
 	def make_bin_layers(self, n_in, n_h_layers, h_size, dropout_p):
 
-		classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
+		if self.r_proj_size>0:
+			projection = nn.Linear(n_in, self.r_proj_size, bias=False)
+			with torch.no_grad():
+				projection.weight.div_(torch.norm(projection.weight, keepdim=True))
+
+			projection.weight.require_grad=False
+
+			classifier = nn.ModuleList([projection, nn.Linear(self.r_proj_size, h_size), nn.LeakyReLU(0.1)])
+
+		else:
+			classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
 
 		for i in range(n_h_layers-1):
 			classifier.append(nn.Linear(h_size, h_size))
@@ -125,17 +135,17 @@ class DenseNet(nn.Module):
 		
 		return z
 
-def DenseNet121(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
-	return DenseNet(Bottleneck, [6,12,24,16], nh, n_h, emb_size, sm_type, dropout_prob=dropout_prob, growth_rate=32, num_classes=n_classes)
+def DenseNet121(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000, r_proj_size=0):
+	return DenseNet(Bottleneck, [6,12,24,16], nh, n_h, emb_size, sm_type, dropout_prob=dropout_prob, growth_rate=32, num_classes=n_classes, rproj_size=r_proj_size)
 
-def DenseNet169(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
-	return DenseNet(Bottleneck, [6,12,32,32], nh, n_h, emb_size, sm_type, dropout_prob=dropout_prob, growth_rate=32, num_classes=n_classes)
+def DenseNet169(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000, r_proj_size=0):
+	return DenseNet(Bottleneck, [6,12,32,32], nh, n_h, emb_size, sm_type, dropout_prob=dropout_prob, growth_rate=32, num_classes=n_classes, rproj_size=r_proj_size)
 
-def DenseNet201(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
-	return DenseNet(Bottleneck, [6,12,48,32], nh, n_h, emb_size, sm_type, dropout_prob=dropout_prob, growth_rate=32, num_classes=n_classes)
+def DenseNet201(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000, r_proj_size=0):
+	return DenseNet(Bottleneck, [6,12,48,32], nh, n_h, emb_size, sm_type, dropout_prob=dropout_prob, growth_rate=32, num_classes=n_classes, rproj_size=r_proj_size)
 
-def DenseNet161(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
-	return DenseNet(Bottleneck, [6,12,36,24], nh, n_h, emb_size, sm_type, dropout_prob=dropout_prob, growth_rate=48, num_classes=n_classes)
+def DenseNet161(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000, r_proj_size=0):
+	return DenseNet(Bottleneck, [6,12,36,24], nh, n_h, emb_size, sm_type, dropout_prob=dropout_prob, growth_rate=48, num_classes=n_classes, rproj_size=r_proj_size)
 
-def densenet_cifar(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
-	return DenseNet(Bottleneck, [6,12,24,16], nh, n_h, emb_size, sm_type, dropout_prob=dropout_prob, growth_rate=12, num_classes=n_classes)
+def densenet_cifar(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000, r_proj_size=0):
+	return DenseNet(Bottleneck, [6,12,24,16], nh, n_h, emb_size, sm_type, dropout_prob=dropout_prob, growth_rate=12, num_classes=n_classes, rproj_size=r_proj_size)

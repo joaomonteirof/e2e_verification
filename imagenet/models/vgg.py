@@ -14,7 +14,7 @@ cfg = {
 
 
 class VGG(nn.Module):
-	def __init__(self, vgg_name, nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
+	def __init__(self, vgg_name, nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000, r_proj_size=0):
 		super(VGG, self).__init__()
 
 		self.dropout_prob = dropout_prob
@@ -23,6 +23,7 @@ class VGG(nn.Module):
 		self.sm_type = sm_type
 		self.n_classes = n_classes
 		self.emb_size = emb_size
+		self.r_proj_size = r_proj_size
 
 		self.features = self._make_layers(cfg[vgg_name])
 		self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
@@ -61,7 +62,17 @@ class VGG(nn.Module):
 
 	def make_bin_layers(self, n_in, n_h_layers, h_size, dropout_p):
 
-		classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
+		if self.r_proj_size>0:
+			projection = nn.Linear(n_in, self.r_proj_size, bias=False)
+			with torch.no_grad():
+				projection.weight.div_(torch.norm(projection.weight, keepdim=True))
+
+			projection.weight.require_grad=False
+
+			classifier = nn.ModuleList([projection, nn.Linear(self.r_proj_size, h_size), nn.LeakyReLU(0.1)])
+
+		else:
+			classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
 
 		for i in range(n_h_layers-1):
 			classifier.append(nn.Linear(h_size, h_size))

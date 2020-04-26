@@ -313,6 +313,7 @@ class TrainLoop(object):
 		'sm_type': self.model.sm_type,
 		'n_classes': self.model.n_classes,
 		'emb_size': self.model.emb_size,
+		'r_proj_size': self.model.r_proj_size,
 		'optimizer_state': self.optimizer.state_dict(),
 		'history': self.history,
 		'total_iters': self.total_iters,

@@ -113,7 +113,7 @@ class ResNet(nn.Module):
 
 	def __init__(self, block, layers, nh, n_h, z_size, sm_type, num_classes=1000, zero_init_residual=False,
 				 groups=1, width_per_group=64, replace_stride_with_dilation=None,
-				 norm_layer=None, dropout_prob=0.25):
+				 norm_layer=None, dropout_prob=0.25, rproj_size=0):
 		super(ResNet, self).__init__()
 		if norm_layer is None:
 			norm_layer = nn.BatchNorm2d
@@ -125,6 +125,7 @@ class ResNet(nn.Module):
 		self.sm_type = sm_type
 		self.n_classes = num_classes
 		self.emb_size = z_size
+		self.r_proj_size = rproj_size
 
 		self.inplanes = 64
 		self.dilation = 1
@@ -201,7 +202,17 @@ class ResNet(nn.Module):
 
 	def make_bin_layers(self, n_in, n_h_layers, h_size, dropout_p):
 
-		classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
+		if self.r_proj_size>0:
+			projection = nn.Linear(n_in, self.r_proj_size, bias=False)
+			with torch.no_grad():
+				projection.weight.div_(torch.norm(projection.weight, keepdim=True))
+
+			projection.weight.require_grad=False
+
+			classifier = nn.ModuleList([projection, nn.Linear(self.r_proj_size, h_size), nn.LeakyReLU(0.1)])
+
+		else:
+			classifier = nn.ModuleList([nn.Linear(n_in, h_size), nn.LeakyReLU(0.1)])
 
 		for i in range(n_h_layers-1):
 			classifier.append(nn.Linear(h_size, h_size))
@@ -239,17 +250,17 @@ class ResNet(nn.Module):
 		return z
 
 
-def ResNet18(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
-	return ResNet(BasicBlock, [2,2,2,2], nh=nh, n_h=n_h, z_size=emb_size, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes)
+def ResNet18(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000, r_proj_size=0):
+	return ResNet(BasicBlock, [2,2,2,2], nh=nh, n_h=n_h, z_size=emb_size, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes, rproj_size=r_proj_size)
 
-def ResNet34(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
-	return ResNet(BasicBlock, [3,4,6,3], nh=nh, n_h=n_h, z_size=emb_size, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes)
+def ResNet34(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000, r_proj_size=0):
+	return ResNet(BasicBlock, [3,4,6,3], nh=nh, n_h=n_h, z_size=emb_size, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes, rproj_size=r_proj_size)
 
-def ResNet50(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
-	return ResNet(Bottleneck, [3,4,6,3], nh=nh, n_h=n_h, z_size=emb_size, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes)
+def ResNet50(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000, r_proj_size=0):
+	return ResNet(Bottleneck, [3,4,6,3], nh=nh, n_h=n_h, z_size=emb_size, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes, rproj_size=r_proj_size)
 
-def ResNet101(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
-	return ResNet(Bottleneck, [3,4,23,3], nh=nh, n_h=n_h, z_size=emb_size, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes)
+def ResNet101(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000, r_proj_size=0):
+	return ResNet(Bottleneck, [3,4,23,3], nh=nh, n_h=n_h, z_size=emb_size, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes, rproj_size=r_proj_size)
 
-def ResNet152(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000):
-	return ResNet(Bottleneck, [3,8,36,3], nh=nh, n_h=n_h, z_size=emb_size, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes)
+def ResNet152(nh=1, n_h=512, emb_size=128, dropout_prob=0.25, sm_type='softmax', n_classes=1000, r_proj_size=0):
+	return ResNet(Bottleneck, [3,8,36,3], nh=nh, n_h=n_h, z_size=emb_size, sm_type=sm_type, dropout_prob=dropout_prob, num_classes=n_classes, rproj_size=r_proj_size)
