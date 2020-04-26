@@ -59,12 +59,14 @@ args=parser.parse_args()
 
 args.cuda=True if not args.no_cuda else False
 
-def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, submission_file, checkpoint_path, softmax, n_classes, pretrained, max_gnorm, lr_factor, logdir):
+def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, submission_file, checkpoint_path, softmax, n_classes, pretrained, max_gnorm, lr_factor, r_proj, logdir):
 
 	file_name = get_file_name(tmp_dir)
 	np.random.seed()
 
-	command = 'sbatch' + ' ' + submission_file + ' ' + str(lr) + ' ' + str(l2) + ' ' + str(momentum) + ' ' + str(smoothing) + ' ' + str(int(patience)) + ' ' + str(model) + ' ' + str(int(emb_size)) + ' ' + str(int(n_hidden)) + ' ' + str(int(hidden_size)) + ' ' + str(dropout_prob) + ' ' + str(epochs) + ' ' + str(batch_size) + ' ' + str(valid_batch_size) + ' ' + str(n_workers) + ' ' + str(cuda) + ' ' + str(data_path) + ' ' + str(valid_data_path) + ' ' + str(hdf_path) + ' ' + str(valid_hdf_path) + ' ' + str(file_name) + ' ' + str(checkpoint_path) + ' ' + str(file_name.split('/')[-1]+'t')+ ' ' + str(softmax) + ' ' + str(n_classes) + ' ' + str(pretrained) + ' ' + str(max_gnorm) + ' ' + str(lr_factor) + ' ' + str(logdir)
+	r_proj = r_proj*emb_size
+
+	command = 'sbatch' + ' ' + submission_file + ' ' + str(lr) + ' ' + str(l2) + ' ' + str(momentum) + ' ' + str(smoothing) + ' ' + str(int(patience)) + ' ' + str(model) + ' ' + str(int(emb_size)) + ' ' + str(int(n_hidden)) + ' ' + str(int(hidden_size)) + ' ' + str(dropout_prob) + ' ' + str(epochs) + ' ' + str(batch_size) + ' ' + str(valid_batch_size) + ' ' + str(n_workers) + ' ' + str(cuda) + ' ' + str(data_path) + ' ' + str(valid_data_path) + ' ' + str(hdf_path) + ' ' + str(valid_hdf_path) + ' ' + str(file_name) + ' ' + str(checkpoint_path) + ' ' + str(file_name.split('/')[-1]+'t')+ ' ' + str(softmax) + ' ' + str(n_classes) + ' ' + str(pretrained) + ' ' + str(max_gnorm) + ' ' + str(lr_factor) + ' ' + str(r_proj) + ' ' + str(logdir)
 
 	for j in range(10):
 
@@ -94,6 +96,7 @@ def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidd
 			print('Embedding size: {}'.format(emb_size))
 			print('Hidden layer size: {}'.format(hidden_size))
 			print('Number of hidden layers: {}'.format(n_hidden))
+			print('Random projection size: {}'.format(r_proj))
 			print('Dropout rate: {}'.format(dropout_prob))
 			print('Batch size: {}'.format(batch_size))
 			print('LR: {}'.format(lr))
@@ -135,6 +138,7 @@ n_classes = args.nclasses
 pretrained = args.pretrained
 max_gnorm = instru.var.OrderedDiscrete([10, 30, 100])
 lr_factor = instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.8])
+r_proj = instru.var.OrderedDiscrete([0., 1., 1.5, 1.8])
 logdir = args.logdir
 
 tmp_dir = os.getcwd() + '/' + args.temp_folder + '/'
@@ -142,7 +146,7 @@ tmp_dir = os.getcwd() + '/' + args.temp_folder + '/'
 if not os.path.isdir(tmp_dir):
 	os.mkdir(tmp_dir)
 
-instrum = instru.Instrumentation(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, sub_file, checkpoint_path, softmax, n_classes, pretrained, max_gnorm, lr_factor, logdir)
+instrum = instru.Instrumentation(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, sub_file, checkpoint_path, softmax, n_classes, pretrained, max_gnorm, lr_factor, r_proj, logdir)
 
 hp_optimizer = optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget, num_workers=args.hp_workers)
 

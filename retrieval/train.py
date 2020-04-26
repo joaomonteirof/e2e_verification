@@ -60,6 +60,7 @@ parser.add_argument('--pretrained', action='store_true', default=False, help='Ge
 parser.add_argument('--pretrained-path', type=str, default=None, metavar='Path', help='Path to trained model. Discards outpu layer')
 parser.add_argument('--hidden-size', type=int, default=512, metavar='S', help='latent layer dimension (default: 512)')
 parser.add_argument('--n-hidden', type=int, default=1, metavar='N', help='maximum number of frames per utterance (default: 1)')
+parser.add_argument('--rproj-size', type=int, default=-1, metavar='S', help='Random projection size - active if greater than 1')
 parser.add_argument('--dropout-prob', type=float, default=0.25, metavar='p', help='Dropout probability (default: 0.25)')
 parser.add_argument('--save-every', type=int, default=1, metavar='N', help='how many epochs to wait before saving checkpoints. Default is 1')
 parser.add_argument('--eval-every', type=int, default=1000, metavar='N', help='how many iterations to wait before evaluatiing models. Default is 1000')
@@ -109,14 +110,16 @@ if args.pretrained_path:
 	print('\nLoading pretrained model from: {}\n'.format(args.pretrained_path))
 	ckpt=torch.load(args.pretrained_path, map_location = lambda storage, loc: storage)
 	args.dropout_prob, args.n_hidden, args.hidden_size, args.emb_size = ckpt['dropout_prob'], ckpt['n_hidden'], ckpt['hidden_size'], ckpt['emb_size']
+	if 'r_proj_size' in ckpt:
+		args.rproj_size = ckpt['r_proj_size']
 	print('\nUsing pretrained config for discriminator. Ignoring args.')
 
 if args.model == 'vgg':
-	model = vgg.VGG('VGG19', nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax, n_classes=args.nclasses, emb_size=args.emb_size)
+	model = vgg.VGG('VGG19', nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax, n_classes=args.nclasses, emb_size=args.emb_size, r_proj_size=args.rproj_size)
 elif args.model == 'resnet':
-	model = resnet.ResNet50(nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax, n_classes=args.nclasses, emb_size=args.emb_size)
+	model = resnet.ResNet50(nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax, n_classes=args.nclasses, emb_size=args.emb_size, r_proj_size=args.rproj_size)
 elif args.model == 'densenet':
-	model = densenet.DenseNet121(nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax, n_classes=args.nclasses, emb_size=args.emb_size)
+	model = densenet.DenseNet121(nh=args.n_hidden, n_h=args.hidden_size, dropout_prob=args.dropout_prob, sm_type=args.softmax, n_classes=args.nclasses, emb_size=args.emb_size, r_proj_size=args.rproj_size)
 
 if args.pretrained_path:
 	if ckpt['sm_type'] == 'am_softmax':
@@ -173,6 +176,7 @@ if args.verbose >0:
 	print('Embedding dimension: {}'.format(args.emb_size))
 	print('Number of hidden layers: {}'.format(args.n_hidden))
 	print('Size of hidden layers: {}'.format(args.hidden_size))
+	print('Random projection size: {}'.format(args.rproj_size))
 	print('Stats: {}'.format(args.stats))
 	print('Ablation Mode: {}'.format(args.ablation))
 

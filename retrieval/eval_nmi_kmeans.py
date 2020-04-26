@@ -50,19 +50,24 @@ if __name__ == '__main__':
 	ckpt = torch.load(args.cp_path, map_location = lambda storage, loc: storage)
 	try :
 		dropout_prob, n_hidden, hidden_size, softmax, n_classes, emb_size = ckpt['dropout_prob'], ckpt['n_hidden'], ckpt['hidden_size'], ckpt['sm_type'], ckpt['n_classes'], ckpt['emb_size']
+		if 'r_proj_size' in ckpt:
+			rproj_size = ckpt['r_proj_size']
+		else:
+			rproj_size = -1
 	except KeyError as err:
 		print("Key Error: {0}".format(err))
 		print('\nProbably old cp has no info regarding classifiers arch!\n')
 		n_hidden, hidden_size, softmax, n_classes = get_classifier_config_from_cp(ckpt)
 		dropout_prob = args.dropout_prob
 		emb_size = 350
+		rproj_size = -1
 
 	if args.model == 'vgg':
-		model = vgg.VGG('VGG19', nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes, emb_size=emb_size)
+		model = vgg.VGG('VGG19', nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes, emb_size=emb_size, r_proj_size=rproj_size)
 	elif args.model == 'resnet':
-		model = resnet.ResNet50(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes, emb_size=emb_size)
+		model = resnet.ResNet50(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes, emb_size=emb_size, r_proj_size=rproj_size)
 	elif args.model == 'densenet':
-		model = densenet.DenseNet121(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes, emb_size=emb_size)
+		model = densenet.DenseNet121(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=n_classes, emb_size=emb_size, r_proj_size=rproj_size)
 
 	if ckpt['sm_type'] == 'am_softmax':
 		del(ckpt['model_state']['out_proj.w'])

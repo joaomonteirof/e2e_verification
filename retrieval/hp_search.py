@@ -62,6 +62,10 @@ def train(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden
 		print('\nLoading pretrained model from: {}\n'.format(args.pretrained_path))
 		ckpt=torch.load(pretrained_path, map_location = lambda storage, loc: storage)
 		dropout_prob, n_hidden, hidden_size, emb_size = ckpt['dropout_prob'], ckpt['n_hidden'], ckpt['hidden_size'], ckpt['emb_size']
+		if 'r_proj_size' in ckpt:
+			rproj_size = ckpt['r_proj_size']
+		else:
+			rproj_size = -1
 		print('\nUsing pretrained config for discriminator. Ignoring args.')
 
 	args_dict['dropout_prob'], args_dict['n_hidden'], args_dict['hidden_size'], args_dict['emb_size'] = dropout_prob, n_hidden, hidden_size, emb_size
@@ -102,11 +106,11 @@ def train(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden
 	nclasses = trainset.n_classes if isinstance(trainset, Loader) else len(trainset.classes)
 
 	if model == 'vgg':
-		model_ = vgg.VGG('VGG19', nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=nclasses, emb_size=emb_size)
+		model_ = vgg.VGG('VGG19', nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=nclasses, emb_size=emb_size, r_proj_size=rproj_size)
 	elif model == 'resnet':
-		model_ = resnet.ResNet50(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=nclasses, emb_size=emb_size)
+		model_ = resnet.ResNet50(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=nclasses, emb_size=emb_size, r_proj_size=rproj_size)
 	elif model == 'densenet':
-		model_ = densenet.DenseNet121(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=nclasses, emb_size=emb_size)
+		model_ = densenet.DenseNet121(nh=n_hidden, n_h=hidden_size, dropout_prob=dropout_prob, sm_type=softmax, n_classes=nclasses, emb_size=emb_size, r_proj_size=rproj_size)
 
 	if pretrained_path != 'none':
 		if ckpt['sm_type'] == 'am_softmax':
@@ -147,6 +151,7 @@ def train(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden
 		print('Embedding size: {}'.format(emb_size))
 		print('Hidden layer size: {}'.format(hidden_size))
 		print('Number of hidden layers: {}'.format(n_hidden))
+		print('Random projection size: {}'.format(rproj_size))
 		print('Dropout rate: {}'.format(dropout_prob))
 		print('Batch size: {}'.format(batch_size))
 		print('LR: {}'.format(lr))
@@ -207,7 +212,12 @@ valid_hdf_path = args.valid_hdf_path if args.valid_hdf_path is not None else 'no
 checkpoint_path=args.checkpoint_path
 softmax=instru.var.OrderedDiscrete(['softmax', 'am_softmax'])
 pretrained = args.pretrained
-pretrained_path = instru.var.OrderedDiscrete(args.pretrained_path) if len(args.pretrained_path) > 0 else 'none'
+if len(args.pretrained_path) > 1:
+	pretrained_path = instru.var.OrderedDiscrete(args.pretrained_path)
+elif len(args.pretrained_path) == 1:
+	pretrained_path = args.pretrained_path
+else:
+	pretrained_path = 'none'
 max_gnorm = instru.var.OrderedDiscrete([10, 50, 100])
 stats = args.stats
 log_dir = args.logdir if args.logdir else 'none'
