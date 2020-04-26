@@ -34,6 +34,8 @@ if __name__ == '__main__':
 		dropout_prob, n_hidden, hidden_size, softmax, n_classes, emb_size = ckpt['dropout_prob'], ckpt['n_hidden'], ckpt['hidden_size'], ckpt['sm_type'], ckpt['n_classes'], ckpt['emb_size']
 		if 'r_proj_size' in ckpt:
 			rproj_size = ckpt['r_proj_size']
+		else:
+			rproj_size = -1
 	except KeyError as err:
 		print("Key Error: {0}".format(err))
 		print('\nProbably old cp has no info regarding classifiers arch!\n')
