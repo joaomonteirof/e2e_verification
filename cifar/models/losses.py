@@ -25,8 +25,6 @@ class AMSoftmax(nn.Module):
 
 	def forward(self, embeddings, target, eval_=False):
 
-		self.w.to(embeddings.device)
-
 		w_norm = F.normalize(self.w, p=2, dim=0)
 
 		cos_theta = embeddings.mm(w_norm)
@@ -64,7 +62,6 @@ class Softmax(nn.Module):
 				layer.bias.data.zero_()
 
 	def forward(self, embeddings, *args, **kwargs):
-		self.w.to(embeddings.device)
 		return self.w(embeddings)
 
 class LabelSmoothingLoss(nn.Module):

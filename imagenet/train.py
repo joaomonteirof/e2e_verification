@@ -150,10 +150,6 @@ elif args.pretrained:
 
 	out_load = model.load_state_dict(model_pretrained.state_dict(), strict=False)
 
-	if isinstance(model.out_proj, Softmax):
-		model.out_proj.w.weight.data = model_pretrained.fc.weight.data.clone()
-		model.out_proj.w.bias.data = model_pretrained.fc.bias.data.clone()
-
 	if args.verbose >0:
 		print(out_load)
 		print('\n')
