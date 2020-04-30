@@ -212,7 +212,7 @@ class TrainLoop(object):
 
 		embeddings, out = self.model.forward(utt)
 
-		loss = F.cross_entropy(self.model.out_proj(out, y), y)
+		loss = F.cross_entropy(self.model.out_proj(embeddings, y), y)
 
 		loss.backward()
 		grad_norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_gnorm)

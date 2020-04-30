@@ -151,9 +151,9 @@ class ResNet(nn.Module):
 		self.lin_proj = nn.Sequential(nn.Linear(512*block.expansion, self.emb_size))
 
 		if sm_type=='softmax':
-			self.out_proj=Softmax(input_features=512*block.expansion, output_features=num_classes)
+			self.out_proj=Softmax(input_features=self.emb_size, output_features=num_classes)
 		elif sm_type=='am_softmax':
-			self.out_proj=AMSoftmax(input_features=512*block.expansion, output_features=num_classes)
+			self.out_proj=AMSoftmax(input_features=self.emb_size, output_features=num_classes)
 		else:
 			raise NotImplementedError
 

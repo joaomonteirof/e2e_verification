@@ -204,8 +204,9 @@ class TrainLoop(object):
 		y = y.to(self.device, non_blocking=True)
 
 		embeddings, out = self.model.forward(x)
+		embeddings_norm = F.normalize(embeddings, p=2, dim=1)
 
-		ce_loss = self.ce_criterion(self.model.out_proj(out, y), y)
+		ce_loss = self.ce_criterion(self.model.out_proj(embeddings_norm, y), y)
 
 		# Get all triplets now for bin classifier
 		triplets_idx = self.harvester.get_triplets(embeddings.detach(), y)
@@ -248,7 +249,7 @@ class TrainLoop(object):
 
 		embeddings, out = self.model.forward(utt)
 
-		loss = F.cross_entropy(self.model.out_proj(out, y), y)
+		loss = F.cross_entropy(self.model.out_proj(embeddings, y), y)
 
 		loss.backward()
 		self.optimizer.step()
