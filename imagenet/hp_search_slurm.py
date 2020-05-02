@@ -55,18 +55,19 @@ parser.add_argument('--seed', type=int, default=1, metavar='S', help='random see
 parser.add_argument('--temp-folder', type=str, default='temp', metavar='Path', help='Temp folder for pickle files')
 parser.add_argument('--checkpoint-path', type=str, default=None, metavar='Path', help='Path for checkpointing')
 parser.add_argument('--logdir', type=str, default=None, metavar='Path', help='Path for checkpointing')
+parser.add_argument('--ablation', action='store_true', default=False, help='Drops the multi class classification loss')
 args=parser.parse_args()
 
 args.cuda=True if not args.no_cuda else False
 
-def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, submission_file, checkpoint_path, softmax, n_classes, pretrained, max_gnorm, lr_factor, r_proj, logdir):
+def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, submission_file, checkpoint_path, softmax, n_classes, pretrained, max_gnorm, lr_factor, r_proj, logdir, ablation):
 
 	file_name = get_file_name(tmp_dir)
 	np.random.seed()
 
 	r_proj = r_proj*emb_size
 
-	command = 'sbatch' + ' ' + submission_file + ' ' + str(lr) + ' ' + str(l2) + ' ' + str(momentum) + ' ' + str(smoothing) + ' ' + str(int(patience)) + ' ' + str(model) + ' ' + str(int(emb_size)) + ' ' + str(int(n_hidden)) + ' ' + str(int(hidden_size)) + ' ' + str(dropout_prob) + ' ' + str(epochs) + ' ' + str(batch_size) + ' ' + str(valid_batch_size) + ' ' + str(n_workers) + ' ' + str(cuda) + ' ' + str(data_path) + ' ' + str(valid_data_path) + ' ' + str(hdf_path) + ' ' + str(valid_hdf_path) + ' ' + str(file_name) + ' ' + str(checkpoint_path) + ' ' + str(file_name.split('/')[-1]+'t')+ ' ' + str(softmax) + ' ' + str(n_classes) + ' ' + str(pretrained) + ' ' + str(max_gnorm) + ' ' + str(lr_factor) + ' ' + str(r_proj) + ' ' + str(logdir)
+	command = 'sbatch' + ' ' + submission_file + ' ' + str(lr) + ' ' + str(l2) + ' ' + str(momentum) + ' ' + str(smoothing) + ' ' + str(int(patience)) + ' ' + str(model) + ' ' + str(int(emb_size)) + ' ' + str(int(n_hidden)) + ' ' + str(int(hidden_size)) + ' ' + str(dropout_prob) + ' ' + str(epochs) + ' ' + str(batch_size) + ' ' + str(valid_batch_size) + ' ' + str(n_workers) + ' ' + str(cuda) + ' ' + str(data_path) + ' ' + str(valid_data_path) + ' ' + str(hdf_path) + ' ' + str(valid_hdf_path) + ' ' + str(file_name) + ' ' + str(checkpoint_path) + ' ' + str(file_name.split('/')[-1]+'t')+ ' ' + str(softmax) + ' ' + str(n_classes) + ' ' + str(pretrained) + ' ' + str(max_gnorm) + ' ' + str(lr_factor) + ' ' + str(r_proj) + ' ' + str(logdir) + ' ' + str(ablation)
 
 	for j in range(10):
 
@@ -106,6 +107,7 @@ def train(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidd
 			print('Patience: {}'.format(patience))
 			print('Softmax Mode is: {}'.format(softmax))
 			print('Pretrained: {}'.format(pretrained))
+			print('Ablation Mode: {}'.format(ablation))
 			print(' ')
 
 			return result
@@ -140,13 +142,14 @@ max_gnorm = instru.var.OrderedDiscrete([10, 30, 100])
 lr_factor = instru.var.OrderedDiscrete([0.1, 0.3, 0.5, 0.8])
 r_proj = instru.var.OrderedDiscrete([0., 1., 1.5, 1.8])
 logdir = args.logdir
+ablation = args.ablation
 
 tmp_dir = os.getcwd() + '/' + args.temp_folder + '/'
 
 if not os.path.isdir(tmp_dir):
 	os.mkdir(tmp_dir)
 
-instrum = instru.Instrumentation(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, sub_file, checkpoint_path, softmax, n_classes, pretrained, max_gnorm, lr_factor, r_proj, logdir)
+instrum = instru.Instrumentation(lr, l2, momentum, smoothing, patience, model, emb_size, n_hidden, hidden_size, dropout_prob, epochs, batch_size, valid_batch_size, n_workers, cuda, data_path, valid_data_path, hdf_path, valid_hdf_path, sub_file, checkpoint_path, softmax, n_classes, pretrained, max_gnorm, lr_factor, r_proj, logdir, ablation)
 
 hp_optimizer = optimization.optimizerlib.RandomSearch(instrumentation=instrum, budget=args.budget, num_workers=args.hp_workers)
 

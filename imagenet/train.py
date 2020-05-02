@@ -73,6 +73,8 @@ parser.add_argument('--no-cp', action='store_true', default=False, help='Disable
 parser.add_argument('--verbose', type=int, default=2, metavar='N', help='Verbose is activated if > 0')
 parser.add_argument('--out-file', type=str, default=None)
 parser.add_argument('--cp-name', type=str, default=None)
+parser.add_argument('--ablation', action='store_true', default=False, help='Drops the multi class classification loss')
+parser.add_argument('--ablation-str', type=str, default=None, help='Drops the multi class classification loss')
 parser.add_argument('--logdir', type=str, default=None, metavar='Path', help='Path for checkpointing')
 args = parser.parse_args()
 args.cuda = True if (args.cuda=='True' or (args.cuda is None and not args.cuda)) and torch.cuda.is_available() else False
@@ -81,6 +83,7 @@ if args.hdf_path=='none': args.hdf_path=None
 if args.valid_data_path=='none': args.valid_data_path=None
 if args.valid_hdf_path=='none': args.valid_hdf_path=None
 if args.pretrained_str=='True': args.pretrained=True
+if args.ablation_str=='True': args.ablation=True
 
 print(args, '\n')
 
@@ -163,7 +166,7 @@ if args.cuda:
 
 optimizer = optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.l2, momentum=args.momentum)
 
-trainer = TrainLoop(model, optimizer, train_loader, valid_loader, max_gnorm=args.max_gnorm, patience=args.patience, lr_factor=args.lr_factor, label_smoothing=args.smoothing, verbose=args.verbose, cp_name=args.cp_name, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, cuda=args.cuda, logger=writer)
+trainer = TrainLoop(model, optimizer, train_loader, valid_loader, max_gnorm=args.max_gnorm, patience=args.patience, lr_factor=args.lr_factor, label_smoothing=args.smoothing, verbose=args.verbose, cp_name=args.cp_name, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, ablation=args.ablation, checkpoint_epoch=args.checkpoint_epoch, cuda=args.cuda, logger=writer)
 
 if args.verbose >0:
 	print('\nCuda Mode is: {}'.format(args.cuda))
@@ -183,6 +186,7 @@ if args.verbose >0:
 	print('Random projection size: {}'.format(args.rproj_size))
 	print('Number of hidden layers: {}'.format(args.n_hidden))
 	print('Size of hidden layers: {}'.format(args.hidden_size))
+	print('Ablation Mode: {}'.format(args.ablation))
 
 
 best_eer = trainer.train(n_epochs=args.epochs, save_every=args.save_every)
