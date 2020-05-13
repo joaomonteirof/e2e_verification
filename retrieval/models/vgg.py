@@ -40,7 +40,6 @@ class VGG(nn.Module):
 
 	def forward(self, x):
 		features = self.avgpool(self.features(x))
-		print(features.size())
 		features_out = features.view(features.size(0), -1)
 		features_emb = self.lin_proj(features_out)
 
