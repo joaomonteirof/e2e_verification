@@ -63,13 +63,6 @@ if args.cuda:
 else:
 	device = torch.device('cpu')
 
-if args.logdir:
-	writer = SummaryWriter(log_dir=args.logdir, comment=args.model, purge_step=True if args.checkpoint_epoch is None else False)
-	args_dict = parse_args_for_log(args)
-	writer.add_hparams(hparam_dict=args_dict, metric_dict={'best_eer':0.0})
-else:
-	writer = None
-
 train_dataset = Loader(hdf5_name = args.train_hdf_file, max_nb_frames = args.n_frames)
 train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, worker_init_fn=set_np_randomseed)
 
@@ -114,6 +107,13 @@ if args.pretrained_path is not None:
 model = model.to(device)
 
 optimizer = TransformerOptimizer(optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.l2, nesterov=True), lr=args.lr, warmup_steps=args.warmup)
+
+if args.logdir:
+	writer = SummaryWriter(log_dir=args.logdir, comment=args.model, purge_step=0 if args.checkpoint_epoch is None else int(args.checkpoint_epoch*len(train_loader)))
+	args_dict = parse_args_for_log(args)
+	writer.add_hparams(hparam_dict=args_dict, metric_dict={'best_eer':0.0})
+else:
+	writer = None
 
 trainer = TrainLoop(model, optimizer, train_loader, valid_loader, max_gnorm=args.max_gnorm, label_smoothing=args.smoothing, verbose=args.verbose, device=device, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, checkpoint_epoch=args.checkpoint_epoch, pretrain=args.pretrain, ablation=args.ablation, cuda=args.cuda, logger=writer)
 

@@ -90,15 +90,6 @@ print(args, '\n')
 if args.cuda:
 	torch.backends.cudnn.benchmark=True
 
-if args.logdir:
-	if args.cp_name:
-		args.logdir = os.path.join(args.logdir, args.cp_name.split('.')[0])
-	writer = SummaryWriter(log_dir=args.logdir, comment=args.model, purge_step=True if args.checkpoint_epoch is None else False)
-	args_dict = parse_args_for_log(args)
-	writer.add_hparams(hparam_dict=args_dict, metric_dict={'best_eer':0.0})
-else:
-	writer = None
-
 if args.hdf_path:
 	transform_train = transforms.Compose([transforms.ToPILImage(), transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])	
 	trainset = Loader(args.hdf_path, transform_train)
@@ -165,6 +156,15 @@ if args.cuda:
 	model = model.to(device)
 
 optimizer = optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.l2, momentum=args.momentum)
+
+if args.logdir:
+	if args.cp_name:
+		args.logdir = os.path.join(args.logdir, args.cp_name.split('.')[0])
+	writer = SummaryWriter(log_dir=args.logdir, comment=args.model, purge_step=0 if args.checkpoint_epoch is None else int(args.checkpoint_epoch*len(train_loader)))
+	args_dict = parse_args_for_log(args)
+	writer.add_hparams(hparam_dict=args_dict, metric_dict={'best_eer':0.0})
+else:
+	writer = None
 
 trainer = TrainLoop(model, optimizer, train_loader, valid_loader, max_gnorm=args.max_gnorm, patience=args.patience, lr_factor=args.lr_factor, label_smoothing=args.smoothing, verbose=args.verbose, cp_name=args.cp_name, save_cp=(not args.no_cp), checkpoint_path=args.checkpoint_path, ablation=args.ablation, checkpoint_epoch=args.checkpoint_epoch, cuda=args.cuda, logger=writer)
 

@@ -71,7 +71,7 @@ def train(lr, l2, momentum, smoothing, warmup, model, emb_size, n_hidden, hidden
 	args_dict['dropout_prob'], args_dict['n_hidden'], args_dict['hidden_size'], args_dict['emb_size'] = dropout_prob, n_hidden, hidden_size, emb_size
 
 	if log_dir != 'none':
-		writer = SummaryWriter(log_dir=os.path.join(log_dir, cp_name), comment=model, purge_step=True)
+		writer = SummaryWriter(log_dir=os.path.join(log_dir, cp_name), comment=model, purge_step=0)
 		writer.add_hparams(hparam_dict=args_dict, metric_dict={'best_eer':0.0})
 	else:
 		writer = None

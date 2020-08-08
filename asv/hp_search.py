@@ -64,7 +64,7 @@ def train(lr, l2, momentum, smoothing, warmup, latent_size, n_hidden, hidden_siz
 
 	if args.logdir:
 		from torch.utils.tensorboard import SummaryWriter
-		writer = SummaryWriter(log_dir=logdir+cp_name, comment=args.model, purge_step=True)
+		writer = SummaryWriter(log_dir=logdir+cp_name, comment=args.model, purge_step=0)
 	else:
 		writer = None
 
