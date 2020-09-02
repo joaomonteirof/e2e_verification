@@ -1,5 +1,5 @@
 # E2E verification
-Part of the code to reproduce the experiments from the preprint: [Generalizing to unseen domains via distribution matching](https://arxiv.org/abs/1911.00804)
+Joint metric learning and distance metric learning for end-to-end verification. Part of the code for: [An end-to-end approach for the verification problem: learning the right distance](https://arxiv.org/abs/2002.09469)
 
 ## Requirements
 
